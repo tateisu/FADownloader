@@ -115,7 +115,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 	public void dispose( String reason ){
 		try{
 			if( cancel_reason.compareAndSet( null, reason ) ){
-				log.i("スレッドキャンセル. 理由:%s",reason);
+				log.i( "スレッドキャンセル. 理由:%s", reason );
 			}
 			synchronized( this ){
 				notify();
@@ -141,9 +141,11 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		DocumentFile document_file;
 		String name;
 		FilePathX parent;
+		ArrayList<DocumentFile> file_list;
 
 		public ArrayList<DocumentFile> getFileList(){
 			if( document_file != null ){
+				if( file_list != null) return file_list;
 				ArrayList<DocumentFile> result = new ArrayList<>();
 				Collections.addAll( result, document_file.listFiles() );
 				Collections.sort( result, new Comparator<DocumentFile>(){
@@ -151,7 +153,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 						return a.getName().compareTo( b.getName() );
 					}
 				} );
-				return result;
+				return file_list = result;
 			}else if( parent != null ){
 				ArrayList<DocumentFile> parent_childs = parent.getFileList();
 				if( parent_childs != null ){
@@ -167,9 +169,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 		private DocumentFile prepareDirectory( LogWriter log ){
 			try{
-				if( document_file != null ){
-					return document_file;
-				}else if( parent != null ){
+				if( document_file != null ) return document_file;
+				if( parent != null ){
 					DocumentFile parent_dir = parent.prepareDirectory( log );
 					if( parent_dir == null ) return null;
 
@@ -189,9 +190,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 		public DocumentFile prepareFile( LogWriter log ){
 			try{
-				if( document_file != null ){
-					return document_file;
-				}else if( parent != null ){
+				if( document_file != null ) return document_file;
+				if( parent != null ){
 					DocumentFile parent_dir = parent.prepareDirectory( log );
 					if( parent_dir == null ) return null;
 
@@ -244,6 +244,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		return null;
 	}
 
+	boolean dry_run = true;
+
 	@Override public void run(){
 
 		status.set( "スレッド開始" );
@@ -270,12 +272,11 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				long remain = last_start + interval * 1000L - now;
 				if( remain <= 0 ) break;
 
-
 				if( remain < ( 15 * 1000L ) ){
-					status.set(String.format("短い待機 あと%s", Utils.formatTimeDuration( remain ) ) );
+					status.set( String.format( "短い待機 あと%s", Utils.formatTimeDuration( remain ) ) );
 					waitEx( remain > 1000L ? 1000L : remain );
 				}else{
-					status.set(String.format( "待機 %s (using AlarmManager)", Utils.formatTimeDuration( remain ) ));
+					status.set( String.format( "待機 %s (using AlarmManager)", Utils.formatTimeDuration( remain ) ) );
 
 					try{
 						PendingIntent pi = Utils.createAlarmPendingIntent( service );
@@ -309,7 +310,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			// WakeLockやWiFiLockを確保
 			callback.acquireWakeLock();
 
-			status.set("Wi-Fi通信状態の確認" );
+			status.set( "Wi-Fi通信状態の確認" );
 
 			// 通信の安定を確認
 			Network network = null;
@@ -338,7 +339,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			// 更新フラグのチェック
 			long last_scan_complete = Pref.pref( service ).getLong( Pref.LAST_SCAN_COMPLETE, 0L );
 			if( System.currentTimeMillis() - last_scan_complete <= interval * 1000L * 2 ){
-				status.set("FlashAir更新チェック" );
+				status.set( "FlashAir更新チェック" );
 				String cgi_url = flashair_url + "command.cgi?op=102";
 				byte[] data = client.getHTTP( log, network, cgi_url );
 				Pref.pref( service ).edit().putLong( Pref.LAST_SCAN_COMPLETE, System.currentTimeMillis() ).apply();
@@ -370,7 +371,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			while( ! isCancelled() ){
 
 				if( job_queue.isEmpty() ){
-					status.set("ファイルスキャン完了" );
+					status.set( "ファイルスキャン完了" );
 					if( ! has_error ){
 						Pref.pref( service ).edit().putLong( Pref.LAST_SCAN_COMPLETE, System.currentTimeMillis() ).apply();
 						if( ! repeat ){
@@ -390,7 +391,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				if( item.is_file ){
 					// TODO ファイル転送
 				}else{
-					status.set(String.format("フォルダの確認 %s",item.air_path ));
+					status.set( String.format( "フォルダの確認 %s", item.air_path ) );
 					// フォルダを読む
 					String cgi_url = flashair_url + "command.cgi?op=100&DIR=" + Uri.encode( item.air_path );
 					byte[] data = client.getHTTP( log, network, cgi_url );
@@ -439,7 +440,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 								job_queue.add( new Item( child_air_path, local_child, false, 0L ) );
 								continue;
 							}
-							status.set(String.format("ファイル確認中 %s",child_air_path ));
+							status.set( String.format( "ファイル確認中 %s", child_air_path ) );
 
 							long time_start = SystemClock.elapsedRealtime();
 
@@ -454,7 +455,6 @@ public class DownloadWorker extends Thread implements CancelChecker{
 								continue;
 							}
 
-
 							DocumentFile file = local_child.prepareFile( log );
 							if( file == null ){
 								log.e( "%s//%s :skip. can not prepare local file.", item.air_path, fname );
@@ -464,7 +464,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 								continue;
 							}
 
-							status.set(String.format("ファイル取得中 %s",child_air_path ));
+							status.set( String.format( "ファイル取得中 %s", child_air_path ) );
 
 							final Uri file_uri = file.getUri();
 							final String get_url = flashair_url + Uri.encode( child_air_path );
@@ -512,6 +512,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 							}else{
 								log.i( "FILE %s :download complete. %dms", fname, SystemClock.elapsedRealtime() - time_start );
 							}
+
 						}catch( Throwable ex ){
 							log.e( "parse error: %s", line );
 							has_error = true;
@@ -521,7 +522,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				}
 			}
 		}
-		status.set("スレッド終了");
+		status.set( "スレッド終了" );
 		callback.onThreadEnd( allow_stop_service );
 	}
 
