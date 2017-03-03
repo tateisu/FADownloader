@@ -22,7 +22,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignBaseline="@+id/etURL"
-            android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
 
             android:labelFor="@+id/etURL"
@@ -30,16 +29,24 @@
 
             />
 
+        <Button
+            android:id="@+id/btnFlashAirURLHelp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignBaseline="@+id/etURL"
+            android:text="@string/question"
+            android:minWidth="48dp"
+            />
+
         <EditText
             android:id="@+id/etURL"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:layout_marginLeft="8dp"
             android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
             android:layout_toEndOf="@+id/tvURLCaption"
-            android:layout_toRightOf="@+id/tvURLCaption"
+            android:layout_toStartOf="@+id/btnFlashAirURLHelp"
 
             android:inputType="textUri"
             />
@@ -49,20 +56,30 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignBaseline="@+id/btnFolderPicker"
-            android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
 
             android:text="@string/local_folder"
             />
 
         <Button
-            android:id="@+id/btnFolderPicker"
+            android:id="@+id/btnFolderPickerHelp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:layout_below="@id/etURL"
+            android:layout_below="@id/btnFlashAirURLHelp"
+            android:layout_marginTop="8dp"
+            android:text="@string/question"
+            android:minWidth="48dp"
+            />
+
+        <Button
+            android:id="@+id/btnFolderPicker"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@+id/btnFolderPickerHelp"
+            android:layout_toStartOf="@+id/btnFolderPickerHelp"
             android:text="@string/dotdotdot"
+            android:minWidth="48dp"
             />
 
         <TextView
@@ -70,19 +87,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
 
-            android:layout_alignBaseline="@+id/btnFolderPicker"
+            android:layout_alignBaseline="@+id/btnFolderPickerHelp"
+
+            android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
 
-            android:layout_marginLeft="8dp"
-            android:layout_marginRight="8dp"
-            android:layout_marginStart="8dp"
-
             android:layout_toEndOf="@+id/tvFolderCaption"
-            android:layout_toLeftOf="@+id/btnFolderPicker"
-            android:layout_toRightOf="@+id/tvFolderCaption"
             android:layout_toStartOf="@+id/btnFolderPicker"
             android:ellipsize="start"
             />
+
 
         <TextView
             android:id="@+id/tvIntervalCaption"
@@ -97,17 +111,26 @@
 
             />
 
+        <Button
+            android:id="@+id/btnIntervalHelp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@id/btnFolderPickerHelp"
+            android:layout_marginTop="8dp"
+            android:text="@string/question"
+            android:minWidth="48dp"
+            />
+
         <EditText
             android:id="@+id/etInterval"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:layout_below="@id/btnFolderPicker"
-            android:layout_marginLeft="8dp"
+            android:layout_alignBaseline="@id/btnIntervalHelp"
             android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_toStartOf="@+id/btnIntervalHelp"
             android:layout_toEndOf="@+id/tvIntervalCaption"
-            android:layout_toRightOf="@+id/tvIntervalCaption"
 
             android:inputType="number"
             />
@@ -125,17 +148,26 @@
             android:text="@string/file_type_caption"
             />
 
+        <Button
+            android:id="@+id/btnFileTypeHelp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@id/btnIntervalHelp"
+            android:layout_marginTop="8dp"
+            android:text="@string/question"
+            android:minWidth="48dp"
+            />
+
         <EditText
             android:id="@+id/etFileType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:layout_below="@id/etInterval"
-            android:layout_marginLeft="8dp"
+            android:layout_alignBaseline="@id/btnFileTypeHelp"
             android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
             android:layout_toEndOf="@+id/tvFileTypeCaption"
-            android:layout_toRightOf="@+id/tvFileTypeCaption"
+            android:layout_toStartOf="@+id/btnFileTypeHelp"
 
             android:inputType="text"
 
@@ -143,12 +175,11 @@
 
         <TextView
             android:id="@+id/tvFileTypeDesc"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
             android:layout_below="@id/etFileType"
-
+            android:layout_alignStart="@id/etFileType"
+            android:layout_alignEnd="@id/etFileType"
             android:text="@string/file_type_desc"
             />
     </RelativeLayout>

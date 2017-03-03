@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="24dp"
+        >
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:text="Local Folder にはスマホ上の、画像をダウンロードして保存するフォルダを指定します"
+            />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="「…」ボタンを押しても最初は「最近」しか選べません。右上のメニューから「内部ストレージを表示」を指定してください"
+            />
+
+        <ImageView
+            android:layout_width="213dp"
+            android:layout_height="213dp"
+            android:layout_marginBottom="24dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/help_saf_1"
+            />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="左のサイドメニューからストレージを選んでください"
+            />
+
+        <ImageView
+            android:layout_width="213dp"
+            android:layout_height="213dp"
+            android:layout_marginBottom="24dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/help_saf_2"
+            />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="右上のメニューから「新しいフォルダ」を選んでください。「FADownloader」などの名前をつけましょう"
+            />
+
+        <ImageView
+            android:layout_width="213dp"
+            android:layout_height="213dp"
+            android:layout_marginBottom="24dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/help_saf_3"
+            />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="作成したフォルダを開いた後、右下の「適用」ボタンを押してください"
+            />
+
+        <ImageView
+            android:layout_width="213dp"
+            android:layout_height="213dp"
+            android:layout_marginBottom="24dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/help_saf_4"
+            />
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/btnClose"
+            android:text="@string/close"
+            />
+    </LinearLayout>
+</ScrollView>

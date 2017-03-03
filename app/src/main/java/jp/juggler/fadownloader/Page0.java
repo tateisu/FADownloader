@@ -1,12 +1,14 @@
 package jp.juggler.fadownloader;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.support.v4.provider.DocumentFile;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -14,7 +16,6 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 
 	EditText etURL;
 	TextView tvFolder;
-	View btnFolderPicker;
 	EditText etInterval;
 	EditText etFileType;
 
@@ -26,10 +27,14 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 
 		etURL = (EditText) root.findViewById( R.id.etURL );
 		tvFolder = (TextView) root.findViewById( R.id.tvFolder );
-		btnFolderPicker = root.findViewById( R.id.btnFolderPicker );
 		etInterval = (EditText) root.findViewById( R.id.etInterval );
 		etFileType = (EditText) root.findViewById( R.id.etFileType );
-		btnFolderPicker.setOnClickListener( this );
+
+		root.findViewById( R.id.btnFolderPicker ).setOnClickListener( this );
+		root.findViewById( R.id.btnFolderPickerHelp ).setOnClickListener( this );
+		root.findViewById( R.id.btnFlashAirURLHelp ).setOnClickListener( this );
+		root.findViewById( R.id.btnIntervalHelp ).setOnClickListener( this );
+		root.findViewById( R.id.btnFileTypeHelp ).setOnClickListener( this );
 
 		ui_value_load();
 		folder_view_update();
@@ -44,7 +49,32 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		case R.id.btnFolderPicker:
 			folder_pick();
 			break;
+		case R.id.btnFolderPickerHelp:
+			openHelp( R.layout.help_saf );
+			break;
+		case R.id.btnFlashAirURLHelp:
+			openHelp( R.layout.help_flashair_url );
+			break;
+		case R.id.btnIntervalHelp:
+			openHelp( R.layout.help_interval );
+			break;
+		case R.id.btnFileTypeHelp:
+			openHelp( R.layout.help_file_type );
+			break;
 		}
+	}
+
+	void openHelp( int layout_id ){
+		View v = activity.getLayoutInflater().inflate( layout_id, null, false );
+		final Dialog d = new Dialog( activity );
+		d.setContentView( v );
+		d.getWindow().setLayout( WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT );
+		d.show();
+		v.findViewById( R.id.btnClose ).setOnClickListener( new View.OnClickListener(){
+			@Override public void onClick( View view ){
+				d.dismiss();
+			}
+		} );
 	}
 
 	// UIフォームの値を設定から読み出す

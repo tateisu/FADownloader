@@ -34,7 +34,7 @@ public class Pref{
 		sv = pref.getString( Pref.UI_INTERVAL, null );
 		if( TextUtils.isEmpty( sv ) ){
 			bChanged = true;
-			e.putString( Pref.UI_INTERVAL, "10" );
+			e.putString( Pref.UI_INTERVAL, "30" );
 		}
 		//
 		sv = pref.getString( Pref.UI_FILE_TYPE, null );

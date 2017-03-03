@@ -61,11 +61,13 @@
         android:layout_below="@+id/tvStatus"
         android:id="@+id/pager"
         >
-        <android.support.v4.view.PagerTitleStrip
+        <android.support.v4.view.PagerTabStrip
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="top"
             android:padding="8dp"
+            android:background="#0080ff"
+            android:textColor="#ffffff"
             />
     </android.support.v4.view.ViewPager>
 
