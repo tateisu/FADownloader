@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">FA Downloader</string>
+    <string name="flashair_url">FlashAir URL</string>
+    <string name="local_folder">Local Folder</string>
+    <string name="repeat_interval">Repeat Interval</string>
+    <string name="repeat">Repeat</string>
+    <string name="once">Once</string>
+    <string name="stop">Stop</string>
+    <string name="file_type_caption">File Type</string>
+    <string name="file_type_desc">(delimited by spaces, "*" for wildcard) </string>
+    <string name="app_permission_required">app permission required</string>
+    <string name="request_permission">request</string>
+    <string name="cancel">cancel</string>
+    <string name="setting">setting</string>
+    <string name="dotdotdot">…</string>
+    <string name="not_selected">(not selected)</string>
+    <string name="folder_not_ok">folder not ok</string>
+    <string name="url_not_ok">url not ok</string>
+    <string name="interval_not_ok">interval not ok</string>
+    <string name="file_type_empty">missing file type.</string>
+    <string name="log_clear">clear log</string>
+</resources>
