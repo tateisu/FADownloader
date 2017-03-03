@@ -59,24 +59,8 @@ public class DownloadService extends Service{
 		}
 	};
 
-	Notification createServiceNotification( String content_text, String sub_text ){
-		NotificationCompat.Builder builder = new NotificationCompat.Builder( this );
-		builder.setSmallIcon( R.drawable.ic_service );
-		builder.setContentTitle( getString( R.string.app_name ) );
-		builder.setContentText( content_text );
-		builder.setSubText( sub_text );
-		builder.setOngoing( true );
-
-		Intent intent = new Intent( this,ActMain.class);
-		intent.setFlags( Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY );
-		PendingIntent pi = PendingIntent.getActivity( getApplicationContext(),567,intent,0);
-		builder.setContentIntent( pi );
-		return builder.build();
-	}
-
-
-	boolean is_alive ;
-	boolean allow_cancel_alarm ;
+	boolean is_alive;
+	boolean allow_cancel_alarm;
 	PowerManager.WakeLock wake_lock;
 
 	WifiManager.WifiLock wifi_lock;
@@ -102,10 +86,9 @@ public class DownloadService extends Service{
 		wifi_lock = wm.createWifiLock( WifiManager.WIFI_MODE_FULL, getPackageName() );
 		wifi_lock.setReferenceCounted( false );
 
-		proc_notification_update.run();
+		setServiceNotification("待機中");
 
 		registerReceiver( receiver, new IntentFilter( ConnectivityManager.CONNECTIVITY_ACTION ) );
-
 
 	}
 
@@ -113,17 +96,17 @@ public class DownloadService extends Service{
 
 		is_alive = false;
 
-		if( worker != null && worker.isAlive()){
+		if( worker != null && worker.isAlive() ){
 			worker.dispose( "サービス終了" );
 		}
 
 		if( allow_cancel_alarm ){
 			try{
-				PendingIntent pi = Utils.createAlarmPendingIntent(this);
+				PendingIntent pi = Utils.createAlarmPendingIntent( this );
 				AlarmManager am = (AlarmManager) getSystemService( Context.ALARM_SERVICE );
 				am.cancel( pi );
-			}catch(Throwable ex){
-				ex.printStackTrace(  );
+			}catch( Throwable ex ){
+				ex.printStackTrace();
 			}
 		}
 
@@ -255,15 +238,18 @@ public class DownloadService extends Service{
 		}
 
 		@Override public void onThreadStart(){
-			proc_notification_update.run();
+			setServiceNotification("スレッド実行中");
+
 		}
 
 		@Override public void onThreadEnd( boolean allow_stop_service ){
-			if( allow_stop_service && ! will_restart ){
-				allow_cancel_alarm = true;
-				stopSelf();
-			}else{
-				proc_notification_update.run();
+			if(!will_restart){
+				if( allow_stop_service ){
+					allow_cancel_alarm = true;
+					stopSelf();
+				}else{
+					setServiceNotification( "待機中" );
+				}
 			}
 		}
 
@@ -277,43 +263,36 @@ public class DownloadService extends Service{
 		}
 
 		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("サービス起動中。WakeLock=%s,WiFiLock=%s\n"
-			,service_instance.wake_lock.isHeld()?"ON":"OFF"
-			,service_instance.wifi_lock.isHeld()?"ON":"OFF"
-		));
+		sb.append( String.format( "サービス起動中。WakeLock=%s,WiFiLock=%s\n"
+			, service_instance.wake_lock.isHeld() ? "ON" : "OFF"
+			, service_instance.wifi_lock.isHeld() ? "ON" : "OFF"
+		) );
 
 		if( service_instance.worker == null || ! service_instance.worker.isAlive() ){
-			sb.append("スレッド停止中。WiFi通信状態の変化や時間経過で開始するかも");
+			sb.append( "スレッド停止中。WiFi通信状態の変化や時間経過で開始するかも" );
 		}else{
-			sb.append("スレッド実行中\n");
-			sb.append(service_instance.worker.getStatus());
+			sb.append( "スレッド実行中\n" );
+			sb.append( service_instance.worker.getStatus() );
 		}
 
 		return sb.toString();
 	}
 
-	final Runnable proc_notification_update = new Runnable(){
-		@Override public void run(){
-			if(!is_alive) return;
+	void setServiceNotification( String status ){
+		if( ! is_alive ) return;
 
-			StringBuilder t1 = new StringBuilder();
+		NotificationCompat.Builder builder = new NotificationCompat.Builder( this );
+		builder.setSmallIcon( R.drawable.ic_service );
+		builder.setContentTitle( getString( R.string.app_name ) );
+		builder.setContentText( status );
+		builder.setOngoing( true );
 
-			StringBuilder t2 = new StringBuilder();
+		Intent intent = new Intent( this, ActMain.class );
+		intent.setFlags( Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY );
+		PendingIntent pi = PendingIntent.getActivity( getApplicationContext(), 567, intent, 0 );
+		builder.setContentIntent( pi );
 
-			t2.append(String.format("WakeLock=%s,WiFiLock=%s"
-				,wake_lock.isHeld()?"ON":"OFF"
-				,wifi_lock.isHeld()?"ON":"OFF"
-			));
+		startForeground( NOTIFICATION_ID_SERVICE, builder.build() );
+	}
 
-			if( worker == null || ! worker.isAlive() ){
-				t1.append("スレッド停止中。WiFi通信状態の変化や時間経過で開始するかも");
-				handler.postDelayed( proc_notification_update,10000L );
-			}else{
-				t1.append(worker.getStatus());
-				handler.postDelayed( proc_notification_update,3000L );
-			}
-
-			startForeground( NOTIFICATION_ID_SERVICE, createServiceNotification( t1.toString(),t2.toString() ));
-		}
-	};
 }
