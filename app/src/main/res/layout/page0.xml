@@ -6,181 +6,144 @@
     android:fillViewport="true"
     >
 
-    <RelativeLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:paddingBottom="@dimen/activity_vertical_margin"
         android:paddingLeft="@dimen/activity_horizontal_margin"
         android:paddingRight="@dimen/activity_horizontal_margin"
         android:paddingTop="@dimen/activity_vertical_margin"
-
         >
 
-        <TextView
-            android:id="@+id/tvURLCaption"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignBaseline="@+id/etURL"
-            android:layout_alignParentStart="true"
-
-            android:labelFor="@+id/etURL"
-            android:text="@string/flashair_url"
-
-            />
-
-        <Button
-            android:id="@+id/btnFlashAirURLHelp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignBaseline="@+id/etURL"
-            android:layout_alignParentEnd="true"
-            android:minWidth="48dp"
-            android:text="@string/question"
-            />
-
-        <EditText
-            android:id="@+id/etURL"
+        <TableLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="8dp"
-            android:layout_toEndOf="@+id/tvURLCaption"
-            android:layout_toStartOf="@+id/btnFlashAirURLHelp"
+            android:stretchColumns="1"
+            >
 
-            android:inputType="textUri"
-            />
+            <TableRow
+                >
 
-        <TextView
-            android:id="@+id/tvFolderCaption"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignBaseline="@+id/btnFolderPicker"
-            android:layout_alignParentStart="true"
+                <TextView
+                    android:id="@+id/tvURLCaption"
 
-            android:text="@string/local_folder"
-            />
+                    android:layout_marginEnd="8dp"
+                    android:labelFor="@+id/etURL"
+                    android:text="@string/flashair_url"
 
-        <Button
-            android:id="@+id/btnFolderPickerHelp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_below="@id/btnFlashAirURLHelp"
-            android:layout_marginTop="8dp"
-            android:minWidth="48dp"
-            android:text="@string/question"
-            />
+                    />
 
-        <Button
-            android:id="@+id/btnFolderPicker"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignBaseline="@+id/btnFolderPickerHelp"
-            android:layout_toStartOf="@+id/btnFolderPickerHelp"
-            android:minWidth="48dp"
-            android:text="@string/dotdotdot"
-            />
+                <EditText
+                    android:id="@+id/etURL"
+                    android:layout_span="2"
 
-        <TextView
-            android:id="@+id/tvFolder"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+                    android:inputType="textUri"
+                    />
 
-            android:layout_alignBaseline="@+id/btnFolderPickerHelp"
+                <Button
+                    android:id="@+id/btnFlashAirURLHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
 
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="8dp"
+            </TableRow>
 
-            android:layout_toEndOf="@+id/tvFolderCaption"
-            android:layout_toStartOf="@+id/btnFolderPicker"
-            android:ellipsize="start"
-            />
+            <TableRow
+                android:layout_marginTop="8dp"
+                >
+
+                <TextView
+                    android:id="@+id/tvFolderCaption"
+
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/local_folder"
+                    />
 
 
-        <TextView
-            android:id="@+id/tvIntervalCaption"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignBaseline="@+id/etInterval"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
+                <TextView
+                    android:id="@+id/tvFolder"
 
-            android:labelFor="@+id/etInterval"
-            android:text="@string/repeat_interval"
+                    android:ellipsize="start"
+                    />
 
-            />
+                <Button
+                    android:id="@+id/btnFolderPicker"
+                    android:minWidth="32dp"
+                    android:text="@string/dotdotdot"
+                    />
 
-        <Button
-            android:id="@+id/btnIntervalHelp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_below="@id/btnFolderPickerHelp"
-            android:layout_marginTop="8dp"
-            android:minWidth="48dp"
-            android:text="@string/question"
-            />
+                <Button
+                    android:id="@+id/btnFolderPickerHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
 
-        <EditText
-            android:id="@+id/etInterval"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignBaseline="@id/btnIntervalHelp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="8dp"
-            android:layout_toEndOf="@+id/tvIntervalCaption"
-            android:layout_toStartOf="@+id/btnIntervalHelp"
+            </TableRow>
 
-            android:inputType="number"
-            />
+            <TableRow
+                android:layout_marginTop="8dp"
+                >
 
 
-        <TextView
-            android:id="@+id/tvFileTypeCaption"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignBaseline="@+id/etFileType"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
+                <TextView
+                    android:id="@+id/tvIntervalCaption"
 
-            android:labelFor="@+id/etFileType"
-            android:text="@string/file_type_caption"
-            />
+                    android:layout_marginEnd="8dp"
+                    android:labelFor="@+id/etInterval"
+                    android:text="@string/repeat_interval"
 
-        <Button
-            android:id="@+id/btnFileTypeHelp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_below="@id/btnIntervalHelp"
-            android:layout_marginTop="8dp"
-            android:minWidth="48dp"
-            android:text="@string/question"
-            />
+                    />
 
-        <EditText
-            android:id="@+id/etFileType"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignBaseline="@id/btnFileTypeHelp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="8dp"
-            android:layout_toEndOf="@+id/tvFileTypeCaption"
-            android:layout_toStartOf="@+id/btnFileTypeHelp"
 
-            android:inputType="text"
+                <EditText
+                    android:id="@+id/etInterval"
+                    android:layout_span="2"
 
-            />
+                    android:inputType="number"
+                    />
 
-        <TextView
-            android:id="@+id/tvFileTypeDesc"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignEnd="@id/etFileType"
-            android:layout_alignStart="@id/etFileType"
-            android:layout_below="@id/etFileType"
-            android:text="@string/file_type_desc"
-            />
-    </RelativeLayout>
+                <Button
+                    android:id="@+id/btnIntervalHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
+            </TableRow>
+
+            <TableRow
+                android:layout_marginTop="8dp"
+                >
+
+                <TextView
+                    android:id="@+id/tvFileTypeCaption"
+
+                    android:layout_marginEnd="8dp"
+                    android:labelFor="@+id/etFileType"
+                    android:text="@string/file_type_caption"
+                    />
+
+
+                <EditText
+                    android:id="@+id/etFileType"
+                    android:layout_span="2"
+
+                    android:inputType="text"
+
+                    />
+
+                <Button
+                    android:id="@+id/btnFileTypeHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
+            </TableRow>
+        </TableLayout>
+    </FrameLayout>
 </ScrollView>
