@@ -8,7 +8,6 @@ import android.content.SharedPreferences;
 import android.net.Network;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v4.provider.DocumentFile;
 
@@ -21,8 +20,6 @@ import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static jp.juggler.fadownloader.HTTPClient.debug_http;
 
 public class DownloadWorker extends Thread implements CancelChecker{
 
@@ -52,9 +49,9 @@ public class DownloadWorker extends Thread implements CancelChecker{
 	public DownloadWorker( DownloadService service, Intent intent, Callback callback ){
 		this.service = service;
 		this.callback = callback;
-		this.log = new LogWriter( service.getContentResolver() );
+		this.log = new LogWriter( service );
 
-		log.i( "スレッド作成：手動開始" );
+		log.i( R.string.thread_ctor_params );
 		this.repeat = intent.getBooleanExtra( DownloadService.EXTRA_REPEAT, false );
 		this.flashair_url = intent.getStringExtra( DownloadService.EXTRA_URI );
 		this.folder_uri = intent.getStringExtra( DownloadService.EXTRA_FOLDER_URI );
@@ -75,9 +72,9 @@ public class DownloadWorker extends Thread implements CancelChecker{
 	public DownloadWorker( DownloadService service, Callback callback ){
 		this.service = service;
 		this.callback = callback;
-		this.log = new LogWriter( service.getContentResolver() );
+		this.log = new LogWriter( service );
 
-		log.i( "スレッド作成：前回の設定" );
+		log.i( R.string.thread_ctor_restart );
 		SharedPreferences pref = Pref.pref( service );
 		this.repeat = pref.getBoolean( Pref.WORKER_REPEAT, false );
 		this.flashair_url = pref.getString( Pref.WORKER_FLASHAIR_URL, null );
@@ -99,7 +96,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				list.add( Pattern.compile( spec + "\\z", Pattern.CASE_INSENSITIVE ) );
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				log.e( "ファイル種別の %s を解釈できません" );
+				log.e( R.string.file_type_parse_error,m.group(1),ex.getClass().getSimpleName(),ex.getMessage());
 			}
 		}
 		return list;
@@ -112,10 +109,10 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		return cancel_reason.get() != null;
 	}
 
-	public void dispose( String reason ){
+	public void cancel( String reason ){
 		try{
 			if( cancel_reason.compareAndSet( null, reason ) ){
-				log.i( "スレッドキャンセル. 理由:%s", reason );
+				log.i( R.string.thread_cancelled, reason );
 			}
 			synchronized( this ){
 				notify();
@@ -177,13 +174,13 @@ public class DownloadWorker extends Thread implements CancelChecker{
 					ArrayList<DocumentFile> parent_list = parent.getFileList();
 					DocumentFile file = bsearch( parent_list, name );
 					if( file == null ){
-						log.i( "%s フォルダ作成", name );
+						log.i( R.string.folder_create, name );
 						file = parent_dir.createDirectory( name );
 					}
 					return document_file = file;
 				}
 			}catch( Throwable ex ){
-				log.e( "ディレクトリ作成失敗: %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+				log.e( R.string.folder_create_failed, ex.getClass().getSimpleName(), ex.getMessage() );
 			}
 			return null;
 		}
@@ -202,7 +199,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 					return document_file = file;
 				}
 			}catch( Throwable ex ){
-				log.e( "ファイル作成失敗: %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+				log.e( R.string.file_create_failed, ex.getClass().getSimpleName(), ex.getMessage() );
 			}
 			return null;
 		}
@@ -244,17 +241,15 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		return null;
 	}
 
-	boolean dry_run = true;
-
 	@Override public void run(){
 
-		status.set( "スレッド開始" );
+		status.set( service.getString(R.string.thread_start) );
 
 		boolean allow_stop_service = false;
 		callback.onThreadStart();
 
 		while( ! isCancelled() ){
-			status.set( "初期化中…" );
+			status.set( service.getString(R.string.initializing) );
 
 			// 古いアラームがあれば除去
 			try{
@@ -273,10 +268,9 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				if( remain <= 0 ) break;
 
 				if( remain < ( 15 * 1000L ) ){
-					status.set( String.format( "短い待機 あと%s", Utils.formatTimeDuration( remain ) ) );
+					status.set( service.getString(R.string.wait_short, Utils.formatTimeDuration( remain ) ) );
 					waitEx( remain > 1000L ? 1000L : remain );
 				}else{
-					status.set( String.format( "待機 %s (using AlarmManager)", Utils.formatTimeDuration( remain ) ) );
 
 					try{
 						PendingIntent pi = Utils.createAlarmPendingIntent( service );
@@ -300,7 +294,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 						log.e( "待機の設定に失敗 %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
 					}
 					callback.releaseWakeLock();
-					dispose( "アラーム待機" );
+					cancel( service.getString(R.string.wait_alarm, Utils.formatTimeDuration( remain ) ) );
 					break;
 				}
 			}
@@ -310,7 +304,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			// WakeLockやWiFiLockを確保
 			callback.acquireWakeLock();
 
-			status.set( "Wi-Fi通信状態の確認" );
+			status.set( service.getString(R.string.wifi_check  ));
 
 			// 通信の安定を確認
 			Network network = null;
@@ -328,8 +322,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			if( isCancelled() ) break;
 
 			if( network == null ){
-				log.e( "通信状態が悪いようです" );
-				dispose( "通信状態が悪い" );
+				cancel( service.getString(R.string.wifi_not_connected) );
 				break;
 			}
 
@@ -339,22 +332,22 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			// 更新フラグのチェック
 			long last_scan_complete = Pref.pref( service ).getLong( Pref.LAST_SCAN_COMPLETE, 0L );
 			if( System.currentTimeMillis() - last_scan_complete <= interval * 1000L * 2 ){
-				status.set( "FlashAir更新チェック" );
+				status.set( service.getString(R.string.flashair_update_status_check));
 				String cgi_url = flashair_url + "command.cgi?op=102";
 				byte[] data = client.getHTTP( log, network, cgi_url );
 				Pref.pref( service ).edit().putLong( Pref.LAST_SCAN_COMPLETE, System.currentTimeMillis() ).apply();
 				if( data == null ){
 					if( client.last_error.contains( "UnknownHostException" ) ){
-						client.last_error = "接続先ホスト名を解決できません。もしかして：スマホのWi-FiからFlashAirのAPに接続していない";
-						dispose( "FlashAir URLの名前解決に失敗" );
+						client.last_error = service.getString(R.string.flashair_host_error );
+						cancel( service.getString(R.string.flashair_host_error_short));
 						callback.releaseWakeLock();
 					}
-					log.e( "更新チェック失敗 %s %s", cgi_url, client.last_error );
+					log.e( R.string.flashair_update_check_failed, cgi_url, client.last_error );
 					continue;
 				}else{
 					String s = Utils.decodeUTF8( data ).trim();
 					if( ! "1".equals( s ) ){
-						log.d( "FlashAirの内容は更新されていません" );
+						log.d( R.string.flashair_not_updated);
 						continue;
 					}
 				}
@@ -371,12 +364,12 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			while( ! isCancelled() ){
 
 				if( job_queue.isEmpty() ){
-					status.set( "ファイルスキャン完了" );
+					status.set( service.getString(R.string.file_scan_completed) );
 					if( ! has_error ){
 						Pref.pref( service ).edit().putLong( Pref.LAST_SCAN_COMPLETE, System.currentTimeMillis() ).apply();
 						if( ! repeat ){
 							Pref.pref( service ).edit().putInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP ).apply();
-							dispose( "繰り返しOFF" );
+							cancel(service.getString(R.string.repeat_off) );
 							callback.releaseWakeLock();
 							allow_stop_service = true;
 						}
@@ -391,17 +384,17 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				if( item.is_file ){
 					// TODO ファイル転送
 				}else{
-					status.set( String.format( "フォルダの確認 %s", item.air_path ) );
+					status.set( service.getString(R.string.progress_folder, item.air_path ) );
 					// フォルダを読む
 					String cgi_url = flashair_url + "command.cgi?op=100&DIR=" + Uri.encode( item.air_path );
 					byte[] data = client.getHTTP( log, network, cgi_url );
 					if( data == null ){
 						if( client.last_error.contains( "UnknownHostException" ) ){
-							client.last_error = "接続先ホスト名を解決できません。もしかして：スマホのWi-FiからFlashAirのAPに接続していない";
-							dispose( "FlashAir URLの名前解決に失敗" );
+							client.last_error = service.getString(R.string.flashair_host_error);
+							cancel(service.getString(R.string.flashair_host_error_short));
 							callback.releaseWakeLock();
 						}
-						log.d( "一覧取得失敗 %s %s %s", item.air_path, cgi_url, client.last_error );
+						log.d(R.string.folder_list_failed, item.air_path, cgi_url, client.last_error );
 						has_error = true;
 						continue;
 					}
@@ -440,7 +433,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 								job_queue.add( new Item( child_air_path, local_child, false, 0L ) );
 								continue;
 							}
-							status.set( String.format( "ファイル確認中 %s", child_air_path ) );
+							status.set( service.getString( R.string.progress_file, child_air_path ) );
 
 							long time_start = SystemClock.elapsedRealtime();
 
@@ -460,11 +453,11 @@ public class DownloadWorker extends Thread implements CancelChecker{
 								log.e( "%s//%s :skip. can not prepare local file.", item.air_path, fname );
 								continue;
 							}else if( file.length() == size ){
-								//		log.f( "%s//%s :skip. same file size.",item.air_path, fname );
+								// log.f( "%s//%s :skip. same file size.",item.air_path, fname );
 								continue;
 							}
 
-							status.set( String.format( "ファイル取得中 %s", child_air_path ) );
+							status.set( service.getString(R.string.download_file, child_air_path ) );
 
 							final Uri file_uri = file.getUri();
 							final String get_url = flashair_url + Uri.encode( child_air_path );
@@ -475,12 +468,11 @@ public class DownloadWorker extends Thread implements CancelChecker{
 									try{
 										OutputStream os = service.getContentResolver().openOutputStream( file_uri );
 										if( os == null ){
-											log.e( "cannot open local output stream." );
+											log.e( "cannot open local output file." );
 										}else{
 											try{
 												for( ; ; ){
 													if( cancel_checker.isCancelled() ){
-														if( debug_http ) log.w( "HTTP read cancelled." );
 														return null;
 													}
 													int delta = in.read( buf );
@@ -522,14 +514,13 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				}
 			}
 		}
-		status.set( "スレッド終了" );
+		status.set(service.getString(R.string.thread_end));
 		callback.onThreadEnd( allow_stop_service );
 	}
 
-	final AtomicReference<String> status = new AtomicReference<>( "初期化中" );
+	final AtomicReference<String> status = new AtomicReference<>( "?" );
 
 	public String getStatus(){
 		return status.get();
 	}
-
 }

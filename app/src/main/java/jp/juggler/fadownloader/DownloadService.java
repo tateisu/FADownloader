@@ -1,7 +1,6 @@
 package jp.juggler.fadownloader;
 
 import android.app.AlarmManager;
-import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -42,15 +41,13 @@ public class DownloadService extends Service{
 				if( ConnectivityManager.CONNECTIVITY_ACTION.equals( action ) ){
 					Network n = Utils.getWiFiNetwork( context );
 					if( n != null ){
-						log.v( "接続状況の変化：Wi-Fi 通信可能" );
+						log.v( getString(R.string.wifi_event_connected)  );
 						int last_mode = Pref.pref( context ).getInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP );
-						if( last_mode == Pref.LAST_MODE_STOP ){
-							// 起こさない
-						}else{
+						if( last_mode != Pref.LAST_MODE_STOP ){
 							worker_wakeup();
 						}
 					}else{
-						log.v( "接続状況の変化：Wi-Fi 通信不可" );
+						log.v( getString(R.string.wifi_event_disconnected)  );
 					}
 				}
 			}catch( Throwable ex ){
@@ -75,8 +72,8 @@ public class DownloadService extends Service{
 		is_alive = true;
 		allow_cancel_alarm = false;
 
-		log = new LogWriter( getContentResolver() );
-		log.d( "サービス開始" );
+		log = new LogWriter( this );
+		log.d( getString(R.string.service_start) );
 
 		PowerManager pm = (PowerManager) getSystemService( Context.POWER_SERVICE );
 		wake_lock = pm.newWakeLock( PowerManager.PARTIAL_WAKE_LOCK, getPackageName() );
@@ -86,10 +83,9 @@ public class DownloadService extends Service{
 		wifi_lock = wm.createWifiLock( WifiManager.WIFI_MODE_FULL, getPackageName() );
 		wifi_lock.setReferenceCounted( false );
 
-		setServiceNotification("待機中");
-
 		registerReceiver( receiver, new IntentFilter( ConnectivityManager.CONNECTIVITY_ACTION ) );
 
+		setServiceNotification(getString(R.string.service_idle));
 	}
 
 	@Override public void onDestroy(){
@@ -97,7 +93,7 @@ public class DownloadService extends Service{
 		is_alive = false;
 
 		if( worker != null && worker.isAlive() ){
-			worker.dispose( "サービス終了" );
+			worker.cancel( getString(R.string.service_end));
 		}
 
 		if( allow_cancel_alarm ){
@@ -120,7 +116,7 @@ public class DownloadService extends Service{
 
 		stopForeground( true );
 
-		log.d( "サービス終了" );
+		log.d( getString(R.string.service_end) );
 		log.dispose();
 		log = null;
 
@@ -137,7 +133,7 @@ public class DownloadService extends Service{
 					Intent broadcast_intent = intent.getParcelableExtra( EXTRA_BROADCAST_INTENT );
 					if( broadcast_intent != null ){
 						action = broadcast_intent.getAction();
-						log.d( "broadcast受信: %s", action );
+						log.d( getString(R.string.broadcast_received,action) );
 
 						if( Receiver1.ACTION_ALARM.equals( action ) ){
 							worker_wakeup();
@@ -153,12 +149,12 @@ public class DownloadService extends Service{
 				try{
 					will_restart = true;
 					if( worker != null ){
-						worker.dispose( "手動リスタート" );
+						worker.cancel( getString(R.string.manual_restart) );
 						worker = null;
 					}
 				}catch( Throwable ex ){
 					ex.printStackTrace();
-					log.e( "スレッドのキャンセルに失敗 %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+					log.e( getString(R.string.thread_cancel_failed, ex.getClass().getSimpleName(), ex.getMessage() ));
 				}finally{
 					will_restart = false;
 				}
@@ -172,10 +168,10 @@ public class DownloadService extends Service{
 					worker.start();
 				}catch( Throwable ex ){
 					ex.printStackTrace();
-					log.e( "スレッド開始に失敗 %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+					log.e( getString(R.string.thread_start_failed, ex.getClass().getSimpleName(), ex.getMessage() ));
 				}
 			}else{
-				log.d( "インテント受信: %s", action );
+				log.d( getString(R.string.unsupported_intent_received, action ));
 			}
 		}
 
@@ -199,7 +195,7 @@ public class DownloadService extends Service{
 			worker.start();
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			log.e( "スレッド開始に失敗 %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+			log.e( getString( R.string.thread_start_failed, ex.getClass().getSimpleName(), ex.getMessage() ));
 		}
 	}
 
@@ -211,13 +207,13 @@ public class DownloadService extends Service{
 				wake_lock.release();
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				log.e( "WakeLockの解放に失敗:%s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+				log.e( getString( R.string.wake_lock_release_failed, ex.getClass().getSimpleName(), ex.getMessage() ));
 			}
 			try{
 				wifi_lock.release();
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				log.e( "WifiLockの解放に失敗:%s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+				log.e( getString( R.string.wifi_lock_release_failed, ex.getClass().getSimpleName(), ex.getMessage() ));
 			}
 		}
 
@@ -227,19 +223,18 @@ public class DownloadService extends Service{
 				wake_lock.acquire();
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				log.e( "WakeLockの取得に失敗:%s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+				log.e(  getString( R.string.wake_lock_acquire_failed,  ex.getClass().getSimpleName(), ex.getMessage() ));
 			}
 			try{
 				wifi_lock.acquire();
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				log.e( "WifiLockの取得に失敗:%s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+				log.e(  getString( R.string.wifi_lock_acquire_failed, ex.getClass().getSimpleName(), ex.getMessage() ));
 			}
 		}
 
 		@Override public void onThreadStart(){
-			setServiceNotification("スレッド実行中");
-
+			setServiceNotification(getString(R.string.thread_running ));
 		}
 
 		@Override public void onThreadEnd( boolean allow_stop_service ){
@@ -248,7 +243,7 @@ public class DownloadService extends Service{
 					allow_cancel_alarm = true;
 					stopSelf();
 				}else{
-					setServiceNotification( "待機中" );
+					setServiceNotification( getString(R.string.service_idle ));
 				}
 			}
 		}
@@ -257,21 +252,22 @@ public class DownloadService extends Service{
 
 	static DownloadService service_instance;
 
-	public static String getStatus(){
+	public static String getStatusForActivity(Context context){
 		if( service_instance == null ){
-			return "サービス停止中。REPEATまたはONCEボタンを押すと開始します";
+			return context.getString(R.string.service_not_running);
 		}
 
 		StringBuilder sb = new StringBuilder();
-		sb.append( String.format( "サービス起動中。WakeLock=%s,WiFiLock=%s\n"
+		sb.append( context.getString(R.string.service_running_status
 			, service_instance.wake_lock.isHeld() ? "ON" : "OFF"
 			, service_instance.wifi_lock.isHeld() ? "ON" : "OFF"
+
 		) );
 
 		if( service_instance.worker == null || ! service_instance.worker.isAlive() ){
-			sb.append( "スレッド停止中。WiFi通信状態の変化や時間経過で開始するかも" );
+			sb.append( context.getString(R.string.thread_not_running_status));
 		}else{
-			sb.append( "スレッド実行中\n" );
+			sb.append( context.getString(R.string.thread_running_status) );
 			sb.append( service_instance.worker.getStatus() );
 		}
 

@@ -20,6 +20,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,9 +35,6 @@ public class ActMain
 	static final int REQUEST_CODE_PERMISSION = 1;
 	static final int REQUEST_CODE_DOCUMENT = 2;
 
-	View btnStop;
-	View btnOnce;
-	View btnRepeat;
 	TextView tvStatus;
 
 	ViewPager pager;
@@ -57,6 +55,10 @@ public class ActMain
 
 		case R.id.btnStop:
 			download_stop();
+			break;
+
+		case R.id.btnModeHelp:
+			openHelp( R.layout.help_mode );
 			break;
 
 		}
@@ -120,8 +122,7 @@ public class ActMain
 				// 永続的な許可を取得
 				getContentResolver().takePersistableUriPermission( treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION );
 				// 覚えておく
-				getSharedPreferences( "app_pref", Context.MODE_PRIVATE )
-					.edit()
+				Pref.pref( this ).edit()
 					.putString( Pref.UI_FOLDER_URI, treeUri.toString() )
 					.apply();
 			}
@@ -141,21 +142,19 @@ public class ActMain
 
 		handler = new Handler();
 
-		btnStop = findViewById( R.id.btnStop );
-		btnOnce = findViewById( R.id.btnOnce );
-		btnRepeat = findViewById( R.id.btnRepeat );
+		findViewById( R.id.btnStop ).setOnClickListener( this );
+		findViewById( R.id.btnOnce ).setOnClickListener( this );
+		findViewById( R.id.btnRepeat ).setOnClickListener( this );
+		findViewById( R.id.btnModeHelp ).setOnClickListener( this );
+
 		tvStatus = (TextView) findViewById( R.id.tvStatus );
 
 		pager = (ViewPager) findViewById( R.id.pager );
+
 		pager_adapter = new PagerAdapterBase( this );
-		pager_adapter.addPage( "設定", R.layout.page0, Page0.class );
-		pager_adapter.addPage( "ログ", R.layout.page1, Page1.class );
+		pager_adapter.addPage( getString( R.string.setting ), R.layout.page0, Page0.class );
+		pager_adapter.addPage( getString( R.string.log ), R.layout.page1, Page1.class );
 		pager.setAdapter( pager_adapter );
-
-		btnStop.setOnClickListener( this );
-		btnOnce.setOnClickListener( this );
-		btnRepeat.setOnClickListener( this );
-
 	}
 
 	/////////////////////////////////////////////////////////////////////////
@@ -297,10 +296,23 @@ public class ActMain
 	final Runnable proc_status = new Runnable(){
 		@Override public void run(){
 			handler.removeCallbacks( proc_status );
-			handler.postDelayed( proc_status,1000L );
+			handler.postDelayed( proc_status, 1000L );
 
-			String status = DownloadService.getStatus();
-			tvStatus.setText(status);
+			String status = DownloadService.getStatusForActivity(ActMain.this);
+			tvStatus.setText( status );
 		}
 	};
+
+	void openHelp( int layout_id ){
+		View v = getLayoutInflater().inflate( layout_id, null, false );
+		final Dialog d = new Dialog( this );
+		d.setContentView( v );
+		d.getWindow().setLayout( WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT );
+		d.show();
+		v.findViewById( R.id.btnClose ).setOnClickListener( new View.OnClickListener(){
+			@Override public void onClick( View view ){
+				d.dismiss();
+			}
+		} );
+	}
 }

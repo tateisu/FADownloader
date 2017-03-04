@@ -97,7 +97,6 @@ public class PagerAdapterBase extends PagerAdapter{
 			//
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			Toast.makeText(activity,"ページの初期化に失敗",Toast.LENGTH_SHORT).show();
 		}
 		return root;
 	}
@@ -116,7 +115,6 @@ public class PagerAdapterBase extends PagerAdapter{
 			}
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			Toast.makeText(activity,"ページの後始末に失敗",Toast.LENGTH_SHORT).show();
 		}
 	}
 

@@ -9,24 +9,25 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:gravity="center_horizontal"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="24dp"
+        android:orientation="vertical"
         android:paddingBottom="24dp"
+        android:paddingEnd="12dp"
+        android:paddingStart="12dp"
+        android:paddingTop="24dp"
         >
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            android:text="Interval にはREPEAT時の巡回間隔を秒数で指定します。デフォルトは30です"
+            android:text="@string/help_repeat_interval_text"
             />
 
         <Button
+            android:id="@+id/btnClose"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/btnClose"
             android:text="@string/close"
             />
     </LinearLayout>

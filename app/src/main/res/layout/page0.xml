@@ -33,18 +33,18 @@
             android:id="@+id/btnFlashAirURLHelp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
             android:layout_alignBaseline="@+id/etURL"
-            android:text="@string/question"
+            android:layout_alignParentEnd="true"
             android:minWidth="48dp"
+            android:text="@string/question"
             />
 
         <EditText
             android:id="@+id/etURL"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
             android:layout_toEndOf="@+id/tvURLCaption"
             android:layout_toStartOf="@+id/btnFlashAirURLHelp"
 
@@ -68,8 +68,8 @@
             android:layout_alignParentEnd="true"
             android:layout_below="@id/btnFlashAirURLHelp"
             android:layout_marginTop="8dp"
-            android:text="@string/question"
             android:minWidth="48dp"
+            android:text="@string/question"
             />
 
         <Button
@@ -78,8 +78,8 @@
             android:layout_height="wrap_content"
             android:layout_alignBaseline="@+id/btnFolderPickerHelp"
             android:layout_toStartOf="@+id/btnFolderPickerHelp"
-            android:text="@string/dotdotdot"
             android:minWidth="48dp"
+            android:text="@string/dotdotdot"
             />
 
         <TextView
@@ -89,8 +89,8 @@
 
             android:layout_alignBaseline="@+id/btnFolderPickerHelp"
 
-            android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
 
             android:layout_toEndOf="@+id/tvFolderCaption"
             android:layout_toStartOf="@+id/btnFolderPicker"
@@ -118,8 +118,8 @@
             android:layout_alignParentEnd="true"
             android:layout_below="@id/btnFolderPickerHelp"
             android:layout_marginTop="8dp"
-            android:text="@string/question"
             android:minWidth="48dp"
+            android:text="@string/question"
             />
 
         <EditText
@@ -127,10 +127,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignBaseline="@id/btnIntervalHelp"
-            android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            android:layout_toStartOf="@+id/btnIntervalHelp"
+            android:layout_marginStart="8dp"
             android:layout_toEndOf="@+id/tvIntervalCaption"
+            android:layout_toStartOf="@+id/btnIntervalHelp"
 
             android:inputType="number"
             />
@@ -155,8 +155,8 @@
             android:layout_alignParentEnd="true"
             android:layout_below="@id/btnIntervalHelp"
             android:layout_marginTop="8dp"
-            android:text="@string/question"
             android:minWidth="48dp"
+            android:text="@string/question"
             />
 
         <EditText
@@ -164,8 +164,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignBaseline="@id/btnFileTypeHelp"
-            android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
             android:layout_toEndOf="@+id/tvFileTypeCaption"
             android:layout_toStartOf="@+id/btnFileTypeHelp"
 
@@ -177,9 +177,9 @@
             android:id="@+id/tvFileTypeDesc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/etFileType"
-            android:layout_alignStart="@id/etFileType"
             android:layout_alignEnd="@id/etFileType"
+            android:layout_alignStart="@id/etFileType"
+            android:layout_below="@id/etFileType"
             android:text="@string/file_type_desc"
             />
     </RelativeLayout>

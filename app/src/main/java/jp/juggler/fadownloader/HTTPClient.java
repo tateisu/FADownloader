@@ -278,11 +278,11 @@ public class HTTPClient{
 
 						if( rcode >= 500 ){
 							if( ! silent_error ) log.e( "[%s,connect] temporary error %d", caption, rcode );
-							last_error = String.format( "通信エラー(HTTP %d)", rcode );
+							last_error = String.format( "(HTTP error %d %d)", rcode );
 							continue;
 						}else if( ! allow_error && rcode >= 300 ){
 							if( ! silent_error ) log.e( "[%s,connect] permanent error %d", caption, rcode );
-							last_error = String.format( "通信エラー(HTTP %d)", rcode );
+							last_error = String.format( "(HTTP error %d)", rcode );
 							return null;
 						}
 
@@ -293,7 +293,7 @@ public class HTTPClient{
 						conn.disconnect();
 						return null;
 					}catch( SSLHandshakeException ex ){
-						last_error = String.format( "SSLエラー。端末の時計は合っていますか？(%s %s)", ex.getClass().getSimpleName(), ex.getMessage() );
+						last_error = String.format( "SSL handshake error. Please check device's date and time. (%s %s)", ex.getClass().getSimpleName(), ex.getMessage() );
 
 						if( ! silent_error ){
 							log.e( "[%s,connect] %s"
@@ -326,7 +326,7 @@ public class HTTPClient{
 							&& ex.getMessage().contains( "authentication challenge" )
 							){
 							ex.printStackTrace();
-							log.d( "do you set corrext time to device clock?" );
+							log.d( "Please check device's date and time." );
 							this.rcode = 401;
 							return null;
 						}
@@ -505,19 +505,19 @@ public class HTTPClient{
 	public File getFile( LogWriter log, File cache_dir, String[] url_list, File _file ){
 		//
 		if( url_list == null || url_list.length < 1 ){
-			setError( 0, "URLが指定されていません" );
+			setError( 0, "missing url argument." );
 			return null;
 		}
 		// make cache_dir
 		if( cache_dir != null ){
 			if( ! cache_dir.mkdirs() && ! cache_dir.isDirectory() ){
-				setError( 0, "保存フォルダを作成できませんでした" );
+				setError( 0, "can not create cache_dir" );
 				return null;
 			}
 		}
 		for( int nTry = 0 ; nTry < 10 ; ++ nTry ){
 			if( cancel_checker.isCancelled() ){
-				setError( 0, "キャンセルされました" );
+				setError( 0, "cancelled." );
 				return null;
 			}
 			//
@@ -604,13 +604,13 @@ public class HTTPClient{
 
 					// URLが複数提供されている場合、404エラーはリトライ対象
 					if( rcode == 404 && url_list.length > 1 ){
-						last_error = String.format( "通信エラー(HTTP %d)", rcode );
+						last_error = String.format( "(HTTP error %d)", rcode );
 						continue;
 					}
 
 					// それ以外の永続エラーはリトライしない
 					if( rcode >= 400 && rcode < 500 ){
-						last_error = String.format( "通信エラー(HTTP %d)", rcode );
+						last_error = String.format( "(HTTP error %d)", rcode );
 						break;
 					}
 				}finally{
@@ -648,7 +648,7 @@ public class HTTPClient{
 			return Utils.xml_document( file );
 		}catch( Throwable ex ){
 			log.d( "getXML: fail to parse xml" );
-			setError( 0, "データ内容にエラーがあります" );
+			setError( 0, "XML parse error." );
 			return null;
 		}
 	}
