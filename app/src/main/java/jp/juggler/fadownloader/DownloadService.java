@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.wifi.WifiManager;
@@ -75,11 +76,11 @@ public class DownloadService extends Service{
 		log = new LogWriter( this );
 		log.d( getString(R.string.service_start) );
 
-		PowerManager pm = (PowerManager) getSystemService( Context.POWER_SERVICE );
+		PowerManager pm = (PowerManager) getApplicationContext().getSystemService( Context.POWER_SERVICE );
 		wake_lock = pm.newWakeLock( PowerManager.PARTIAL_WAKE_LOCK, getPackageName() );
 		wake_lock.setReferenceCounted( false );
 
-		WifiManager wm = (WifiManager) getSystemService( Context.WIFI_SERVICE );
+		WifiManager wm = (WifiManager) getApplicationContext().getSystemService( Context.WIFI_SERVICE );
 		wifi_lock = wm.createWifiLock( WifiManager.WIFI_MODE_FULL, getPackageName() );
 		wifi_lock.setReferenceCounted( false );
 
@@ -246,6 +247,10 @@ public class DownloadService extends Service{
 					setServiceNotification( getString(R.string.service_idle ));
 				}
 			}
+		}
+
+		@Override public Location getLocation(){
+			return null;
 		}
 
 	};

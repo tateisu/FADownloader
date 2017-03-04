@@ -5,11 +5,16 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.Location;
 import android.net.Network;
 import android.net.Uri;
 import android.os.Build;
 import android.os.SystemClock;
 import android.support.v4.provider.DocumentFile;
+
+import it.sephiroth.android.library.exif2.ExifData;
+import it.sephiroth.android.library.exif2.ExifInterface;
+import it.sephiroth.android.library.exif2.ExifTag;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -33,6 +38,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 		void onThreadEnd( boolean allow_stop_service );
 
+		Location getLocation();
 	}
 
 	final DownloadService service;
@@ -85,6 +91,18 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		file_type_list = file_type_parse();
 	}
 
+	final AtomicReference<String> status = new AtomicReference<>( "?" );
+
+	public String getStatus(){
+		return status.get();
+	}
+
+	static class AlreadyGeolocationPresentedException extends Throwable{
+
+	}
+
+	Pattern reJPEG = Pattern.compile( "\\.jp(g|eg?)\\z", Pattern.CASE_INSENSITIVE );
+
 	Pattern reFileType = Pattern.compile( "(\\S+)" );
 
 	private ArrayList<Pattern> file_type_parse(){
@@ -96,7 +114,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				list.add( Pattern.compile( spec + "\\z", Pattern.CASE_INSENSITIVE ) );
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				log.e( R.string.file_type_parse_error,m.group(1),ex.getClass().getSimpleName(),ex.getMessage());
+				log.e( R.string.file_type_parse_error, m.group( 1 ), ex.getClass().getSimpleName(), ex.getMessage() );
 			}
 		}
 		return list;
@@ -142,7 +160,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 		public ArrayList<DocumentFile> getFileList(){
 			if( document_file != null ){
-				if( file_list != null) return file_list;
+				if( file_list != null ) return file_list;
 				ArrayList<DocumentFile> result = new ArrayList<>();
 				Collections.addAll( result, document_file.listFiles() );
 				Collections.sort( result, new Comparator<DocumentFile>(){
@@ -243,13 +261,13 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 	@Override public void run(){
 
-		status.set( service.getString(R.string.thread_start) );
+		status.set( service.getString( R.string.thread_start ) );
 
 		boolean allow_stop_service = false;
 		callback.onThreadStart();
 
 		while( ! isCancelled() ){
-			status.set( service.getString(R.string.initializing) );
+			status.set( service.getString( R.string.initializing ) );
 
 			// 古いアラームがあれば除去
 			try{
@@ -268,7 +286,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				if( remain <= 0 ) break;
 
 				if( remain < ( 15 * 1000L ) ){
-					status.set( service.getString(R.string.wait_short, Utils.formatTimeDuration( remain ) ) );
+					status.set( service.getString( R.string.wait_short, Utils.formatTimeDuration( remain ) ) );
 					waitEx( remain > 1000L ? 1000L : remain );
 				}else{
 
@@ -294,7 +312,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 						log.e( "待機の設定に失敗 %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
 					}
 					callback.releaseWakeLock();
-					cancel( service.getString(R.string.wait_alarm, Utils.formatTimeDuration( remain ) ) );
+					cancel( service.getString( R.string.wait_alarm, Utils.formatTimeDuration( remain ) ) );
 					break;
 				}
 			}
@@ -304,7 +322,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			// WakeLockやWiFiLockを確保
 			callback.acquireWakeLock();
 
-			status.set( service.getString(R.string.wifi_check  ));
+			status.set( service.getString( R.string.wifi_check ) );
 
 			// 通信の安定を確認
 			Network network = null;
@@ -322,7 +340,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			if( isCancelled() ) break;
 
 			if( network == null ){
-				cancel( service.getString(R.string.wifi_not_connected) );
+				cancel( service.getString( R.string.wifi_not_connected ) );
 				break;
 			}
 
@@ -371,17 +389,17 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			while( ! isCancelled() ){
 
 				if( job_queue.isEmpty() ){
-					status.set( service.getString(R.string.file_scan_completed) );
+					status.set( service.getString( R.string.file_scan_completed ) );
 					if( ! has_error ){
 
 						Pref.pref( service ).edit()
 							.putLong( Pref.LAST_SCAN_COMPLETE, System.currentTimeMillis() )
-							.putLong( Pref.FLASHAIR_UPDATE_STATUS_OLD,flashair_update_status )
+							.putLong( Pref.FLASHAIR_UPDATE_STATUS_OLD, flashair_update_status )
 							.apply();
 
 						if( ! repeat ){
 							Pref.pref( service ).edit().putInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP ).apply();
-							cancel(service.getString(R.string.repeat_off) );
+							cancel( service.getString( R.string.repeat_off ) );
 							callback.releaseWakeLock();
 							allow_stop_service = true;
 						}
@@ -396,17 +414,17 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				if( item.is_file ){
 					// TODO ファイル転送
 				}else{
-					status.set( service.getString(R.string.progress_folder, item.air_path ) );
+					status.set( service.getString( R.string.progress_folder, item.air_path ) );
 					// フォルダを読む
 					String cgi_url = flashair_url + "command.cgi?op=100&DIR=" + Uri.encode( item.air_path );
 					byte[] data = client.getHTTP( log, network, cgi_url );
 					if( data == null ){
 						if( client.last_error.contains( "UnknownHostException" ) ){
-							client.last_error = service.getString(R.string.flashair_host_error);
-							cancel(service.getString(R.string.flashair_host_error_short));
+							client.last_error = service.getString( R.string.flashair_host_error );
+							cancel( service.getString( R.string.flashair_host_error_short ) );
 							callback.releaseWakeLock();
 						}
-						log.e(R.string.folder_list_failed, item.air_path, cgi_url, client.last_error );
+						log.e( R.string.folder_list_failed, item.air_path, cgi_url, client.last_error );
 						has_error = true;
 						continue;
 					}
@@ -464,12 +482,12 @@ public class DownloadWorker extends Thread implements CancelChecker{
 							if( file == null ){
 								log.e( "%s//%s :skip. can not prepare local file.", item.air_path, fname );
 								continue;
-							}else if( file.length() == size ){
+							}else if( file.length() >= size ){
 								// log.f( "%s//%s :skip. same file size.",item.air_path, fname );
 								continue;
 							}
 
-							status.set( service.getString(R.string.download_file, child_air_path ) );
+							status.set( service.getString( R.string.download_file, child_air_path ) );
 
 							final Uri file_uri = file.getUri();
 							final String get_url = flashair_url + Uri.encode( child_air_path );
@@ -515,6 +533,16 @@ public class DownloadWorker extends Thread implements CancelChecker{
 								has_error = true;
 							}else{
 								log.i( "FILE %s :download complete. %dms", fname, SystemClock.elapsedRealtime() - time_start );
+
+								// 位置情報を取得する時にファイルの日時が使えないかと思ったけど
+								// タイムゾーンがわからん…
+
+								Location location = callback.getLocation();
+								if( location != null && reJPEG.matcher( fname ).find() ){
+									status.set( service.getString( R.string.exif_update, child_air_path ) );
+									updateFileLocation( location, local_child );
+								}
+
 							}
 
 						}catch( Throwable ex ){
@@ -526,13 +554,83 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				}
 			}
 		}
-		status.set(service.getString(R.string.thread_end));
+		status.set( service.getString( R.string.thread_end ) );
 		callback.onThreadEnd( allow_stop_service );
 	}
 
-	final AtomicReference<String> status = new AtomicReference<>( "?" );
+	private void updateFileLocation( final Location location, FilePathX file ){
 
-	public String getStatus(){
-		return status.get();
+		try{
+			FilePathX tmp_path = new FilePathX();
+			tmp_path.parent = file.parent;
+			tmp_path.name = file.name + ".tmp." + currentThread().getId() + "." + android.os.Process.myPid();
+
+			DocumentFile tmp_file = tmp_path.prepareFile( log );
+			if( tmp_file != null ){
+				boolean bModifyFailed = false;
+				OutputStream os = service.getContentResolver().openOutputStream( tmp_file.getUri() );
+				try{
+					InputStream is = service.getContentResolver().openInputStream( file.document_file.getUri() );
+					try{
+						ExifInterface.modifyExifTag( is, ExifInterface.Options.OPTION_ALL
+							, os, new ExifInterface.ModifyExifTagCallback(){
+								@Override public boolean modify( ExifInterface ei ){
+									String s = ei.getLatitude();
+									if( s != null ) return false;
+
+									double latitude = location.getLatitude();
+									double longitude = location.getLongitude();
+
+									ei.addGpsTags( latitude, longitude );
+
+									return true;
+								}
+							} );
+					}finally{
+						try{
+							if( is != null ) is.close();
+						}catch( Throwable ignored ){
+						}
+					}
+				}catch( ExifInterface.ModifyExifTagFailedException ignored ){
+					// 既にEXIF情報があった
+					bModifyFailed = true;
+				}catch( Throwable ex ){
+					// 変更失敗
+					bModifyFailed = true;
+					ex.printStackTrace();
+					log.e( "exif mangling failed. %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+				}finally{
+					try{
+						if( os != null ) os.close();
+					}catch( Throwable ignored ){
+					}
+				}
+
+				if( bModifyFailed ){
+					try{
+						tmp_file.delete();
+					}catch( Throwable ignored ){
+
+					}
+				}else{
+					try{
+						if( ! file.document_file.delete() ){
+							log.e( "EXIF追加後のファイル操作に失敗" );
+						}else if( ! tmp_file.renameTo( file.name ) ){
+							log.e( "EXIF追加後のファイル操作に失敗" );
+						}
+					}catch( Throwable ex ){
+						log.e( "EXIF追加後のファイル操作に失敗. %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+					}
+				}
+			}
+
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+			log.e( "exif mangling failed. %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+		}
+
 	}
+
 }

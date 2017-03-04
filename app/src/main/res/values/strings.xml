@@ -78,4 +78,5 @@
     <string name="download_file">DOWNLOADING: %s</string>
     <string name="thread_end">thread stopped</string>
     <string name="flashair_update_status_error">FlashAir update status data error</string>
+    <string name="exif_update">EXIF update: %s</string>
 </resources>
