@@ -60,8 +60,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/llBtnList"
-        android:background="#ccc"
+        android:background="#000"
         android:padding="12dp"
+        android:textColor="#FFF"
         />
 
     <android.support.v4.view.ViewPager
