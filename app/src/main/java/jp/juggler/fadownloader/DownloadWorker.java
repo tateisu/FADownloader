@@ -329,27 +329,34 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			// 成功しても失敗しても、次回待機の計算はここから
 			Pref.pref( service ).edit().putLong( Pref.LAST_START, System.currentTimeMillis() ).apply();
 
-			// 更新フラグのチェック
-			long last_scan_complete = Pref.pref( service ).getLong( Pref.LAST_SCAN_COMPLETE, 0L );
-			if( System.currentTimeMillis() - last_scan_complete <= interval * 1000L * 2 ){
-				status.set( service.getString(R.string.flashair_update_status_check));
-				String cgi_url = flashair_url + "command.cgi?op=102";
+			// アップデートステータスの取得
+			long flashair_update_status;
+			{
+				status.set( service.getString( R.string.flashair_update_status_check ) );
+				String cgi_url = flashair_url + "command.cgi?op=121";
 				byte[] data = client.getHTTP( log, network, cgi_url );
-				Pref.pref( service ).edit().putLong( Pref.LAST_SCAN_COMPLETE, System.currentTimeMillis() ).apply();
 				if( data == null ){
 					if( client.last_error.contains( "UnknownHostException" ) ){
-						client.last_error = service.getString(R.string.flashair_host_error );
-						cancel( service.getString(R.string.flashair_host_error_short));
+						client.last_error = service.getString( R.string.flashair_host_error );
+						cancel( service.getString( R.string.flashair_host_error_short ) );
 						callback.releaseWakeLock();
 					}
 					log.e( R.string.flashair_update_check_failed, cgi_url, client.last_error );
 					continue;
-				}else{
-					String s = Utils.decodeUTF8( data ).trim();
-					if( ! "1".equals( s ) ){
-						log.d( R.string.flashair_not_updated);
-						continue;
-					}
+				}
+				try{
+					flashair_update_status = Long.parseLong( Utils.decodeUTF8( data ).trim() );
+				}catch( Throwable ex ){
+					log.e( R.string.flashair_update_status_error );
+					cancel( service.getString( R.string.flashair_update_status_error ) );
+					callback.releaseWakeLock();
+					continue;
+				}
+				long flashair_update_status_old = Pref.pref( service ).getLong( Pref.FLASHAIR_UPDATE_STATUS_OLD, - 1L );
+				if( flashair_update_status_old != - 1L && flashair_update_status_old == flashair_update_status ){
+					// 前回スキャン開始時と同じ数字なので変更されていない
+					log.d( R.string.flashair_not_updated );
+					continue;
 				}
 			}
 
@@ -366,7 +373,12 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				if( job_queue.isEmpty() ){
 					status.set( service.getString(R.string.file_scan_completed) );
 					if( ! has_error ){
-						Pref.pref( service ).edit().putLong( Pref.LAST_SCAN_COMPLETE, System.currentTimeMillis() ).apply();
+
+						Pref.pref( service ).edit()
+							.putLong( Pref.LAST_SCAN_COMPLETE, System.currentTimeMillis() )
+							.putLong( Pref.FLASHAIR_UPDATE_STATUS_OLD,flashair_update_status )
+							.apply();
+
 						if( ! repeat ){
 							Pref.pref( service ).edit().putInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP ).apply();
 							cancel(service.getString(R.string.repeat_off) );
@@ -394,7 +406,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 							cancel(service.getString(R.string.flashair_host_error_short));
 							callback.releaseWakeLock();
 						}
-						log.d(R.string.folder_list_failed, item.air_path, cgi_url, client.last_error );
+						log.e(R.string.folder_list_failed, item.air_path, cgi_url, client.last_error );
 						has_error = true;
 						continue;
 					}

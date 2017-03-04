@@ -66,4 +66,6 @@ public class Pref{
 	// ファイルスキャンが完了した時刻
 	public static final String LAST_SCAN_COMPLETE = "last_scan_complete";
 
+	public static final String FLASHAIR_UPDATE_STATUS_OLD = "flashair_update_status_old";
+
 }
