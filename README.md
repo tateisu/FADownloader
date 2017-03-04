@@ -1,9 +1,14 @@
 # FADownloader
 
-対応OS: Android 5.0以降
++ Androidスマーフォンから一回だけor定期的にFlashAirのファイル一覧をスキャンして、特定拡張子のファイルをダウンロードするアプリです。
++ WakeLockやWifiLockを取得したり通信状態を確認したりHTTP通信もしつこくリトライしたりします。
++ DOZEモードでも動くsetAlarmClockを贅沢に使ったりしてるので、バッテリーにはあまり優しくありません。
 
-Androidスマーフォンから一回だけor定期的にFlashAirのファイル一覧をスキャンして、特定拡張子のファイルをダウンロードするアプリです。
+## 動作環境
++ Android OS 5.0以降
++ FlashAir ファームウェア v2.00.02以降
+
+## 注意事項
++ Wi-Fi 
 作ったばっかりなので品質は悪いと思います。
 
-WakeLockやWifiLockを取得したり通信状態を確認したりHTTP通信もしつこくリトライする系。
-DOZEモードでも動くsetAlarmClockを贅沢に使ったりしてるので、バッテリーにはあまり優しくない
