@@ -38,7 +38,7 @@ android {
                     def versionName = defaultConfig.versionName
                     def flavor = variant.flavorName
                     def date = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date())
-                    def newName = "FADownloader-${versionCode}-${versionName}-${date}-${flavor}.apk"
+                    def newName = "FADownloader-${flavor}-${versionCode}-${versionName}-${date}.apk"
                     output.outputFile = new File((String) output.outputFile.parent, (String) newName)
                 }
             }
