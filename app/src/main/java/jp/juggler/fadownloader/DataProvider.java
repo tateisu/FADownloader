@@ -10,9 +10,11 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import config.BuildVariant;
+
 public class DataProvider extends ContentProvider{
 
-	static final String AUTHORITY = "jp.juggler.fadownloader.data";
+	static final String AUTHORITY = BuildVariant.DATA_PROVIDER_AUTHORITY;
 
 	static final String DB_NAME = "data";
 	static final int DB_SCHEMA_VERSION = 1;

@@ -17,6 +17,33 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    productFlavors {
+        dev {
+            applicationId "jp.juggler.fadownloader.dev"
+        }
+        rc {
+            applicationId "jp.juggler.fadownloader"
+        }
+    }
+
+
+    // Generate Signed APK のファイル名を変更
+    applicationVariants.all { variant ->
+        if (variant.buildType.name.equals("release")) {
+            variant.outputs.each { output ->
+                if (output.outputFile != null && output.outputFile.name.endsWith('.apk')) {
+                    // Rename APK
+                    def versionCode = defaultConfig.versionCode
+                    def versionName = defaultConfig.versionName
+                    def flavor = variant.flavorName
+                    def date = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date())
+                    def newName = "jp.juggler.fadownloader-${versionCode}-${versionName}-${date}-${flavor}.apk"
+                    output.outputFile = new File((String) output.outputFile.parent, (String) newName)
+                }
+            }
+        }
+    }
 }
 
 dependencies {
