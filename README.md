@@ -17,5 +17,5 @@
 + 作ったばっかりだし、自分での使用頻度も低めなので品質はそれなりだと思います。
 
 ## ビルドについて
-BuildVariant ウィンドウで rc/dev のproductFlavor を選択してください
-Generate signed SDK でも rc/dev のproductFlavor を選択してください
++ BuildVariant ウィンドウで rc/dev のproductFlavor を選択してください
++ Generate signed SDK でも rc/dev のproductFlavor を選択してください
