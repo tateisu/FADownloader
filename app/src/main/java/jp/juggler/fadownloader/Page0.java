@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.support.annotation.LayoutRes;
 import android.support.v4.provider.DocumentFile;
 import android.text.TextUtils;
 import android.view.View;
@@ -46,10 +47,13 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		root.findViewById( R.id.btnLocationIntervalDesiredHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnLocationIntervalMinHelp ).setOnClickListener( this );
 
-		ArrayAdapter<CharSequence> locatiom_mode_adapter = new ArrayAdapter<CharSequence>(
+		ArrayAdapter<CharSequence> locatiom_mode_adapter = new ArrayAdapter<>(
 			activity
 			,android.R.layout.simple_spinner_item
 		);
+		locatiom_mode_adapter.setDropDownViewResource( R.layout.spinner_dropdown );
+
+
 		locatiom_mode_adapter.addAll(
 			activity.getString(R.string.location_mode_0),
 			activity.getString(R.string.location_mode_1),

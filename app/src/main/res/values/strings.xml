@@ -85,15 +85,15 @@
     <string name="location_setting_returns_unknown_status">location setting returns unknown status %1$d</string>
     <string name="play_service_connection_failed">play service connection failed (%1$d)%2$s</string>
     <string name="play_service_connection_suspended">play service connection suspended(%1$d)</string>
-    <string name="get_last_location_failed">getLastLocation() failed. %1$s %2$s</string>
+    <string name="get_last_location_failed" translatable="false">getLastLocation() failed. %1$s %2$s</string>
     <string name="location_update_request_failed">location update request failed %1$s %2$s</string>
     <string name="location_update_request_result">location update request result: %1$s %2$s</string>
     <string name="location_mode">GeoTagging Mode</string>
     <string name="location_interval_desired">location update interval(desired)</string>
     <string name="location_interval_min">location update interval(min)</string>
-    <string name="help_location_mode">GeoTagging Modeを設定すると、スマホから位置情報を取得してJPEGファイルのEXIF情報に位置データを付与シます。位置精度が高いモードほどバッテリー消費が大きいことに注意してください。</string>
-    <string name="help_location_interval_min">location interval min には位置情報を更新する時間間隔の最低値を秒数で指定します。少ない数字ほど位置情報の精度は良くなりますが、バッテリー消費も大きくなります。</string>
-    <string name="help_location_interval_desired">location interval desired には位置情報を更新する時間間隔の希望値を秒数で指定します。端末やPlayサービスにより調整が行われるため、希望通りの時間間隔になるとは限りません。短い方が位置情報の精度は良くなりますが、バッテリー消費は大きくなります。</string>
+    <string name="help_location_mode">GeoTagging Modeを設定すると、スマホから位置情報を取得してJPEGファイルのEXIF情報に位置データを付与します。\nサービス起動中はずっと位置情報を要求し続けます。\n位置精度が高いモードほどバッテリー消費が大きいことに注意してください。\n</string>
+    <string name="help_location_interval_min">location interval min には位置情報を更新する時間間隔の最低値を秒数で指定します。\n少ない数字ほど位置情報の精度は良くなりますが、バッテリー消費も大きくなります。</string>
+    <string name="help_location_interval_desired">location interval desired には位置情報を更新する時間間隔の希望値を秒数で指定します。\n短い方が位置情報の精度は良くなりますが、バッテリー消費は大きくなります。\n\n端末やPlayサービスにより調整が行われるため、希望通りの時間間隔になるとは限りません。\n</string>
 
 
     <string name="location_mode_0">OFF</string>
