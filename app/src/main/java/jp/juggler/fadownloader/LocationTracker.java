@@ -11,17 +11,16 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import java.text.SimpleDateFormat;
-import java.util.GregorianCalendar;
 import java.util.Locale;
 
 public class LocationTracker implements LocationListener{
 
 	// 動作モード。互換性のためにAPIの数字そのままはではない
-	public static final int NO_LOCATION_UPDATE =0;
-	public static final int LOCATION_NO_POWER =1;
-	public static final int LOCATION_LOW_POWER =2;
-	public static final int LOCATION_BALANCED =3;
-	public static final int LOCATION_HIGH_ACCURACY =4;
+	public static final int NO_LOCATION_UPDATE = 0;
+	public static final int LOCATION_NO_POWER = 1;
+	public static final int LOCATION_LOW_POWER = 2;
+	public static final int LOCATION_BALANCED = 3;
+	public static final int LOCATION_HIGH_ACCURACY = 4;
 
 	// Setting のデフォルト値
 	public static final int DEFAULT_MODE = NO_LOCATION_UPDATE;
@@ -29,6 +28,7 @@ public class LocationTracker implements LocationListener{
 	public static final long DEFAULT_INTERVAL_MIN = 1000L * 300;
 
 	public static class Setting{
+
 		int mode;
 
 		// Sets the desired interval for active location updates. This interval is
@@ -46,12 +46,16 @@ public class LocationTracker implements LocationListener{
 		}
 
 		int getUpdatePriority(){
-			switch(mode){
+			switch( mode ){
 			default:
-			case LOCATION_NO_POWER : return LocationRequest.PRIORITY_NO_POWER;
-			case LOCATION_LOW_POWER: return LocationRequest.PRIORITY_LOW_POWER;
-			case LOCATION_BALANCED: return LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
-			case LOCATION_HIGH_ACCURACY: return LocationRequest.PRIORITY_HIGH_ACCURACY;
+			case LOCATION_NO_POWER:
+				return LocationRequest.PRIORITY_NO_POWER;
+			case LOCATION_LOW_POWER:
+				return LocationRequest.PRIORITY_LOW_POWER;
+			case LOCATION_BALANCED:
+				return LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
+			case LOCATION_HIGH_ACCURACY:
+				return LocationRequest.PRIORITY_HIGH_ACCURACY;
 			}
 		}
 	}
@@ -62,11 +66,11 @@ public class LocationTracker implements LocationListener{
 	Setting location_setting;
 	boolean is_disposed = false;
 
-
-	public LocationTracker( LogWriter log,GoogleApiClient client ){
-		this.log= log;
+	public LocationTracker( LogWriter log, GoogleApiClient client ){
+		this.log = log;
 		this.mGoogleApiClient = client;
 	}
+
 	public void dispose(){
 		is_disposed = true;
 		tracking_end();
@@ -75,6 +79,7 @@ public class LocationTracker implements LocationListener{
 	public void onGoogleAPIConnected(){
 		tracking_start();
 	}
+
 	public void onGoogleAPIDisconnected(){
 		tracking_end();
 	}
@@ -90,56 +95,61 @@ public class LocationTracker implements LocationListener{
 	private boolean isTracked = false;
 
 	private void tracking_end(){
-		if(!isTracked) return;
+		if( ! isTracked ) return;
 
 		try{
-			if(! mGoogleApiClient.isConnected() ){
-				log.d( "tracking_end: api not connected." );
+			if( ! mGoogleApiClient.isConnected() ){
+				log.w( "tracking_end: api not connected." );
 			}else{
 				LocationServices.FusedLocationApi.removeLocationUpdates(
 					mGoogleApiClient,
 					this
 				).setResultCallback( new ResultCallback<Status>(){
 					@Override public void onResult( @NonNull Status status ){
-						log.d("tracking_end: result %s %s",status.getStatusCode(),status.getStatusMessage());
+						if( status.isSuccess() ){
+							// 正常終了
+							log.h( R.string.location_update_end );
+						}else{
+							log.e( "tracking_end: result %s %s", status.getStatusCode(), status.getStatusMessage() );
+						}
 					}
 				} );
 			}
-		}catch(Throwable ex){
-			ex.printStackTrace(  );
-			log.e( "tracking_end: exception: %s %s",ex.getClass().getSimpleName(),ex.getMessage() );
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+			log.e( "tracking_end: exception: %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
 		}finally{
 			isTracked = false;
 		}
 	}
 
 	private void tracking_start(){
-		if(is_disposed){
-			log.d("tracking_start: tracker is already disposed.");
+		if( is_disposed ){
+			log.d( "tracking_start: tracker is already disposed." );
 			return;
 		}
-		if(!mGoogleApiClient.isConnected()){
-			log.d("tracking_start: api not connected.");
+		if( ! mGoogleApiClient.isConnected() ){
+			log.d( "tracking_start: api not connected." );
 			return;
 		}
 
 		// last known location で初期化
 		try{
-			mCurrentLocation= LocationServices.FusedLocationApi.getLastLocation( mGoogleApiClient );
+			mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation( mGoogleApiClient );
 			if( mCurrentLocation != null ){
-				log.v(R.string.location_last_known, date_fmt.format( mCurrentLocation.getTime() ));
+				log.v( R.string.location_last_known, date_fmt.format( mCurrentLocation.getTime() ) );
 			}
-		}catch(SecurityException ex){
-			log.e(R.string.get_last_location_failed,ex.getClass().getSimpleName(),ex.getMessage());
-		}catch(Throwable ex){
+		}catch( SecurityException ex ){
+			log.e( R.string.get_last_location_failed, ex.getClass().getSimpleName(), ex.getMessage() );
+		}catch( Throwable ex ){
 			ex.printStackTrace();
-			log.e(R.string.get_last_location_failed,ex.getClass().getSimpleName(),ex.getMessage());
+			log.e( R.string.get_last_location_failed, ex.getClass().getSimpleName(), ex.getMessage() );
 		}
 
 		if( location_setting != null && location_setting.isUpdateRequired() ){
 			LocationRequest mLocationRequest = new LocationRequest();
-			mLocationRequest.setInterval(location_setting.interval_desired );
-			mLocationRequest.setFastestInterval(location_setting.interval_min );
+			mLocationRequest.setInterval( location_setting.interval_desired );
+			mLocationRequest.setFastestInterval( location_setting.interval_min );
 			mLocationRequest.setPriority( location_setting.getUpdatePriority() );
 			try{
 				LocationServices.FusedLocationApi.requestLocationUpdates(
@@ -149,31 +159,31 @@ public class LocationTracker implements LocationListener{
 				).setResultCallback( new ResultCallback<Status>(){
 					@Override public void onResult( @NonNull Status status ){
 						if( status.isSuccess() ){
-							log.i(R.string.location_update_start);
+							if( ! isTracked ) log.h( R.string.location_update_start );
 							isTracked = true;
 						}else{
-							log.i(R.string.location_update_request_result,status.getStatusCode(),status.getStatusMessage());
+							log.e( R.string.location_update_request_result, status.getStatusCode(), status.getStatusMessage() );
 						}
 					}
 				} );
-			}catch(SecurityException ex){
-				log.e(R.string.location_update_request_failed,ex.getClass().getSimpleName(),ex.getMessage());
-			}catch(Throwable ex){
+			}catch( SecurityException ex ){
+				log.e( R.string.location_update_request_failed, ex.getClass().getSimpleName(), ex.getMessage() );
+			}catch( Throwable ex ){
 				ex.printStackTrace();
-				log.e(R.string.location_update_request_failed,ex.getClass().getSimpleName(),ex.getMessage());
+				log.e( R.string.location_update_request_failed, ex.getClass().getSimpleName(), ex.getMessage() );
 			}
 		}
 	}
 
-	private SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss.SSS z",Locale.getDefault(  ) );
+	private SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss.SSS z", Locale.getDefault() );
 
 	@Override public synchronized void onLocationChanged( Location location ){
-		log.v(R.string.location_changed,date_fmt.format( location.getTime() ));
+		log.v( R.string.location_changed, date_fmt.format( location.getTime() ) );
 		mCurrentLocation = location;
 	}
 
 	public synchronized Location getLocation(){
-		if( location_setting ==null || ! location_setting.isUpdateRequired() ) return null;
+		if( location_setting == null || ! location_setting.isUpdateRequired() ) return null;
 		return mCurrentLocation;
 	}
 

@@ -46,6 +46,8 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		root.findViewById( R.id.btnLocationModeHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnLocationIntervalDesiredHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnLocationIntervalMinHelp ).setOnClickListener( this );
+		root.findViewById( R.id.btnOSSLicence ).setOnClickListener( this );
+
 
 		ArrayAdapter<CharSequence> locatiom_mode_adapter = new ArrayAdapter<>(
 			activity
@@ -106,6 +108,11 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		case R.id.btnLocationIntervalMinHelp:
 			( (ActMain) activity ).openHelp( R.layout.help_location_interval_min );
 			break;
+
+		case R.id.btnOSSLicence:
+			( (ActMain) activity ).openHelp( R.layout.help_oss_license );
+			break;
+
 		}
 	}
 
