@@ -1,4 +1,4 @@
-# FADownloader
+# FA Downloader
 
 + Androidスマーフォンから一回だけor定期的にFlashAirのファイル一覧をスキャンして、特定拡張子のファイルをダウンロードするアプリです。
 + WakeLockやWifiLockを取得したり通信状態を確認したりHTTP通信もしつこくリトライしたりします。
