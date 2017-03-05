@@ -69,7 +69,7 @@ public abstract class TableMeta{
 		}
 	}
 
-	public void registUri( String authority, String table ){
+	public void registerUri( String authority, String table ){
 		this.authority = authority;
 		this.matcher_idx = sUriHandlerList.size();
 		this.table = table;

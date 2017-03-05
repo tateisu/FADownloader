@@ -25,7 +25,6 @@ import javax.net.ssl.SSLHandshakeException;
 import org.w3c.dom.Element;
 
 import android.net.Network;
-import android.os.Build;
 import android.os.SystemClock;
 
 //! リトライつきHTTPクライアント
@@ -156,11 +155,11 @@ public class HTTPClient{
 	@SuppressWarnings( "ConstantConditions" )
 	public byte[] getHTTP( LogWriter log, Network network, String url, HTTPClientReceiver receiver ){
 
-		// http://android-developers.blogspot.jp/2011/09/androids-http-clients.html
-		// HTTP connection reuse which was buggy pre-froyo
-		if( Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO ){
-			System.setProperty( "http.keepAlive", "false" );
-		}
+//		// http://android-developers.blogspot.jp/2011/09/androids-http-clients.html
+//		// HTTP connection reuse which was buggy pre-froyo
+//		if( Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO ){
+//			System.setProperty( "http.keepAlive", "false" );
+//		}
 
 		try{
 			synchronized( this ){
@@ -233,9 +232,9 @@ public class HTTPClient{
 							conn.connect();
 						}else{
 							conn.setDoOutput( true );
-							if( Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB ){
-								conn.setRequestProperty( "Content-Length", Integer.toString( post_content.length ) );
-							}
+//							if( Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB ){
+//								conn.setRequestProperty( "Content-Length", Integer.toString( post_content.length ) );
+//							}
 							if( post_content_type != null ){
 								conn.setRequestProperty( "Content-Type", post_content_type );
 							}
@@ -278,7 +277,7 @@ public class HTTPClient{
 
 						if( rcode >= 500 ){
 							if( ! silent_error ) log.e( "[%s,connect] temporary error %d", caption, rcode );
-							last_error = String.format( "(HTTP error %d %d)", rcode );
+							last_error = String.format( "(HTTP error %d)", rcode );
 							continue;
 						}else if( ! allow_error && rcode >= 300 ){
 							if( ! silent_error ) log.e( "[%s,connect] permanent error %d", caption, rcode );

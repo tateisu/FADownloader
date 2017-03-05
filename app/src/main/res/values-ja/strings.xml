@@ -6,7 +6,6 @@
     <string name="once">Once</string>
     <string name="stop">Stop</string>
     <string name="file_type_caption">File Type</string>
-    <string name="file_type_desc">(空白区切り、&quot;*&quot;ワイルドカード)</string>
     <string name="app_permission_required">アプリに権限が必要です</string>
     <string name="request_permission">request</string>
     <string name="cancel">cancel</string>

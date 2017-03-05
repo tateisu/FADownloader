@@ -10,7 +10,6 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -48,7 +47,6 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
-import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
@@ -386,7 +384,7 @@ public class ActMain
 		SharedPreferences pref = Pref.pref( this );
 		String sv;
 
-		// LocationSettingを確認する前のepeat引数の値を思い出す
+		// LocationSettingを確認する前のrepeat引数の値を思い出す
 		boolean repeat = pref.getBoolean( Pref.UI_REPEAT, false );
 
 		// 設定から値を読んでバリデーション

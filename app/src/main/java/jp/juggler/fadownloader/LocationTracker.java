@@ -175,7 +175,7 @@ public class LocationTracker implements LocationListener{
 		}
 	}
 
-	private SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss.SSS z", Locale.getDefault() );
+	static final SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss.SSS z", Locale.getDefault() );
 
 	@Override public synchronized void onLocationChanged( Location location ){
 		log.v( R.string.location_changed, date_fmt.format( location.getTime() ) );

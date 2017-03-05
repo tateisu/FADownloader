@@ -16,8 +16,6 @@ import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
-import java.util.TimeZone;
-import java.util.GregorianCalendar;
 
 public class LogViewer implements LoaderManager.LoaderCallbacks<Cursor>{
 
@@ -76,10 +74,10 @@ public class LogViewer implements LoaderManager.LoaderCallbacks<Cursor>{
 
 	class LogAdapter extends CursorAdapter{
 
-		LayoutInflater inflater = activity.getLayoutInflater();
-		int colidx_time;
-		int colidx_message;
-		int colidx_level;
+		final LayoutInflater inflater = activity.getLayoutInflater();
+		final int colidx_time;
+		final int colidx_message;
+		final int colidx_level;
 
 		SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss.SSS z", Locale.getDefault(  ) );
 

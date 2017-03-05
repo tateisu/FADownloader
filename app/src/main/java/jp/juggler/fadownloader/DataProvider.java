@@ -35,7 +35,7 @@ public class DataProvider extends ContentProvider{
 	}
 
 	static{
-		LogData.meta.registUri( AUTHORITY, "log" );
+		LogData.meta.registerUri( AUTHORITY, "log" );
 	}
 
 	private DBHelper1 mDBHelper;

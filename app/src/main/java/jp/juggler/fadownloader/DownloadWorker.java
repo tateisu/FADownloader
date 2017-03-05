@@ -114,9 +114,9 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		return status.get();
 	}
 
-	Pattern reJPEG = Pattern.compile( "\\.jp(g|eg?)\\z", Pattern.CASE_INSENSITIVE );
+	static final Pattern reJPEG = Pattern.compile( "\\.jp(g|eg?)\\z", Pattern.CASE_INSENSITIVE );
 
-	Pattern reFileType = Pattern.compile( "(\\S+)" );
+	static final Pattern reFileType = Pattern.compile( "(\\S+)" );
 
 	private ArrayList<Pattern> file_type_parse(){
 		ArrayList<Pattern> list = new ArrayList<>();
@@ -238,10 +238,10 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 	static class Item{
 
-		String air_path;
-		FilePathX local_path;
-		boolean is_file;
-		long size;
+		final String air_path;
+		final FilePathX local_path;
+		final boolean is_file;
+		final long size;
 
 		Item( String air_path, FilePathX local_path, boolean is_file, long size ){
 			this.air_path = air_path;
@@ -251,8 +251,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		}
 	}
 
-	Pattern reLine = Pattern.compile( "([^\\x0d\\x0a]+)" );
-	Pattern reAttr = Pattern.compile( ",(\\d+),(\\d+),(\\d+),(\\d+)$" );
+	static final Pattern reLine = Pattern.compile( "([^\\x0d\\x0a]+)" );
+	static final Pattern reAttr = Pattern.compile( ",(\\d+),(\\d+),(\\d+),(\\d+)$" );
 
 	private static DocumentFile bsearch( ArrayList<DocumentFile> local_files, String fname ){
 		int start = 0;
@@ -308,7 +308,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 					try{
 						PendingIntent pi = Utils.createAlarmPendingIntent( service );
 
-						AlarmManager am = (AlarmManager) service.getSystemService( Context.ALARM_SERVICE ); // AlramManager取得
+						AlarmManager am = (AlarmManager) service.getSystemService( Context.ALARM_SERVICE ); // AlarmManager取得
 						/*
 						if( Build.VERSION.SDK_INT >= 23 ){
 							am.setExactAndAllowWhileIdle( AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime(), pi );
@@ -507,7 +507,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 							final Uri file_uri = file.getUri();
 							final String get_url = flashair_url + Uri.encode( child_air_path );
 							data = client.getHTTP( log, network, get_url, new HTTPClientReceiver(){
-								byte[] buf = new byte[ 2048 ];
+								final byte[] buf = new byte[ 2048 ];
 
 								public byte[] onHTTPClientStream( LogWriter log, CancelChecker cancel_checker, InputStream in, int content_length ){
 									try{

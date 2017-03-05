@@ -19,7 +19,7 @@ public class LogData{
 	public static final int LEVEL_HEARTBEAT = 600;
 	public static final int LEVEL_FLOOD = 700;
 
-	public static TableMeta meta = new TableMeta(){
+	public static final TableMeta meta = new TableMeta(){
 		@Override public void onDBCreate( SQLiteDatabase db ){
 			db.execSQL(
 				"create table if not exists " + table

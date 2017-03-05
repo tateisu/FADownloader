@@ -38,7 +38,7 @@ public class IabResult {
     }
     public int getResponse() { return mResponse; }
     public String getMessage() { return mMessage; }
-    public boolean isSuccess() { return mResponse == IabHelper.BILLING_RESPONSE_RESULT_OK; }
+    @SuppressWarnings( "BooleanMethodIsAlwaysInverted" ) public boolean isSuccess() { return mResponse == IabHelper.BILLING_RESPONSE_RESULT_OK; }
     public boolean isFailure() { return !isSuccess(); }
     public String toString() { return "IabResult: " + getMessage(); }
 }

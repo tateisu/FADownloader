@@ -6,7 +6,6 @@ import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,10 +39,10 @@ public class PagerAdapterBase extends PagerAdapter{
 		this.inflater = activity.getLayoutInflater();
 	}
 
-	protected final ArrayList<CharSequence> title_list = new ArrayList<CharSequence>();
-	protected final ArrayList<Integer> layout_id_list = new ArrayList<Integer>();
-	protected final ArrayList<Class<? extends PageViewHolder>> holder_class_list = new ArrayList<Class<? extends PageViewHolder>>();
-	protected final SparseArray<PageViewHolder> holder_list = new SparseArray<PageViewHolder>();
+	protected final ArrayList<CharSequence> title_list = new ArrayList<>();
+	protected final ArrayList<Integer> layout_id_list = new ArrayList<>();
+	protected final ArrayList<Class<? extends PageViewHolder>> holder_class_list = new ArrayList<>();
+	protected final SparseArray<PageViewHolder> holder_list = new SparseArray<>();
 
 	public int addPage( CharSequence title, int layout_id, Class<? extends PageViewHolder> holder_class ){
 		int idx = title_list.size();

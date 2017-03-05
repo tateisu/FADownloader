@@ -8,7 +8,6 @@
     <string name="once">Once</string>
     <string name="stop">Stop</string>
     <string name="file_type_caption">File Type</string>
-    <string name="file_type_desc">(delimited by spaces, "*" for wildcard) </string>
     <string name="app_permission_required">app permission required</string>
     <string name="request_permission">request</string>
     <string name="cancel">Cancel</string>
@@ -114,8 +113,5 @@
     <string name="setting_desc">変更した設定はREPEAT/ONCEを押すと反映されます</string>
     <string name="remove_ad">remove ad</string>
     <string name="other">Other</string>
-    <string name="download_setting">download setting</string>
-    <string name="geotagging_setting">GeoTagging setting</string>
-    <string name="mode">mode</string>
 
 </resources>
