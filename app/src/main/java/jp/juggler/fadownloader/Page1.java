@@ -4,12 +4,10 @@ import android.app.Activity;
 import android.view.View;
 import android.widget.ListView;
 
-public class Page1 extends PagerAdapterBase.PageViewHolder implements View.OnClickListener{
+public class Page1 extends PagerAdapterBase.PageViewHolder{
 
 	ListView lvLog;
 	LogViewer log_viewer;
-
-	View btnLogClear;
 
 
 	public Page1( Activity activity, View ignored ){
@@ -20,11 +18,7 @@ public class Page1 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		lvLog = (ListView) root.findViewById( R.id.lvLog );
 		log_viewer = new LogViewer();
 
-		btnLogClear = root.findViewById( R.id.btnLogClear );
-		btnLogClear.setOnClickListener( this );
-
-
-		if( ((ActMain)activity).is_start){
+		if( ( (ActMain) activity ).is_start ){
 			onStart();
 		}
 	}
@@ -34,18 +28,11 @@ public class Page1 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 	}
 
 	void onStart(){
-		log_viewer.onStart( (ActMain)activity, lvLog, 0 );
+		log_viewer.onStart( (ActMain) activity, lvLog, 0 );
 	}
 
 	void onStop(){
 		log_viewer.onStop();
 	}
 
-	@Override public void onClick( View view ){
-		switch(view.getId()){
-		case R.id.btnLogClear:
-			activity.getContentResolver().delete( LogData.meta.content_uri,null,null );
-			break;
-		}
-	}
 }

@@ -32,5 +32,4 @@ public class PermissionChecker{
 		}
 		return list;
 	}
-
 }

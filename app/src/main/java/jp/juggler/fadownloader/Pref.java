@@ -47,24 +47,24 @@ public class Pref{
 			e.putString( Pref.UI_FILE_TYPE, ".jp*" );
 		}
 		//
-		iv = pref.getInt( Pref.UI_LOCATION_MODE,-1);
+		iv = pref.getInt( Pref.UI_LOCATION_MODE, - 1 );
 		if( iv < 0 || iv > LocationTracker.LOCATION_HIGH_ACCURACY ){
 			bChanged = true;
-			e.putInt( Pref.UI_LOCATION_MODE,  LocationTracker.DEFAULT_MODE );
+			e.putInt( Pref.UI_LOCATION_MODE, LocationTracker.DEFAULT_MODE );
 		}
 		//
 		sv = pref.getString( Pref.UI_LOCATION_INTERVAL_DESIRED, null );
 		if( TextUtils.isEmpty( sv ) ){
 			bChanged = true;
 			e.putString( Pref.UI_LOCATION_INTERVAL_DESIRED
-				, Long.toString( LocationTracker.DEFAULT_INTERVAL_DESIRED /1000L) );
+				, Long.toString( LocationTracker.DEFAULT_INTERVAL_DESIRED / 1000L ) );
 		}
 		//
 		sv = pref.getString( Pref.UI_LOCATION_INTERVAL_MIN, null );
 		if( TextUtils.isEmpty( sv ) ){
 			bChanged = true;
 			e.putString( Pref.UI_LOCATION_INTERVAL_MIN
-				, Long.toString( LocationTracker.DEFAULT_INTERVAL_MIN /1000L) );
+				, Long.toString( LocationTracker.DEFAULT_INTERVAL_MIN / 1000L ) );
 		}
 		//
 		if( bChanged ) e.apply();
@@ -86,12 +86,14 @@ public class Pref{
 	public static final String WORKER_FOLDER_URI = "worker_folder_uri";
 	public static final String WORKER_INTERVAL = "worker_interval";
 	public static final String WORKER_FILE_TYPE = "worker_file_type";
-	public static final String WORKER_LOCATION_INTERVAL_DESIRED = "worker_location_interval_desired" ;
+	public static final String WORKER_LOCATION_INTERVAL_DESIRED = "worker_location_interval_desired";
 	public static final String WORKER_LOCATION_INTERVAL_MIN = "worker_location_interval_min";
 	public static final String WORKER_LOCATION_MODE = "worker_location_mode";
 
 	// ファイルスキャンが完了した時刻
 	public static final String LAST_SCAN_COMPLETE = "last_scan_complete";
 	public static final String FLASHAIR_UPDATE_STATUS_OLD = "flashair_update_status_old";
+
+	public static final String REMOVE_AD_PURCHASED = "remove_ad_purchased";
 
 }

@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -21,12 +22,18 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.android.trivialdrivesample.util.IabHelper;
+import com.example.android.trivialdrivesample.util.IabResult;
+import com.example.android.trivialdrivesample.util.Inventory;
+import com.example.android.trivialdrivesample.util.Purchase;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
@@ -41,8 +48,11 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+
+import config.BuildVariant;
 
 public class ActMain
 	extends AppCompatActivity
@@ -52,6 +62,7 @@ public class ActMain
 	static final int REQUEST_CODE_PERMISSION = 1;
 	static final int REQUEST_CODE_DOCUMENT = 2;
 	static final int REQUEST_CHECK_SETTINGS = 3;
+	static final int REQUEST_PURCHASE = 4;
 
 	TextView tvStatus;
 
@@ -88,7 +99,7 @@ public class ActMain
 		super.onResume();
 		is_resume = true;
 
-		if (mAdView != null) {
+		if( mAdView != null ){
 			mAdView.resume();
 		}
 
@@ -104,7 +115,7 @@ public class ActMain
 	@Override protected void onPause(){
 		is_resume = false;
 
-		if (mAdView != null) {
+		if( mAdView != null ){
 			mAdView.pause();
 		}
 
@@ -119,6 +130,7 @@ public class ActMain
 	@Override protected void onStart(){
 		super.onStart();
 		is_start = true;
+
 		Page1 page = pager_adapter.getPage( 1 );
 		if( page != null ) page.onStart();
 
@@ -150,6 +162,9 @@ public class ActMain
 	}
 
 	@Override public void onActivityResult( int requestCode, int resultCode, Intent resultData ){
+		// mIabHelper が結果を処理した
+		if( mIabHelper != null && mIabHelper.handleActivityResult( requestCode, resultCode, resultData ) ) return;
+
 		if( requestCode == REQUEST_CODE_DOCUMENT ){
 			if( resultCode == Activity.RESULT_OK ){
 				Uri treeUri = resultData.getData();
@@ -163,11 +178,12 @@ public class ActMain
 
 			Page0 page = pager_adapter.getPage( 0 );
 			if( page != null ) page.folder_view_update();
-
-		}else{
-			super.onActivityResult( requestCode, resultCode, resultData );
+			return;
 		}
+
+		super.onActivityResult( requestCode, resultCode, resultData );
 	}
+
 	AdView mAdView;
 
 	@Override
@@ -175,11 +191,17 @@ public class ActMain
 		super.onCreate( savedInstanceState );
 		setContentView( R.layout.act_main );
 
+		setupIabHelper();
 
-		MobileAds.initialize(getApplicationContext(), getResources().getString(R.string.banner_ad_unit_id));
-		mAdView = (AdView) findViewById(R.id.adView);
-		AdRequest adRequest = new AdRequest.Builder().build();
-		mAdView.loadAd(adRequest);
+		mAdView = (AdView) findViewById( R.id.adView );
+		if( BuildVariant.IS_ADFREE ){
+			( (ViewGroup) mAdView.getParent() ).removeView( mAdView );
+			mAdView = null;
+		}else{
+			MobileAds.initialize( getApplicationContext(), getResources().getString( R.string.banner_ad_unit_id ) );
+			AdRequest adRequest = new AdRequest.Builder().build();
+			mAdView.loadAd( adRequest );
+		}
 
 		handler = new Handler();
 
@@ -195,20 +217,26 @@ public class ActMain
 		pager_adapter = new PagerAdapterBase( this );
 		pager_adapter.addPage( getString( R.string.setting ), R.layout.page0, Page0.class );
 		pager_adapter.addPage( getString( R.string.log ), R.layout.page1, Page1.class );
+		pager_adapter.addPage( getString( R.string.other ), R.layout.page2, Page2.class );
 		pager.setAdapter( pager_adapter );
 
-		mGoogleApiClient = new GoogleApiClient.Builder(this)
-			.addConnectionCallbacks(connection_callback)
-			.addOnConnectionFailedListener(connection_fail_callback)
-			.addApi(LocationServices.API)
+		mGoogleApiClient = new GoogleApiClient.Builder( this )
+			.addConnectionCallbacks( connection_callback )
+			.addOnConnectionFailedListener( connection_fail_callback )
+			.addApi( LocationServices.API )
 			.build();
 	}
 
 	@Override
-	public void onDestroy() {
-		if (mAdView != null) {
+	public void onDestroy(){
+		if( mAdView != null ){
 			mAdView.destroy();
 		}
+		if( mIabHelper != null ){
+			mIabHelper.dispose();
+			mIabHelper = null;
+		}
+
 		super.onDestroy();
 	}
 	/////////////////////////////////////////////////////////////////////////
@@ -291,8 +319,10 @@ public class ActMain
 		//repeat引数の値は、LocationSettingの確認が終わるまで覚えておく必要がある
 		Pref.pref( this ).edit().putBoolean( Pref.UI_REPEAT, repeat ).apply();
 
-// TODO 位置情報を使わないオプションの時はLocationSettingをチェックしない
-		if( mGoogleApiClient.isConnected() ){
+		if( Pref.pref( this ).getInt( Pref.UI_LOCATION_MODE, - 1 ) == LocationTracker.NO_LOCATION_UPDATE ){
+			// 位置情報を使わないオプションの時はLocationSettingをチェックしない
+			startDownloadService();
+		}else if( mGoogleApiClient.isConnected() ){
 			startLocationSettingCheck();
 		}else{
 			Toast.makeText( this, getString( R.string.google_api_not_connected ), Toast.LENGTH_SHORT ).show();
@@ -399,8 +429,8 @@ public class ActMain
 			return;
 		}
 
-		int location_mode = pref.getInt(Pref.UI_LOCATION_MODE,-1);
-		if( location_mode < 0 || location_mode > LocationTracker.LOCATION_HIGH_ACCURACY){
+		int location_mode = pref.getInt( Pref.UI_LOCATION_MODE, - 1 );
+		if( location_mode < 0 || location_mode > LocationTracker.LOCATION_HIGH_ACCURACY ){
 			Toast.makeText( this, getString( R.string.location_mode_invalid ), Toast.LENGTH_SHORT ).show();
 			return;
 		}
@@ -408,7 +438,7 @@ public class ActMain
 		long location_update_interval_desired = LocationTracker.DEFAULT_INTERVAL_DESIRED;
 		long location_update_interval_min = LocationTracker.DEFAULT_INTERVAL_MIN;
 
-		if( location_mode != LocationTracker.NO_LOCATION_UPDATE){
+		if( location_mode != LocationTracker.NO_LOCATION_UPDATE ){
 			try{
 				location_update_interval_desired = 1000L * Long.parseLong(
 					pref.getString( Pref.UI_LOCATION_INTERVAL_DESIRED, "" ).trim(), 10 );
@@ -482,19 +512,129 @@ public class ActMain
 
 	final GoogleApiClient.OnConnectionFailedListener connection_fail_callback = new GoogleApiClient.OnConnectionFailedListener(){
 		@Override public void onConnectionFailed( @NonNull ConnectionResult connectionResult ){
-			String msg = getString(R.string.play_service_connection_failed,connectionResult.getErrorCode(),connectionResult.getErrorMessage());
-			Toast.makeText( ActMain.this,msg, Toast.LENGTH_SHORT ).show();
+			String msg = getString( R.string.play_service_connection_failed, connectionResult.getErrorCode(), connectionResult.getErrorMessage() );
+			Toast.makeText( ActMain.this, msg, Toast.LENGTH_SHORT ).show();
 		}
 	};
 	final GoogleApiClient.ConnectionCallbacks connection_callback = new GoogleApiClient.ConnectionCallbacks(){
 		@Override public void onConnected( @Nullable Bundle bundle ){
 			permission_request();
 		}
+
 		// Playサービスとの接続が失われた
 		@Override public void onConnectionSuspended( int i ){
-			Toast.makeText( ActMain.this, getString( R.string.play_service_connection_suspended,i ), Toast.LENGTH_SHORT ).show();
+			Toast.makeText( ActMain.this, getString( R.string.play_service_connection_suspended
+				, i ), Toast.LENGTH_SHORT ).show();
 			mGoogleApiClient.connect();
 		}
 	};
 
+	static final String APP_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkTbDT+kbberoRK6QHAKNzuKsFh0zSVJk97trga30ZHHyQHPsHtIJCvIibgHmm5QL6xr9TualN5iYMfNKA4bZM3x25kNiJ0NVuP86sravHdTyVuZyIu2WUI1CNdGRun5GYSGtxXNOuZujRkPtIMGjl750Z18CirrXYkl85KHDLgiOAu+d7HjssQ215+Qfo7iJIl30CYgcBl+szfH42MQK2Jd03LeTMf+5MA/ve/6iL2I1nyZrtWrC6Sw1uqOqjB9jx8cJALOrX+CmDa+si9krAI7gcOV/E8CJvVyC7cPxxooB425S8xHTr/MPjkEmwnu7ppMk5MyO+G1XP927fVg0ywIDAQAB";
+	static final String REMOVE_AD_PRODUCT_ID = "remove_ad";
+	static final String TAG = "ActMain";
+
+	IabHelper mIabHelper;
+	boolean bSetupCompleted;
+	boolean bRemoveAdPurchased;
+
+	// onCreateから呼ばれる
+	void setupIabHelper(){
+		//noinspection SimplifiableIfStatement
+		if( BuildVariant.IS_ADFREE ){
+			bRemoveAdPurchased = true;
+		}else{
+			bRemoveAdPurchased = Pref.pref( this ).getBoolean( Pref.REMOVE_AD_PURCHASED, false );
+		}
+		if( ! bRemoveAdPurchased ){
+			mIabHelper = new IabHelper( this, APP_PUBLIC_KEY );
+			mIabHelper.startSetup( new IabHelper.OnIabSetupFinishedListener(){
+				public void onIabSetupFinished( IabResult result ){
+					// return if activity is destroyed
+					if( mIabHelper == null ) return;
+
+					if( ! result.isSuccess() ){
+						Log.d( TAG, "onIabSetupFinished: "
+							+ result.getResponse()
+							+ "," + result.getMessage()
+						);
+						return;
+					}
+
+					bSetupCompleted = true;
+
+					// セットアップが終わったら購入済みアイテムの確認を開始する
+					mIabHelper.queryInventoryAsync( mGotInventoryListener );
+				}
+			} );
+		}
+	}
+
+	// 購入済みアイテム取得のコールバック
+	final IabHelper.QueryInventoryFinishedListener mGotInventoryListener = new IabHelper.QueryInventoryFinishedListener(){
+		public void onQueryInventoryFinished( IabResult result, Inventory inventory ){
+
+			// return if activity is destroyed
+			if( mIabHelper == null ) return;
+
+			if( result.isFailure() ){
+				Log.d( TAG, "onQueryInventoryFinished: "
+					+ result.getResponse()
+					+ "," + result.getMessage()
+				);
+				return;
+			}
+
+			// 広告除去アイテムがあれば広告を非表示にする
+			remove_ad( inventory.getPurchase( REMOVE_AD_PRODUCT_ID ) != null );
+		}
+	};
+
+	// 購入開始
+	public void startRemoveAdPurchase(){
+		try{
+			mIabHelper.launchPurchaseFlow(
+				this
+				, REMOVE_AD_PRODUCT_ID
+				, IabHelper.ITEM_TYPE_INAPP
+				, REQUEST_PURCHASE
+				, mPurchaseFinishedListener
+				, null
+			);
+		}catch( IllegalStateException ex ){
+			ex.printStackTrace();
+		}
+	}
+
+	// 購入結果の受け取り用メソッド
+	final IabHelper.OnIabPurchaseFinishedListener mPurchaseFinishedListener
+		= new IabHelper.OnIabPurchaseFinishedListener(){
+		public void onIabPurchaseFinished( IabResult result, Purchase purchase ){
+			// return if activity destroyed
+			if( mIabHelper == null ) return;
+
+			if( result.isFailure() ){
+				Log.d( TAG, "onIabPurchaseFinished: "
+					+ result.getResponse()
+					+ "," + result.getMessage()
+				);
+				return;
+			}
+
+			remove_ad( purchase.getSku().equals( REMOVE_AD_PRODUCT_ID ) );
+		}
+	};
+
+	void remove_ad( boolean isPurchased ){
+		bRemoveAdPurchased = isPurchased;
+		if( isPurchased ){
+			if( mAdView != null ){
+				( (ViewGroup) mAdView.getParent() ).removeView( mAdView );
+				mAdView.destroy();
+				mAdView = null;
+			}
+		}
+
+		Page2 page = pager_adapter.getPage( 2 );
+		if( page != null ) page.updatePurchaseButton();
+	}
 }

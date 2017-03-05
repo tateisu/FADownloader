@@ -1,4 +1,4 @@
-<resources>
+<resources  xmlns:tools="http://schemas.android.com/tools">
 
     <string name="flashair_url">FlashAir URL</string>
 
@@ -108,8 +108,11 @@
     <string name="location_changed">location changed. location.time=%1$s</string>
     <string name="location_last_known">location last known. location.time=%1$s</string>
     <string name="location_update_start">location update start.</string>
-    <string name="oss_license_info">open-source software license information</string>
+    <string name="oss_license_info" tools:ignore="MissingTranslation">OSS license information</string>
     <string name="help_oss_license_long">このアプリは sephiroth74氏の Android-Exif-Extended ライブラリを(SAF対応のために少し改造して)使用しています。\nhttps://github.com/sephiroth74/Android-Exif-Extended\nThis software is licensed under the Apache 2 license, quoted below.\nLicensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. You may obtain a copy of the License at\nhttp://www.apache.org/licenses/LICENSE-2.0\nUnless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.\n</string>
     <string name="location_update_end">location update end</string>
+    <string name="setting_desc">変更した設定はREPEAT/ONCEを押すと反映されます</string>
+    <string name="remove_ad">remove ad</string>
+    <string name="other">Other</string>
 
 </resources>

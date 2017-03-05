@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.support.annotation.LayoutRes;
 import android.support.v4.provider.DocumentFile;
 import android.text.TextUtils;
 import android.view.View;
@@ -20,7 +19,7 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 	TextView tvFolder;
 	EditText etInterval;
 	EditText etFileType;
-	Spinner spLocaitonMode;
+	Spinner spLocationMode;
 	EditText etLocationIntervalDesired;
 	EditText etLocationIntervalMin;
 
@@ -34,7 +33,7 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		tvFolder = (TextView) root.findViewById( R.id.tvFolder );
 		etInterval = (EditText) root.findViewById( R.id.etInterval );
 		etFileType = (EditText) root.findViewById( R.id.etFileType );
-		spLocaitonMode = (Spinner) root.findViewById( R.id.spLocaitonMode );
+		spLocationMode = (Spinner) root.findViewById( R.id.spLocationMode );
 		etLocationIntervalDesired = (EditText) root.findViewById( R.id.etLocationIntervalDesired );
 		etLocationIntervalMin = (EditText) root.findViewById( R.id.etLocationIntervalMin );
 
@@ -46,25 +45,22 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		root.findViewById( R.id.btnLocationModeHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnLocationIntervalDesiredHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnLocationIntervalMinHelp ).setOnClickListener( this );
-		root.findViewById( R.id.btnOSSLicence ).setOnClickListener( this );
 
-
-		ArrayAdapter<CharSequence> locatiom_mode_adapter = new ArrayAdapter<>(
+		ArrayAdapter<CharSequence> location_mode_adapter = new ArrayAdapter<>(
 			activity
-			,android.R.layout.simple_spinner_item
+			, android.R.layout.simple_spinner_item
 		);
-		locatiom_mode_adapter.setDropDownViewResource( R.layout.spinner_dropdown );
+		location_mode_adapter.setDropDownViewResource( R.layout.spinner_dropdown );
 
-
-		locatiom_mode_adapter.addAll(
-			activity.getString(R.string.location_mode_0),
-			activity.getString(R.string.location_mode_1),
-			activity.getString(R.string.location_mode_2),
-			activity.getString(R.string.location_mode_3),
-			activity.getString(R.string.location_mode_4)
+		location_mode_adapter.addAll(
+			activity.getString( R.string.location_mode_0 ),
+			activity.getString( R.string.location_mode_1 ),
+			activity.getString( R.string.location_mode_2 ),
+			activity.getString( R.string.location_mode_3 ),
+			activity.getString( R.string.location_mode_4 )
 		);
-		spLocaitonMode.setAdapter( locatiom_mode_adapter );
-		spLocaitonMode.setOnItemSelectedListener( new AdapterView.OnItemSelectedListener(){
+		spLocationMode.setAdapter( location_mode_adapter );
+		spLocationMode.setOnItemSelectedListener( new AdapterView.OnItemSelectedListener(){
 			@Override public void onItemSelected( AdapterView<?> parent, View view, int position, long id ){
 				updateFormEnabled();
 			}
@@ -109,10 +105,6 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 			( (ActMain) activity ).openHelp( R.layout.help_location_interval_min );
 			break;
 
-		case R.id.btnOSSLicence:
-			( (ActMain) activity ).openHelp( R.layout.help_oss_license );
-			break;
-
 		}
 	}
 
@@ -131,8 +123,8 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		sv = pref.getString( Pref.UI_FILE_TYPE, null );
 		if( sv != null ) etFileType.setText( sv );
 		//
-		iv = pref.getInt( Pref.UI_LOCATION_MODE,-1);
-		if( iv >= 0 && iv < spLocaitonMode.getCount() ) spLocaitonMode.setSelection( iv );
+		iv = pref.getInt( Pref.UI_LOCATION_MODE, - 1 );
+		if( iv >= 0 && iv < spLocationMode.getCount() ) spLocationMode.setSelection( iv );
 		//
 		sv = pref.getString( Pref.UI_LOCATION_INTERVAL_DESIRED, null );
 		if( sv != null ) etLocationIntervalDesired.setText( sv );
@@ -142,8 +134,9 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 
 		updateFormEnabled();
 	}
+
 	private void updateFormEnabled(){
-		boolean location_enabled = (spLocaitonMode.getSelectedItemPosition() > 0);
+		boolean location_enabled = ( spLocationMode.getSelectedItemPosition() > 0 );
 		etLocationIntervalDesired.setEnabled( location_enabled );
 		etLocationIntervalMin.setEnabled( location_enabled );
 	}
@@ -154,9 +147,9 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 			.putString( Pref.UI_FLASHAIR_URL, etURL.getText().toString() )
 			.putString( Pref.UI_INTERVAL, etInterval.getText().toString() )
 			.putString( Pref.UI_FILE_TYPE, etFileType.getText().toString() )
-			.putInt( Pref.UI_LOCATION_MODE,spLocaitonMode.getSelectedItemPosition() )
-			.putString( Pref.UI_LOCATION_INTERVAL_DESIRED,etLocationIntervalDesired.getText().toString() )
-			.putString( Pref.UI_LOCATION_INTERVAL_MIN,etLocationIntervalMin.getText().toString() )
+			.putInt( Pref.UI_LOCATION_MODE, spLocationMode.getSelectedItemPosition() )
+			.putString( Pref.UI_LOCATION_INTERVAL_DESIRED, etLocationIntervalDesired.getText().toString() )
+			.putString( Pref.UI_LOCATION_INTERVAL_MIN, etLocationIntervalMin.getText().toString() )
 			.apply();
 	}
 
@@ -167,12 +160,13 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 	}
 
 	// フォルダの表示を更新
-	String folder_view_update(){
+	void folder_view_update(){
 		String folder_uri = null;
 
 		String sv = Pref.pref( activity ).getString( Pref.UI_FOLDER_URI, null );
 		if( ! TextUtils.isEmpty( sv ) ){
-			DocumentFile folder = DocumentFile.fromTreeUri( activity, Uri.parse( sv ) );
+			DocumentFile folder;
+			folder = DocumentFile.fromTreeUri( activity, Uri.parse( sv ) );
 			if( folder != null ){
 				if( folder.exists() && folder.canWrite() ){
 					folder_uri = sv;
@@ -184,7 +178,5 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		if( folder_uri == null ){
 			tvFolder.setText( R.string.not_selected );
 		}
-
-		return folder_uri;
 	}
 }

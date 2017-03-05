@@ -9,220 +9,229 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:scrollbarStyle="outsideOverlay"
     >
 
-    <TableLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:stretchColumns="1"
+        android:orientation="vertical"
         >
 
-        <TableRow>
 
-            <TextView
-                android:layout_marginEnd="8dp"
-                android:labelFor="@+id/etURL"
-                android:text="@string/flashair_url"
-
-                />
-
-            <EditText
-                android:id="@+id/etURL"
-                android:layout_span="2"
-
-                android:inputType="textUri"
-                />
-
-            <Button
-                android:id="@+id/btnFlashAirURLHelp"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_marginStart="8dp"
-                android:minWidth="32dp"
-                android:text="@string/question"
-                />
-
-        </TableRow>
-
-        <TableRow android:layout_marginTop="8dp">
-
-            <TextView
-
-                android:layout_marginEnd="8dp"
-                android:text="@string/local_folder"
-                />
-
-
-            <TextView
-                android:id="@+id/tvFolder"
-                android:ellipsize="start"
-                />
-
-            <Button
-                android:id="@+id/btnFolderPicker"
-                android:minWidth="32dp"
-                android:text="@string/dotdotdot"
-                />
-
-            <Button
-                android:id="@+id/btnFolderPickerHelp"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_marginStart="8dp"
-                android:minWidth="32dp"
-                android:text="@string/question"
-                />
-
-        </TableRow>
-
-        <TableRow
-            android:layout_marginTop="8dp"
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stretchColumns="1"
+            android:shrinkColumns="0,1"
             >
 
-            <TextView
-                android:layout_marginEnd="8dp"
-                android:labelFor="@+id/etFileType"
-                android:text="@string/file_type_caption"
-                />
+            <TableRow android:layout_marginTop="8dp">
+
+                <TextView
+                    android:layout_marginEnd="8dp"
+                    android:labelFor="@+id/etURL"
+                    android:text="@string/flashair_url"
+
+                    />
+
+                <EditText
+                    android:id="@+id/etURL"
+                    android:layout_span="2"
+
+                    android:inputType="textUri"
+                    />
+
+                <Button
+                    android:id="@+id/btnFlashAirURLHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
+
+            </TableRow>
+
+            <TableRow android:layout_marginTop="8dp">
+
+                <TextView
+
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/local_folder"
+                    />
 
 
-            <EditText
-                android:id="@+id/etFileType"
-                android:layout_span="2"
+                <TextView
+                    android:id="@+id/tvFolder"
+                    android:ellipsize="start"
+                    />
 
-                android:inputType="text"
+                <Button
+                    android:id="@+id/btnFolderPicker"
+                    android:minWidth="32dp"
+                    android:text="@string/dotdotdot"
+                    />
 
-                />
+                <Button
+                    android:id="@+id/btnFolderPickerHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
 
-            <Button
-                android:id="@+id/btnFileTypeHelp"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_marginStart="8dp"
-                android:minWidth="32dp"
-                android:text="@string/question"
-                />
-        </TableRow>
+            </TableRow>
 
-        <TableRow
-            android:layout_marginTop="8dp"
-            >
+            <TableRow
+                android:layout_marginTop="8dp"
+                >
 
-
-            <TextView
-                android:layout_marginEnd="8dp"
-                android:labelFor="@+id/etInterval"
-                android:text="@string/repeat_interval"
-
-                />
-
-
-            <EditText
-                android:id="@+id/etInterval"
-                android:layout_span="2"
-
-                android:inputType="number"
-                />
-
-            <Button
-                android:id="@+id/btnIntervalHelp"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_marginStart="8dp"
-                android:minWidth="32dp"
-                android:text="@string/question"
-                />
-        </TableRow>
+                <TextView
+                    android:layout_marginEnd="8dp"
+                    android:labelFor="@+id/etFileType"
+                    android:text="@string/file_type_caption"
+                    />
 
 
-        <TableRow
-            android:layout_marginTop="8dp"
-            >
+                <EditText
+                    android:id="@+id/etFileType"
+                    android:layout_span="2"
 
-            <TextView
-                android:layout_marginEnd="8dp"
-                android:text="@string/location_mode"
-                />
+                    android:inputType="text"
 
+                    />
 
-            <Spinner
-                android:id="@+id/spLocaitonMode"
-                android:layout_span="2"
-                />
+                <Button
+                    android:id="@+id/btnFileTypeHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
+            </TableRow>
 
-            <Button
-                android:id="@+id/btnLocationModeHelp"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_marginStart="8dp"
-                android:minWidth="32dp"
-                android:text="@string/question"
-                />
-        </TableRow>
-
-        <TableRow
-            android:layout_marginTop="8dp"
-            >
-
-            <TextView
-
-                android:layout_marginEnd="8dp"
-                android:labelFor="@+id/etLocationIntervalDesired"
-                android:text="@string/location_interval_desired"
-                />
+            <TableRow
+                android:layout_marginTop="8dp"
+                >
 
 
-            <EditText
-                android:id="@+id/etLocationIntervalDesired"
-                android:layout_span="2"
+                <TextView
+                    android:layout_marginEnd="8dp"
+                    android:labelFor="@+id/etInterval"
+                    android:text="@string/repeat_interval"
 
-                android:inputType="number"
-
-                />
-
-            <Button
-                android:id="@+id/btnLocationIntervalDesiredHelp"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_marginStart="8dp"
-                android:minWidth="32dp"
-                android:text="@string/question"
-                />
-        </TableRow>
-
-        <TableRow
-            android:layout_marginTop="8dp"
-            >
-
-            <TextView
-
-                android:layout_marginEnd="8dp"
-                android:labelFor="@+id/etFileType"
-                android:text="@string/location_interval_min"
-                />
+                    />
 
 
-            <EditText
-                android:id="@+id/etLocationIntervalMin"
-                android:layout_span="2"
+                <EditText
+                    android:id="@+id/etInterval"
+                    android:layout_span="2"
 
-                android:inputType="number"
+                    android:inputType="number"
+                    />
 
-                />
+                <Button
+                    android:id="@+id/btnIntervalHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
+            </TableRow>
 
-            <Button
-                android:id="@+id/btnLocationIntervalMinHelp"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_marginStart="8dp"
-                android:minWidth="32dp"
-                android:text="@string/question"
-                />
-        </TableRow>
 
-        <TableRow             android:layout_marginTop="20dp"
-            >
+            <TableRow
+                android:layout_marginTop="8dp"
+                >
 
-            <Button
-                android:id="@+id/btnOSSLicence"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_span="4"
-                android:layout_column="0"
-                android:text="@string/oss_license_info"
-                />
-        </TableRow>
-    </TableLayout>
+                <TextView
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/location_mode"
+                    />
+
+
+                <Spinner
+                    android:id="@+id/spLocationMode"
+                    android:layout_span="2"
+                    />
+
+                <Button
+                    android:id="@+id/btnLocationModeHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
+            </TableRow>
+
+            <TableRow
+                android:layout_marginTop="8dp"
+                >
+
+                <TextView
+
+                    android:layout_marginEnd="8dp"
+                    android:labelFor="@+id/etLocationIntervalDesired"
+                    android:text="@string/location_interval_desired"
+                    />
+
+
+                <EditText
+                    android:id="@+id/etLocationIntervalDesired"
+                    android:layout_span="2"
+
+                    android:inputType="number"
+
+                    />
+
+                <Button
+                    android:id="@+id/btnLocationIntervalDesiredHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
+            </TableRow>
+
+            <TableRow
+                android:layout_marginTop="8dp"
+                >
+
+                <TextView
+
+                    android:layout_marginEnd="8dp"
+                    android:labelFor="@+id/etLocationIntervalMin"
+                    android:text="@string/location_interval_min"
+                    />
+
+
+                <EditText
+                    android:id="@+id/etLocationIntervalMin"
+                    android:layout_span="2"
+
+                    android:inputType="number"
+
+                    />
+
+                <Button
+                    android:id="@+id/btnLocationIntervalMinHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
+            </TableRow>
+
+        </TableLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:text="@string/setting_desc"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="20dp"
+            />
+    </LinearLayout>
 </ScrollView>
