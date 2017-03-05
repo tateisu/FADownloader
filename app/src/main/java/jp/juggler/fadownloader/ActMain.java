@@ -7,11 +7,13 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.provider.DocumentFile;
 import android.support.v4.view.ViewPager;
@@ -25,6 +27,17 @@ import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
@@ -35,6 +48,7 @@ public class ActMain
 
 	static final int REQUEST_CODE_PERMISSION = 1;
 	static final int REQUEST_CODE_DOCUMENT = 2;
+	static final int REQUEST_CHECK_SETTINGS = 3;
 
 	TextView tvStatus;
 
@@ -47,15 +61,15 @@ public class ActMain
 		switch( view.getId() ){
 
 		case R.id.btnOnce:
-			download_start( false );
+			download_start_button( false );
 			break;
 
 		case R.id.btnRepeat:
-			download_start( true );
+			download_start_button( true );
 			break;
 
 		case R.id.btnStop:
-			download_stop();
+			download_stop_button();
 			break;
 
 		case R.id.btnModeHelp:
@@ -97,11 +111,19 @@ public class ActMain
 		Page1 page = pager_adapter.getPage( 1 );
 		if( page != null ) page.onStart();
 
+		mGoogleApiClient.connect();
+
 		proc_status.run();
+
 	}
 
 	@Override protected void onStop(){
 		is_start = false;
+
+		if( mGoogleApiClient.isConnected() ){
+			mGoogleApiClient.disconnect();
+		}
+
 		handler.removeCallbacks( proc_status );
 		Page1 page = pager_adapter.getPage( 1 );
 		if( page != null ) page.onStop();
@@ -156,6 +178,12 @@ public class ActMain
 		pager_adapter.addPage( getString( R.string.setting ), R.layout.page0, Page0.class );
 		pager_adapter.addPage( getString( R.string.log ), R.layout.page1, Page1.class );
 		pager.setAdapter( pager_adapter );
+
+		mGoogleApiClient = new GoogleApiClient.Builder(this)
+			.addConnectionCallbacks(connection_callback)
+			.addOnConnectionFailedListener(connection_fail_callback)
+			.addApi(LocationServices.API)
+			.build();
 	}
 
 	/////////////////////////////////////////////////////////////////////////
@@ -202,13 +230,14 @@ public class ActMain
 				.create();
 			dialog.show();
 			permission_alert = new WeakReference<>( dialog );
+
 		}
 	}
 
 	////////////////////////////////////////////////////////////
 
 	// 転送サービスを停止
-	private void download_stop(){
+	private void download_stop_button(){
 		Pref.pref( this ).edit()
 			.putInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP )
 			.putLong( Pref.LAST_MODE_UPDATE, System.currentTimeMillis() )
@@ -226,7 +255,7 @@ public class ActMain
 	}
 
 	// 転送サービスを開始
-	void download_start( boolean repeat ){
+	void download_start_button( boolean repeat ){
 
 		// UIフォームの値を設定に保存
 		Page0 page = pager_adapter.getPage( 0 );
@@ -234,10 +263,78 @@ public class ActMain
 			page.ui_value_save();
 		}
 
-		// 設定から値を読んでバリデーション
+		//repeat引数の値は、LocationSettingの確認が終わるまで覚えておく必要がある
+		Pref.pref( this ).edit().putBoolean( Pref.UI_REPEAT, repeat ).apply();
+
+// TODO 位置情報を使わないオプションの時はLocationSettingをチェックしない
+		if( mGoogleApiClient.isConnected() ){
+			startLocationSettingCheck();
+		}else{
+			Toast.makeText( this, getString( R.string.google_api_not_connected ), Toast.LENGTH_SHORT ).show();
+		}
+	}
+
+	protected LocationSettingsRequest mLocationSettingsRequest;
+
+	void startLocationSettingCheck(){
+		long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
+		long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = UPDATE_INTERVAL_IN_MILLISECONDS / 2;
+
+		LocationRequest mLocationRequest = new LocationRequest();
+		mLocationRequest.setInterval( UPDATE_INTERVAL_IN_MILLISECONDS );
+		mLocationRequest.setFastestInterval( FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS );
+		mLocationRequest.setPriority( LocationRequest.PRIORITY_HIGH_ACCURACY );
+
+		LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+		builder.addLocationRequest( mLocationRequest );
+		mLocationSettingsRequest = builder.build();
+
+		PendingResult<LocationSettingsResult> result =
+			LocationServices.SettingsApi.checkLocationSettings(
+				mGoogleApiClient,
+				mLocationSettingsRequest
+			);
+		result.setResultCallback( location_setting_callback );
+	}
+
+	final ResultCallback<LocationSettingsResult> location_setting_callback = new ResultCallback<LocationSettingsResult>(){
+		@Override public void onResult( @NonNull LocationSettingsResult locationSettingsResult ){
+			Status status = locationSettingsResult.getStatus();
+			if( status == null ) return;
+			int status_code = status.getStatusCode();
+			switch( status_code ){
+			case LocationSettingsStatusCodes.SUCCESS:
+				startDownloadService();
+				break;
+			case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+				try{
+					// Show the dialog by calling startResolutionForResult(), and check the result
+					// in onActivityResult().
+					status.startResolutionForResult( ActMain.this, REQUEST_CHECK_SETTINGS );
+				}catch( IntentSender.SendIntentException ex ){
+					ex.printStackTrace();
+					Toast.makeText( ActMain.this, getString( R.string.resolution_request_failed ), Toast.LENGTH_LONG ).show();
+				}
+				break;
+			case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+				Toast.makeText( ActMain.this, getString( R.string.location_setting_change_unavailable ), Toast.LENGTH_LONG ).show();
+				break;
+			default:
+				Toast.makeText( ActMain.this, getString( R.string.location_setting_returns_unknown_status, status_code ), Toast.LENGTH_LONG ).show();
+				break;
+
+			}
+		}
+	};
+
+	void startDownloadService(){
 		SharedPreferences pref = Pref.pref( this );
 		String sv;
 
+		// LocationSettingを確認する前のepeat引数の値を思い出す
+		boolean repeat = pref.getBoolean( Pref.UI_REPEAT, false );
+
+		// 設定から値を読んでバリデーション
 		String flashair_url = pref.getString( Pref.UI_FLASHAIR_URL, "" ).trim();
 		if( TextUtils.isEmpty( flashair_url ) ){
 			Toast.makeText( this, getString( R.string.url_not_ok ), Toast.LENGTH_SHORT ).show();
@@ -277,8 +374,41 @@ public class ActMain
 			return;
 		}
 
+		int location_mode = pref.getInt(Pref.UI_LOCATION_MODE,-1);
+		if( location_mode < 0 || location_mode > LocationTracker.LOCATION_HIGH_ACCURACY){
+			Toast.makeText( this, getString( R.string.location_mode_invalid ), Toast.LENGTH_SHORT ).show();
+			return;
+		}
+
+		long location_update_interval_desired = LocationTracker.DEFAULT_INTERVAL_DESIRED;
+		long location_update_interval_min = LocationTracker.DEFAULT_INTERVAL_MIN;
+
+		if( location_mode != LocationTracker.NO_LOCATION_UPDATE){
+			try{
+				location_update_interval_desired = 1000L * Long.parseLong(
+					pref.getString( Pref.UI_LOCATION_INTERVAL_DESIRED, "" ).trim(), 10 );
+			}catch( Throwable ex ){
+				location_update_interval_desired = - 1L;
+			}
+			if( repeat && location_update_interval_desired < 1000L ){
+				Toast.makeText( this, getString( R.string.location_update_interval_not_ok ), Toast.LENGTH_SHORT ).show();
+				return;
+			}
+
+			try{
+				location_update_interval_min = 1000L * Long.parseLong(
+					pref.getString( Pref.UI_LOCATION_INTERVAL_MIN, "" ).trim(), 10 );
+			}catch( Throwable ex ){
+				location_update_interval_min = - 1L;
+			}
+			if( repeat && location_update_interval_min < 1000L ){
+				Toast.makeText( this, getString( R.string.location_update_interval_not_ok ), Toast.LENGTH_SHORT ).show();
+				return;
+			}
+		}
+
 		// 最後に押したボタンを覚えておく
-		Pref.pref( this ).edit()
+		pref.edit()
 			.putInt( Pref.LAST_MODE, repeat ? Pref.LAST_MODE_REPEAT : Pref.LAST_MODE_ONCE )
 			.putLong( Pref.LAST_MODE_UPDATE, System.currentTimeMillis() )
 			.apply();
@@ -291,6 +421,11 @@ public class ActMain
 		intent.putExtra( DownloadService.EXTRA_FOLDER_URI, folder_uri );
 		intent.putExtra( DownloadService.EXTRA_INTERVAL, interval );
 		intent.putExtra( DownloadService.EXTRA_FILE_TYPE, file_type );
+
+		intent.putExtra( DownloadService.EXTRA_LOCATION_INTERVAL_DESIRED, location_update_interval_desired );
+		intent.putExtra( DownloadService.EXTRA_LOCATION_INTERVAL_MIN, location_update_interval_min );
+		intent.putExtra( DownloadService.EXTRA_LOCATION_MODE, location_mode );
+
 		startService( intent );
 	}
 
@@ -299,7 +434,7 @@ public class ActMain
 			handler.removeCallbacks( proc_status );
 			handler.postDelayed( proc_status, 1000L );
 
-			String status = DownloadService.getStatusForActivity(ActMain.this);
+			String status = DownloadService.getStatusForActivity( ActMain.this );
 			tvStatus.setText( status );
 		}
 	};
@@ -317,4 +452,24 @@ public class ActMain
 			}
 		} );
 	}
+
+	GoogleApiClient mGoogleApiClient;
+
+	final GoogleApiClient.OnConnectionFailedListener connection_fail_callback = new GoogleApiClient.OnConnectionFailedListener(){
+		@Override public void onConnectionFailed( @NonNull ConnectionResult connectionResult ){
+			String msg = getString(R.string.play_service_connection_failed,connectionResult.getErrorCode(),connectionResult.getErrorMessage());
+			Toast.makeText( ActMain.this,msg, Toast.LENGTH_SHORT ).show();
+		}
+	};
+	final GoogleApiClient.ConnectionCallbacks connection_callback = new GoogleApiClient.ConnectionCallbacks(){
+		@Override public void onConnected( @Nullable Bundle bundle ){
+			permission_request();
+		}
+		// Playサービスとの接続が失われた
+		@Override public void onConnectionSuspended( int i ){
+			Toast.makeText( ActMain.this, getString( R.string.play_service_connection_suspended,i ), Toast.LENGTH_SHORT ).show();
+			mGoogleApiClient.connect();
+		}
+	};
+
 }

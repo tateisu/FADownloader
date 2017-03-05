@@ -11,12 +11,19 @@ import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.wifi.WifiManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.WakefulBroadcastReceiver;
+import android.widget.Toast;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 
 public class DownloadService extends Service{
 
@@ -30,6 +37,9 @@ public class DownloadService extends Service{
 	static final String EXTRA_FOLDER_URI = "folder_uri";
 	static final String EXTRA_INTERVAL = "interval";
 	static final String EXTRA_FILE_TYPE = "file_type";
+	static final String EXTRA_LOCATION_INTERVAL_DESIRED = "location_interval_desired";
+	static final String EXTRA_LOCATION_INTERVAL_MIN = "location_interval_min";
+	static final String EXTRA_LOCATION_MODE = "location_mode";
 
 	static final int NOTIFICATION_ID_SERVICE = 1;
 
@@ -64,6 +74,8 @@ public class DownloadService extends Service{
 	WifiManager.WifiLock wifi_lock;
 	Handler handler;
 
+	LocationTracker location_tracker;
+
 	@Override public void onCreate(){
 		super.onCreate();
 
@@ -87,11 +99,27 @@ public class DownloadService extends Service{
 		registerReceiver( receiver, new IntentFilter( ConnectivityManager.CONNECTIVITY_ACTION ) );
 
 		setServiceNotification(getString(R.string.service_idle));
+
+
+		mGoogleApiClient = new GoogleApiClient.Builder(this)
+			.addConnectionCallbacks(connection_callback)
+			.addOnConnectionFailedListener(connection_fail_callback)
+			.addApi( LocationServices.API)
+			.build();
+		mGoogleApiClient.connect();
+
+		location_tracker = new LocationTracker(log,mGoogleApiClient);
 	}
 
 	@Override public void onDestroy(){
 
 		is_alive = false;
+
+		location_tracker.dispose();
+
+		if( mGoogleApiClient.isConnected() ){
+			mGoogleApiClient.disconnect();
+		}
 
 		if( worker != null && worker.isAlive() ){
 			worker.cancel( getString(R.string.service_end));
@@ -164,6 +192,7 @@ public class DownloadService extends Service{
 					Pref.pref( this ).edit()
 						.remove( Pref.LAST_START )
 						.remove( Pref.LAST_SCAN_COMPLETE )
+						.remove( Pref.FLASHAIR_UPDATE_STATUS_OLD )
 						.apply();
 					worker = new DownloadWorker( this, intent, worker_callback );
 					worker.start();
@@ -234,7 +263,7 @@ public class DownloadService extends Service{
 			}
 		}
 
-		@Override public void onThreadStart(){
+		@Override public void onThreadStart(final LocationTracker.Setting location_setting){
 			setServiceNotification(getString(R.string.thread_running ));
 		}
 
@@ -250,7 +279,7 @@ public class DownloadService extends Service{
 		}
 
 		@Override public Location getLocation(){
-			return null;
+			return location_tracker.getLocation();
 		}
 
 	};
@@ -296,4 +325,28 @@ public class DownloadService extends Service{
 		startForeground( NOTIFICATION_ID_SERVICE, builder.build() );
 	}
 
+	GoogleApiClient mGoogleApiClient;
+
+	final GoogleApiClient.OnConnectionFailedListener connection_fail_callback = new GoogleApiClient.OnConnectionFailedListener(){
+		@Override public void onConnectionFailed( @NonNull ConnectionResult connectionResult ){
+			log.w(R.string.play_service_connection_failed,connectionResult.getErrorCode(),connectionResult.getErrorMessage());
+
+			location_tracker.onGoogleAPIDisconnected();
+		}
+	};
+	final GoogleApiClient.ConnectionCallbacks connection_callback = new GoogleApiClient.ConnectionCallbacks(){
+		@Override public void onConnected( @Nullable Bundle bundle ){
+			if(!is_alive) return;
+			// TODO
+			location_tracker.onGoogleAPIConnected();
+		}
+		// Playサービスとの接続が失われた
+		@Override public void onConnectionSuspended( int i ){
+			if(!is_alive) return;
+
+			log.w( R.string.play_service_connection_suspended,i );
+			mGoogleApiClient.connect();
+			location_tracker.onGoogleAPIDisconnected();
+		}
+	};
 }

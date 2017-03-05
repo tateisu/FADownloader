@@ -12,9 +12,7 @@ import android.os.Build;
 import android.os.SystemClock;
 import android.support.v4.provider.DocumentFile;
 
-import it.sephiroth.android.library.exif2.ExifData;
 import it.sephiroth.android.library.exif2.ExifInterface;
-import it.sephiroth.android.library.exif2.ExifTag;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -34,7 +32,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 		void acquireWakeLock();
 
-		void onThreadStart();
+		void onThreadStart(LocationTracker.Setting location_setting);
 
 		void onThreadEnd( boolean allow_stop_service );
 
@@ -51,6 +49,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 	final String file_type;
 	final LogWriter log;
 	final ArrayList<Pattern> file_type_list;
+	final LocationTracker.Setting location_setting;
 
 	public DownloadWorker( DownloadService service, Intent intent, Callback callback ){
 		this.service = service;
@@ -64,15 +63,25 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		this.interval = intent.getIntExtra( DownloadService.EXTRA_INTERVAL, 86400 );
 		this.file_type = intent.getStringExtra( DownloadService.EXTRA_FILE_TYPE );
 
+		location_setting = new LocationTracker.Setting();
+		location_setting.interval_desired = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_DESIRED ,LocationTracker.DEFAULT_INTERVAL_DESIRED);
+		location_setting.interval_min = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_MIN ,LocationTracker.DEFAULT_INTERVAL_MIN);
+		location_setting.mode = intent.getIntExtra( DownloadService.EXTRA_LOCATION_MODE ,LocationTracker.DEFAULT_MODE);
+
 		Pref.pref( service ).edit()
 			.putBoolean( Pref.WORKER_REPEAT, repeat )
 			.putString( Pref.WORKER_FLASHAIR_URL, flashair_url )
 			.putString( Pref.WORKER_FOLDER_URI, folder_uri )
 			.putInt( Pref.WORKER_INTERVAL, interval )
 			.putString( Pref.WORKER_FILE_TYPE, file_type )
+			.putLong( Pref.WORKER_LOCATION_INTERVAL_DESIRED, location_setting.interval_desired )
+			.putLong( Pref.WORKER_LOCATION_INTERVAL_MIN, location_setting.interval_min  )
+			.putInt( Pref.WORKER_LOCATION_MODE, location_setting.mode )
 			.apply();
 
 		file_type_list = file_type_parse();
+
+		service.location_tracker.updateSetting(location_setting);
 	}
 
 	public DownloadWorker( DownloadService service, Callback callback ){
@@ -88,17 +97,21 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		this.interval = pref.getInt( Pref.WORKER_INTERVAL, 86400 );
 		this.file_type = pref.getString( Pref.WORKER_FILE_TYPE, null );
 
+		location_setting = new LocationTracker.Setting();
+		location_setting.interval_desired = pref.getLong(Pref.WORKER_LOCATION_INTERVAL_DESIRED ,LocationTracker.DEFAULT_INTERVAL_DESIRED);
+		location_setting.interval_min = pref.getLong(Pref.WORKER_LOCATION_INTERVAL_MIN,LocationTracker.DEFAULT_INTERVAL_MIN);
+		location_setting.mode = pref.getInt(Pref.WORKER_LOCATION_MODE ,LocationTracker.DEFAULT_MODE);
+
 		file_type_list = file_type_parse();
+
+		service.location_tracker.updateSetting(location_setting);
+
 	}
 
 	final AtomicReference<String> status = new AtomicReference<>( "?" );
 
 	public String getStatus(){
 		return status.get();
-	}
-
-	static class AlreadyGeolocationPresentedException extends Throwable{
-
 	}
 
 	Pattern reJPEG = Pattern.compile( "\\.jp(g|eg?)\\z", Pattern.CASE_INSENSITIVE );
@@ -264,7 +277,9 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		status.set( service.getString( R.string.thread_start ) );
 
 		boolean allow_stop_service = false;
-		callback.onThreadStart();
+
+
+		callback.onThreadStart(location_setting);
 
 		while( ! isCancelled() ){
 			status.set( service.getString( R.string.initializing ) );
@@ -563,7 +578,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		try{
 			FilePathX tmp_path = new FilePathX();
 			tmp_path.parent = file.parent;
-			tmp_path.name = file.name + ".tmp." + currentThread().getId() + "." + android.os.Process.myPid();
+			tmp_path.name =  "tmp-" + currentThread().getId() + "-" + android.os.Process.myPid()  + "-" +file.name;
 
 			DocumentFile tmp_file = tmp_path.prepareFile( log );
 			if( tmp_file != null ){
@@ -607,6 +622,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 					}
 				}
 
+
+
 				if( bModifyFailed ){
 					try{
 						tmp_file.delete();
@@ -615,11 +632,20 @@ public class DownloadWorker extends Thread implements CancelChecker{
 					}
 				}else{
 					try{
-						if( ! file.document_file.delete() ){
-							log.e( "EXIF追加後のファイル操作に失敗" );
-						}else if( ! tmp_file.renameTo( file.name ) ){
-							log.e( "EXIF追加後のファイル操作に失敗" );
+						// 更新後の方がファイルが小さいことがあるのか？
+						if(tmp_file.length() < file.document_file.length() ){
+							log.e("EXIF付与したファイルの方が小さい!付与前後のファイルを残しておく");
+							// この場合両方のファイルを残しておく
+						}else{
+							if( ! file.document_file.delete() ){
+								log.e( "EXIF追加後のファイル操作に失敗" );
+							}else if( ! tmp_file.renameTo( file.name ) ){
+								log.e( "EXIF追加後のファイル操作に失敗" );
+							}else{
+								log.i("%s に位置情報を付与しました",file.name );
+							}
 						}
+
 					}catch( Throwable ex ){
 						log.e( "EXIF追加後のファイル操作に失敗. %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
 					}

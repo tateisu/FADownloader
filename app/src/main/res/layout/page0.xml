@@ -4,16 +4,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:clipToPadding="false"
     >
-
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingBottom="@dimen/activity_vertical_margin"
-        android:paddingLeft="@dimen/activity_horizontal_margin"
-        android:paddingRight="@dimen/activity_horizontal_margin"
-        android:paddingTop="@dimen/activity_vertical_margin"
-        >
 
         <TableLayout
             android:layout_width="match_parent"
@@ -21,12 +17,9 @@
             android:stretchColumns="1"
             >
 
-            <TableRow
-                >
+            <TableRow>
 
                 <TextView
-                    android:id="@+id/tvURLCaption"
-
                     android:layout_marginEnd="8dp"
                     android:labelFor="@+id/etURL"
                     android:text="@string/flashair_url"
@@ -50,12 +43,9 @@
 
             </TableRow>
 
-            <TableRow
-                android:layout_marginTop="8dp"
-                >
+            <TableRow android:layout_marginTop="8dp" >
 
                 <TextView
-                    android:id="@+id/tvFolderCaption"
 
                     android:layout_marginEnd="8dp"
                     android:text="@string/local_folder"
@@ -64,7 +54,6 @@
 
                 <TextView
                     android:id="@+id/tvFolder"
-
                     android:ellipsize="start"
                     />
 
@@ -83,6 +72,33 @@
                     />
 
             </TableRow>
+            <TableRow
+                android:layout_marginTop="8dp"
+                >
+
+                <TextView
+                    android:layout_marginEnd="8dp"
+                    android:labelFor="@+id/etFileType"
+                    android:text="@string/file_type_caption"
+                    />
+
+
+                <EditText
+                    android:id="@+id/etFileType"
+                    android:layout_span="2"
+
+                    android:inputType="text"
+
+                    />
+
+                <Button
+                    android:id="@+id/btnFileTypeHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
+            </TableRow>
 
             <TableRow
                 android:layout_marginTop="8dp"
@@ -90,8 +106,6 @@
 
 
                 <TextView
-                    android:id="@+id/tvIntervalCaption"
-
                     android:layout_marginEnd="8dp"
                     android:labelFor="@+id/etInterval"
                     android:text="@string/repeat_interval"
@@ -115,29 +129,80 @@
                     />
             </TableRow>
 
+
             <TableRow
                 android:layout_marginTop="8dp"
                 >
 
                 <TextView
-                    android:id="@+id/tvFileTypeCaption"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/location_mode"
+                    />
+
+
+                <Spinner
+                    android:id="@+id/spLocaitonMode"
+                    android:layout_span="2"
+                    />
+
+                <Button
+                    android:id="@+id/btnLocationModeHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
+            </TableRow>
+            <TableRow
+                android:layout_marginTop="8dp"
+                >
+
+                <TextView
 
                     android:layout_marginEnd="8dp"
-                    android:labelFor="@+id/etFileType"
-                    android:text="@string/file_type_caption"
+                    android:labelFor="@+id/etLocationIntervalDesired"
+                    android:text="@string/location_interval_desired"
                     />
 
 
                 <EditText
-                    android:id="@+id/etFileType"
+                    android:id="@+id/etLocationIntervalDesired"
                     android:layout_span="2"
 
-                    android:inputType="text"
+                    android:inputType="number"
 
                     />
 
                 <Button
-                    android:id="@+id/btnFileTypeHelp"
+                    android:id="@+id/btnLocationIntervalDesiredHelp"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="32dp"
+                    android:text="@string/question"
+                    />
+            </TableRow>
+            <TableRow
+                android:layout_marginTop="8dp"
+                >
+
+                <TextView
+
+                    android:layout_marginEnd="8dp"
+                    android:labelFor="@+id/etFileType"
+                    android:text="@string/location_interval_min"
+                    />
+
+
+                <EditText
+                    android:id="@+id/etLocationIntervalMin"
+                    android:layout_span="2"
+
+                    android:inputType="number"
+
+                    />
+
+                <Button
+                    android:id="@+id/btnLocationIntervalMinHelp"
                     style="?android:attr/buttonBarButtonStyle"
                     android:layout_marginStart="8dp"
                     android:minWidth="32dp"
@@ -145,5 +210,4 @@
                     />
             </TableRow>
         </TableLayout>
-    </FrameLayout>
 </ScrollView>

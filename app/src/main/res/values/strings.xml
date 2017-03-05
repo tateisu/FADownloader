@@ -72,11 +72,39 @@
     <string name="flashair_not_updated">FlashAir is not updated.</string>
     <string name="file_scan_completed">file scan completed.</string>
     <string name="repeat_off">not repeat</string>
-    <string name="progress_folder">FOLDER %s</string>
+    <string name="progress_folder">FOLDER %1$s</string>
     <string name="folder_list_failed">file listing failed. %1$s %2$s %3$s</string>
-    <string name="progress_file">FILE %s</string>
-    <string name="download_file">DOWNLOADING: %s</string>
+    <string name="progress_file">FILE %1$s</string>
+    <string name="download_file">DOWNLOADING: %1$s</string>
     <string name="thread_end">thread stopped</string>
     <string name="flashair_update_status_error">FlashAir update status data error</string>
-    <string name="exif_update">EXIF update: %s</string>
+    <string name="exif_update">EXIF update: %1$s</string>
+    <string name="google_api_not_connected">google api not connected</string>
+    <string name="resolution_request_failed">resolution request failed.</string>
+    <string name="location_setting_change_unavailable">location setting change unavailable</string>
+    <string name="location_setting_returns_unknown_status">location setting returns unknown status %1$d</string>
+    <string name="play_service_connection_failed">play service connection failed (%1$d)%2$s</string>
+    <string name="play_service_connection_suspended">play service connection suspended(%1$d)</string>
+    <string name="get_last_location_failed">getLastLocation() failed. %1$s %2$s</string>
+    <string name="location_update_request_failed">location update request failed %1$s %2$s</string>
+    <string name="location_update_request_result">location update request result: %1$s %2$s</string>
+    <string name="location_mode">GeoTagging Mode</string>
+    <string name="location_interval_desired">location update interval(desired)</string>
+    <string name="location_interval_min">location update interval(min)</string>
+    <string name="help_location_mode">GeoTagging Modeを設定すると、スマホから位置情報を取得してJPEGファイルのEXIF情報に位置データを付与シます。位置精度が高いモードほどバッテリー消費が大きいことに注意してください。</string>
+    <string name="help_location_interval_min">location interval min には位置情報を更新する時間間隔の最低値を秒数で指定します。少ない数字ほど位置情報の精度は良くなりますが、バッテリー消費も大きくなります。</string>
+    <string name="help_location_interval_desired">location interval desired には位置情報を更新する時間間隔の希望値を秒数で指定します。端末やPlayサービスにより調整が行われるため、希望通りの時間間隔になるとは限りません。短い方が位置情報の精度は良くなりますが、バッテリー消費は大きくなります。</string>
+
+
+    <string name="location_mode_0">OFF</string>
+    <string name="location_mode_1">電力消費最低</string>
+    <string name="location_mode_2">電力消費低</string>
+    <string name="location_mode_3">バランス</string>
+    <string name="location_mode_4">高精度</string>
+    <string name="location_mode_invalid">invalid GeoTagging Mode</string>
+    <string name="location_update_interval_not_ok">location update interval not OK</string>
+    <string name="location_changed">location changed. location.time=%1$s</string>
+    <string name="location_last_known">location last known. location.time=%1$s</string>
+    <string name="location_update_start">location update start.</string>
+
 </resources>

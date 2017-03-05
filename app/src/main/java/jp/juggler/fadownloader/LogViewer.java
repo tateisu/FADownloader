@@ -81,8 +81,7 @@ public class LogViewer implements LoaderManager.LoaderCallbacks<Cursor>{
 		int colidx_message;
 		int colidx_level;
 
-		GregorianCalendar calendar = new GregorianCalendar( 1, 1, 1 );
-		SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss.SSS z", Locale.JAPAN );
+		SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss.SSS z", Locale.getDefault(  ) );
 
 		public LogAdapter( Context context, Cursor c ){
 			super( context, c, false );
@@ -91,8 +90,6 @@ public class LogViewer implements LoaderManager.LoaderCallbacks<Cursor>{
 			colidx_message = c.getColumnIndex( LogData.COL_MESSAGE );
 			colidx_level = c.getColumnIndex( LogData.COL_LEVEL );
 
-			//
-			calendar.setTimeZone( TimeZone.getDefault() );
 		}
 
 		@Override public View newView( Context context, Cursor cursor, ViewGroup viewGroup ){
@@ -109,8 +106,7 @@ public class LogViewer implements LoaderManager.LoaderCallbacks<Cursor>{
 			long time = cursor.getLong( colidx_time );
 			String message = cursor.getString( colidx_message );
 			int level = cursor.getInt( colidx_level );
-			calendar.setTimeInMillis( time );
-			holder.tvTime.setText( date_fmt.format( calendar.getTime() ) );
+			holder.tvTime.setText( date_fmt.format(time ) );
 			holder.tvMessage.setText( message );
 
 			int fg;
