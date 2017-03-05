@@ -62,7 +62,7 @@
     <string name="folder_create_failed">folder create failed. %1$s %2$s</string>
     <string name="file_create_failed">file create failed. %1$s %2$s</string>
     <string name="thread_start">thread start</string>
-    <string name="initializing">initializeing…</string>
+    <string name="initializing">initializeing</string>
     <string name="wait_short">wait short time. remain=%1$s</string>
     <string name="wait_alarm">wait for alarm. remain=%1$s</string>
     <string name="wifi_check">Wi-Fi check</string>
@@ -89,7 +89,7 @@
     <string name="play_service_connection_suspended">play service connection suspended(%1$d)</string>
     <string name="get_last_location_failed" translatable="false">getLastLocation() failed. %1$s %2$s</string>
     <string name="location_update_request_failed">location update request failed %1$s %2$s</string>
-    <string name="location_update_request_result">location update request result: %1$s %2$s</string>
+    <string name="location_update_request_result">location update request failed: %1$d %2$s</string>
     <string name="location_mode">GeoTagging Mode</string>
     <string name="location_interval_desired">location update interval(desired)</string>
     <string name="location_interval_min">location update interval(min)</string>
@@ -114,5 +114,8 @@
     <string name="setting_desc">変更した設定はREPEAT/ONCEを押すと反映されます</string>
     <string name="remove_ad">remove ad</string>
     <string name="other">Other</string>
+    <string name="download_setting">download setting</string>
+    <string name="geotagging_setting">GeoTagging setting</string>
+    <string name="mode">mode</string>
 
 </resources>

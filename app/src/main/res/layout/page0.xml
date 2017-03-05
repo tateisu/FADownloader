@@ -18,220 +18,201 @@
         android:orientation="vertical"
         >
 
+        <TextView
+            style="@style/setting_row_label"
+            android:labelFor="@+id/etURL"
+            android:text="@string/flashair_url"
+            />
 
-        <TableLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:stretchColumns="1"
-            android:shrinkColumns="0,1"
-            >
+        <LinearLayout style="@style/setting_row_form">
 
-            <TableRow android:layout_marginTop="8dp">
+            <EditText
+                android:id="@+id/etURL"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:inputType="textUri"
+                />
 
-                <TextView
-                    android:layout_marginEnd="8dp"
-                    android:labelFor="@+id/etURL"
-                    android:text="@string/flashair_url"
+            <Button
+                android:id="@+id/btnFlashAirURLHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
 
-                    />
+        <View style="@style/setting_divider"/>
 
-                <EditText
-                    android:id="@+id/etURL"
-                    android:layout_span="2"
+        <TextView
+            style="@style/setting_row_label"
+            android:text="@string/local_folder"
+            />
 
-                    android:inputType="textUri"
-                    />
+        <LinearLayout style="@style/setting_row_form">
 
-                <Button
-                    android:id="@+id/btnFlashAirURLHelp"
-                    style="?android:attr/buttonBarButtonStyle"
-                    android:layout_marginStart="8dp"
-                    android:minWidth="32dp"
-                    android:text="@string/question"
-                    />
+            <TextView
+                android:id="@+id/tvFolder"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="start"
+                />
 
-            </TableRow>
+            <Button
+                android:id="@+id/btnFolderPicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="32dp"
+                android:text="@string/dotdotdot"
+                />
 
-            <TableRow android:layout_marginTop="8dp">
+            <Button
+                android:id="@+id/btnFolderPickerHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
 
-                <TextView
+        <View style="@style/setting_divider"/>
 
-                    android:layout_marginEnd="8dp"
-                    android:text="@string/local_folder"
-                    />
+        <TextView
+            style="@style/setting_row_label"
+            android:labelFor="@+id/etFileType"
+            android:text="@string/file_type_caption"
+            />
 
-
-                <TextView
-                    android:id="@+id/tvFolder"
-                    android:ellipsize="start"
-                    />
-
-                <Button
-                    android:id="@+id/btnFolderPicker"
-                    android:minWidth="32dp"
-                    android:text="@string/dotdotdot"
-                    />
-
-                <Button
-                    android:id="@+id/btnFolderPickerHelp"
-                    style="?android:attr/buttonBarButtonStyle"
-                    android:layout_marginStart="8dp"
-                    android:minWidth="32dp"
-                    android:text="@string/question"
-                    />
-
-            </TableRow>
-
-            <TableRow
-                android:layout_marginTop="8dp"
-                >
-
-                <TextView
-                    android:layout_marginEnd="8dp"
-                    android:labelFor="@+id/etFileType"
-                    android:text="@string/file_type_caption"
-                    />
+        <LinearLayout style="@style/setting_row_form">
 
 
-                <EditText
-                    android:id="@+id/etFileType"
-                    android:layout_span="2"
+            <EditText
+                android:id="@+id/etFileType"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
 
-                    android:inputType="text"
+                android:inputType="text"
 
-                    />
+                />
 
-                <Button
-                    android:id="@+id/btnFileTypeHelp"
-                    style="?android:attr/buttonBarButtonStyle"
-                    android:layout_marginStart="8dp"
-                    android:minWidth="32dp"
-                    android:text="@string/question"
-                    />
-            </TableRow>
+            <Button
+                android:id="@+id/btnFileTypeHelp"
+                style="@style/setting_row_help"
+                />
 
-            <TableRow
-                android:layout_marginTop="8dp"
-                >
+        </LinearLayout>
 
+        <View style="@style/setting_divider"/>
 
-                <TextView
-                    android:layout_marginEnd="8dp"
-                    android:labelFor="@+id/etInterval"
-                    android:text="@string/repeat_interval"
+        <TextView
+            style="@style/setting_row_label"
+            android:labelFor="@+id/etInterval"
+            android:text="@string/repeat_interval"
 
-                    />
+            />
 
+        <LinearLayout style="@style/setting_row_form">
 
-                <EditText
-                    android:id="@+id/etInterval"
-                    android:layout_span="2"
+            <EditText
+                android:id="@+id/etInterval"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
 
-                    android:inputType="number"
-                    />
+                android:inputType="number"
+                />
 
-                <Button
-                    android:id="@+id/btnIntervalHelp"
-                    style="?android:attr/buttonBarButtonStyle"
-                    android:layout_marginStart="8dp"
-                    android:minWidth="32dp"
-                    android:text="@string/question"
-                    />
-            </TableRow>
+            <Button
+                android:id="@+id/btnIntervalHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
 
+        <View style="@style/setting_divider"/>
 
-            <TableRow
-                android:layout_marginTop="8dp"
-                >
+        <TextView
+            style="@style/setting_row_label"
+            android:text="@string/location_mode"
+            />
 
-                <TextView
-                    android:layout_marginEnd="8dp"
-                    android:text="@string/location_mode"
-                    />
+        <LinearLayout style="@style/setting_row_form">
 
+            <Spinner
+                android:id="@+id/spLocationMode"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                />
 
-                <Spinner
-                    android:id="@+id/spLocationMode"
-                    android:layout_span="2"
-                    />
+            <Button
+                android:id="@+id/btnLocationModeHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
 
-                <Button
-                    android:id="@+id/btnLocationModeHelp"
-                    style="?android:attr/buttonBarButtonStyle"
-                    android:layout_marginStart="8dp"
-                    android:minWidth="32dp"
-                    android:text="@string/question"
-                    />
-            </TableRow>
-
-            <TableRow
-                android:layout_marginTop="8dp"
-                >
-
-                <TextView
-
-                    android:layout_marginEnd="8dp"
-                    android:labelFor="@+id/etLocationIntervalDesired"
-                    android:text="@string/location_interval_desired"
-                    />
+        <View style="@style/setting_divider"/>
 
 
-                <EditText
-                    android:id="@+id/etLocationIntervalDesired"
-                    android:layout_span="2"
+        <TextView
+            style="@style/setting_row_label"
+            android:labelFor="@+id/etLocationIntervalDesired"
+            android:text="@string/location_interval_desired"
+            />
 
-                    android:inputType="number"
+        <LinearLayout style="@style/setting_row_form">
 
-                    />
+            <EditText
+                android:id="@+id/etLocationIntervalDesired"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
 
-                <Button
-                    android:id="@+id/btnLocationIntervalDesiredHelp"
-                    style="?android:attr/buttonBarButtonStyle"
-                    android:layout_marginStart="8dp"
-                    android:minWidth="32dp"
-                    android:text="@string/question"
-                    />
-            </TableRow>
+                android:inputType="number"
 
-            <TableRow
-                android:layout_marginTop="8dp"
-                >
+                />
 
-                <TextView
+            <Button
+                android:id="@+id/btnLocationIntervalDesiredHelp"
+                style="@style/setting_row_help"
 
-                    android:layout_marginEnd="8dp"
-                    android:labelFor="@+id/etLocationIntervalMin"
-                    android:text="@string/location_interval_min"
-                    />
+                />
+        </LinearLayout>
 
+        <View style="@style/setting_divider"/>
 
-                <EditText
-                    android:id="@+id/etLocationIntervalMin"
-                    android:layout_span="2"
+        <TextView
 
-                    android:inputType="number"
+            style="@style/setting_row_label"
+            android:labelFor="@+id/etLocationIntervalMin"
+            android:text="@string/location_interval_min"
+            />
 
-                    />
+        <LinearLayout style="@style/setting_row_form">
 
-                <Button
-                    android:id="@+id/btnLocationIntervalMinHelp"
-                    style="?android:attr/buttonBarButtonStyle"
-                    android:layout_marginStart="8dp"
-                    android:minWidth="32dp"
-                    android:text="@string/question"
-                    />
-            </TableRow>
+            <EditText
+                android:id="@+id/etLocationIntervalMin"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
 
-        </TableLayout>
+                android:inputType="number"
+
+                />
+
+            <Button
+                android:id="@+id/btnLocationIntervalMinHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
+
+        <View style="@style/setting_divider"/>
+
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:layout_marginBottom="20dp"
+            android:layout_marginTop="20dp"
             android:gravity="center"
             android:text="@string/setting_desc"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="20dp"
             />
     </LinearLayout>
 </ScrollView>

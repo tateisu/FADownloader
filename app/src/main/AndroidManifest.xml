@@ -42,7 +42,8 @@
             android:name="jp.juggler.fadownloader.ActMain"
             android:icon="@drawable/ic_launcher"
             android:launchMode="singleTask"
-            android:windowSoftInputMode="stateAlwaysHidden"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
+            android:screenOrientation="sensorPortrait"
             >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

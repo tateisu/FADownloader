@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "694255757125",
+    "firebase_url": "https://fadownloader-a5167.firebaseio.com",
+    "project_id": "fadownloader-a5167",
+    "storage_bucket": "fadownloader-a5167.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694255757125:android:c7de29d7c6639aca",
+        "android_client_info": {
+          "package_name": "jp.juggler.fadownloader"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "694255757125-emlsgvh237g3sr13ia92r70m08qkc16i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQYPC9qts5KMMc8_-9d79M9VwJsn1jkjE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
