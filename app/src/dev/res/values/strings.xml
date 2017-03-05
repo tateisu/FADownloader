@@ -1,3 +1,7 @@
-<resources>
-    <string name="app_name" translatable="false">(dev)FA Downloader</string>
+<resources
+    xmlns:tools="http://schemas.android.com/tools"
+    
+    >
+    <string name="app_name" translatable="false" tools:ignore="MissingTranslation">(dev)FA Downloader</string>
+    <string name="banner_ad_unit_id" translatable="false" tools:ignore="MissingTranslation">ca-app-pub-5890454442862024/7301745198</string>
 </resources>

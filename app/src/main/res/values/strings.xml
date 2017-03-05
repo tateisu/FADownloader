@@ -1,5 +1,4 @@
 <resources>
-    <string name="banner_ad_unit_id">ca-app-pub-5890454442862024/8139349992</string>
 
     <string name="flashair_url">FlashAir URL</string>
 
@@ -12,7 +11,7 @@
     <string name="file_type_desc">(delimited by spaces, "*" for wildcard) </string>
     <string name="app_permission_required">app permission required</string>
     <string name="request_permission">request</string>
-    <string name="cancel">cancel</string>
+    <string name="cancel">Cancel</string>
     <string name="setting">setting</string>
     <string name="dotdotdot">…</string>
     <string name="not_selected">(not selected)</string>
@@ -22,7 +21,7 @@
     <string name="file_type_empty">missing file type.</string>
     <string name="log_clear">clear log</string>
     <string name="question">\?</string>
-    <string name="close">close</string>
+    <string name="close">Close</string>
     <string name="help_repeat_interval_text">Repeat IntervalにはREPEAT時の巡回間隔を秒数で指定します。\nデフォルトは30です。\nFlashAirは無線LANにアクセスがない場合に自動的に電源を切るタイムアウト(デフォルト300秒)が存在するため、それより少ない数字を指定することをオススメします。\n</string>
     <string name="help_file_type_text">File type には、転送するファイルの拡張子を指定します。\n空白で区切って複数書けます。\n* はワイルドカードとして解釈されます。\nデフォルトは「.jp*」です</string>
     <string name="help_flashair_url_text">FlashAir URL には、スマホからFlashAirにアクセスする際に使うFlashAir URLを指定してください。\nデフォルトは「http://flashair/」です。\n末尾の / を忘れないでね。 \nなお、サブフォルダを指定してもうまく動きません。</string>
