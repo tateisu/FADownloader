@@ -1,5 +1,8 @@
 <resources>
+    <string name="banner_ad_unit_id">ca-app-pub-5890454442862024/8139349992</string>
+
     <string name="flashair_url">FlashAir URL</string>
+
     <string name="local_folder">Local Folder</string>
     <string name="repeat_interval">Repeat Interval</string>
     <string name="repeat">Repeat</string>

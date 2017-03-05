@@ -27,6 +27,9 @@ import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -85,6 +88,10 @@ public class ActMain
 		super.onResume();
 		is_resume = true;
 
+		if (mAdView != null) {
+			mAdView.resume();
+		}
+
 		Page0 page = pager_adapter.getPage( 0 );
 		if( page != null ){
 			page.ui_value_load();
@@ -96,6 +103,10 @@ public class ActMain
 
 	@Override protected void onPause(){
 		is_resume = false;
+
+		if (mAdView != null) {
+			mAdView.pause();
+		}
 
 		Page0 page = pager_adapter.getPage( 0 );
 		if( page != null ) page.ui_value_save();
@@ -157,11 +168,18 @@ public class ActMain
 			super.onActivityResult( requestCode, resultCode, resultData );
 		}
 	}
+	AdView mAdView;
 
 	@Override
 	protected void onCreate( Bundle savedInstanceState ){
 		super.onCreate( savedInstanceState );
 		setContentView( R.layout.act_main );
+
+
+		MobileAds.initialize(getApplicationContext(), getResources().getString(R.string.banner_ad_unit_id));
+		mAdView = (AdView) findViewById(R.id.adView);
+		AdRequest adRequest = new AdRequest.Builder().build();
+		mAdView.loadAd(adRequest);
 
 		handler = new Handler();
 
@@ -186,6 +204,13 @@ public class ActMain
 			.build();
 	}
 
+	@Override
+	public void onDestroy() {
+		if (mAdView != null) {
+			mAdView.destroy();
+		}
+		super.onDestroy();
+	}
 	/////////////////////////////////////////////////////////////////////////
 	// アプリ権限の要求
 
