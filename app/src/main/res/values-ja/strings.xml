@@ -32,8 +32,6 @@
     <string name="help_local_folder_text5">作成したフォルダを開いた後、右下の「適用」ボタンを押してください</string>
     <string name="screen_shot">参考画像</string>
     <string name="log">ログ</string>
-    <string name="wifi_event_connected">通信状態変化：Wi-Fi OK</string>
-    <string name="wifi_event_disconnected">通信状態変化：Wi-Fi NG</string>
     <string name="service_start">サービス開始</string>
     <string name="service_idle">待機中</string>
     <string name="service_end">サービス終了</string>
@@ -108,4 +106,16 @@
     <string name="remove_ad">広告非表示</string>
     <string name="other">その他</string>
     <string name="oss_license_info">OSSライセンス情報</string>
+    <string name="help_force_wifi">Wi-Fi強制機能をONにしてFlashAir APのSSIDを入力すると、Wi-Fi接続がより安定します。\n・Wi-FiがOFFになっていたらONにします\n・指定したSSIDの優先度を上げます\n・指定したSSIDと現在の接続先が異なる場合、Wi-Fi APのスキャンを定期的に行います\n・指定したSSIDがスキャン結果に含まれる場合、そのWi-Fi AP に接続先を切り替えます\n</string>
+    <string name="help_ssid">SSIDにはFlashAir Wi-Fi APのSSIDを指定してください\n</string>
+    <string name="fix_wifi_ap">Wi-Fi AP強制変更</string>
+    <string name="ssid_empty">SSIDを指定してください</string>
+    <string name="wifi_ap_force_changed">Wi-Fi APを切り替えました</string>
+    <string name="wifi_ap_ssid">Wi-Fi APのSSID</string>
+    <string name="wifi_current_connection">接続中のWi-Fi APは%1$sです。id=%2$d,priority=%3$d</string>
+    <string name="wifi_not_enabled">現在 Wi-Fiが有効ではありません</string>
+    <string name="wifi_scan_start">Wi-Fiスキャンを開始しました</string>
+    <string name="wifi_status_unknown">Wi-Fiの状態が不明です</string>
+    <string name="wifi_target_ssid_not_found">Wi-Fi AP %1$s への接続設定がありません</string>
+    <string name="wifi_target_ssid_not_scanned">Wi-Fiスキャン結果に%1$sがありません</string>
 </resources>

@@ -6,6 +6,7 @@ import android.text.TextUtils;
 
 public class Pref{
 
+
 	public static SharedPreferences pref( Context context ){
 		return context.getSharedPreferences( "app_pref", Context.MODE_PRIVATE );
 	}
@@ -19,6 +20,8 @@ public class Pref{
 	public static final String UI_LOCATION_MODE = "ui_location_mode";
 	public static final String UI_LOCATION_INTERVAL_DESIRED = "ui_location_interval_desired";
 	public static final String UI_LOCATION_INTERVAL_MIN = "ui_location_interval_min";
+	public static final String UI_FORCE_WIFI = "ui_force_wifi";
+	public static final String UI_SSID = "ui_ssid";
 
 	public static void initialize( Context context ){
 		SharedPreferences pref = pref( context );
@@ -89,6 +92,8 @@ public class Pref{
 	public static final String WORKER_LOCATION_INTERVAL_DESIRED = "worker_location_interval_desired";
 	public static final String WORKER_LOCATION_INTERVAL_MIN = "worker_location_interval_min";
 	public static final String WORKER_LOCATION_MODE = "worker_location_mode";
+	public static final String WORKER_FORCE_WIFI = "worker_force_wifi";
+	public static final String WORKER_SSID = "worker_ssid";
 
 	// ファイルスキャンが完了した時刻
 	public static final String LAST_SCAN_COMPLETE = "last_scan_complete";

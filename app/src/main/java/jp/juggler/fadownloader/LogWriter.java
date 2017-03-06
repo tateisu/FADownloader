@@ -139,4 +139,17 @@ public class LogWriter{
 			LogData.insert( cr, cv, System.currentTimeMillis(), LogData.LEVEL_FLOOD, fmt );
 		}
 	}
+
+	@SuppressWarnings( "unused" )
+	public void e(Throwable ex,String fmt,Object... args){
+		if( args.length > 0) fmt = String.format( fmt,args);
+		synchronized(cv){
+			LogData.insert( cr, cv, System.currentTimeMillis(), LogData.LEVEL_ERROR, fmt+String.format(":%s %s",ex.getClass().getSimpleName(),ex.getMessage()) );
+		}
+	}
+	@SuppressWarnings( "unused" )
+	public String formatError(Throwable ex,String fmt,Object... args){
+		if( args.length > 0) fmt = String.format( fmt,args);
+		return fmt+String.format(":%s %s",ex.getClass().getSimpleName(),ex.getMessage());
+	}
 }

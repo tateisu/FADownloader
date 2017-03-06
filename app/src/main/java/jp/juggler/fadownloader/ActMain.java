@@ -460,6 +460,20 @@ public class ActMain
 			}
 		}
 
+		boolean force_wifi = pref.getBoolean( Pref.UI_FORCE_WIFI, false );
+
+		String ssid;
+		if( !force_wifi){
+			ssid = "";
+		}else{
+			sv = pref.getString( Pref.UI_SSID, "" );
+			ssid = sv.trim();
+			if( TextUtils.isEmpty( ssid ) ){
+				Toast.makeText( this, getString( R.string.ssid_empty ), Toast.LENGTH_SHORT ).show();
+				return;
+			}
+		}
+
 		// 最後に押したボタンを覚えておく
 		pref.edit()
 			.putInt( Pref.LAST_MODE, repeat ? Pref.LAST_MODE_REPEAT : Pref.LAST_MODE_ONCE )
@@ -478,6 +492,8 @@ public class ActMain
 		intent.putExtra( DownloadService.EXTRA_LOCATION_INTERVAL_DESIRED, location_update_interval_desired );
 		intent.putExtra( DownloadService.EXTRA_LOCATION_INTERVAL_MIN, location_update_interval_min );
 		intent.putExtra( DownloadService.EXTRA_LOCATION_MODE, location_mode );
+		intent.putExtra( DownloadService.EXTRA_FORCE_WIFI, force_wifi );
+		intent.putExtra( DownloadService.EXTRA_SSID, ssid );
 
 		startService( intent );
 	}
@@ -505,13 +521,66 @@ public class ActMain
 			}
 		} );
 	}
+	void openHelp( String text ){
+		View v = getLayoutInflater().inflate( R.layout.help_single_text, null, false );
+		((TextView)v.findViewById( R.id.text )).setText(text);
 
+		final Dialog d = new Dialog( this );
+		d.requestWindowFeature( Window.FEATURE_NO_TITLE );
+		d.setContentView( v );
+		d.getWindow().setLayout( WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT );
+		d.show();
+		v.findViewById( R.id.btnClose ).setOnClickListener( new View.OnClickListener(){
+			@Override public void onClick( View view ){
+				d.dismiss();
+			}
+		} );
+	}
 	GoogleApiClient mGoogleApiClient;
 
 	final GoogleApiClient.OnConnectionFailedListener connection_fail_callback = new GoogleApiClient.OnConnectionFailedListener(){
 		@Override public void onConnectionFailed( @NonNull ConnectionResult connectionResult ){
-			String msg = getString( R.string.play_service_connection_failed, connectionResult.getErrorCode(), connectionResult.getErrorMessage() );
+			int code = connectionResult.getErrorCode();
+			String msg = connectionResult.getErrorMessage();
+			if( TextUtils.isEmpty( msg )){
+				switch(code){
+				case ConnectionResult.SUCCESS: msg="SUCCESS";break;
+				case ConnectionResult.SERVICE_MISSING: msg="SERVICE_MISSING";break;
+				case ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED: msg="SERVICE_VERSION_UPDATE_REQUIRED";break;
+				case ConnectionResult.SERVICE_DISABLED: msg="SERVICE_DISABLED";break;
+				case ConnectionResult.SIGN_IN_REQUIRED: msg="SIGN_IN_REQUIRED";break;
+				case ConnectionResult.INVALID_ACCOUNT: msg="INVALID_ACCOUNT";break;
+				case ConnectionResult.RESOLUTION_REQUIRED: msg="RESOLUTION_REQUIRED";break;
+				case ConnectionResult.NETWORK_ERROR: msg="NETWORK_ERROR";break;
+				case ConnectionResult.INTERNAL_ERROR: msg="INTERNAL_ERROR";break;
+				case ConnectionResult.SERVICE_INVALID: msg="SERVICE_INVALID";break;
+				case ConnectionResult.DEVELOPER_ERROR: msg="DEVELOPER_ERROR";break;
+				case ConnectionResult.LICENSE_CHECK_FAILED: msg="LICENSE_CHECK_FAILED";break;
+				case ConnectionResult.CANCELED: msg="CANCELED";break;
+				case ConnectionResult.TIMEOUT: msg="TIMEOUT";break;
+				case ConnectionResult.INTERRUPTED: msg="INTERRUPTED";break;
+				case ConnectionResult.API_UNAVAILABLE: msg="API_UNAVAILABLE";break;
+				case ConnectionResult.SIGN_IN_FAILED: msg="SIGN_IN_FAILED";break;
+				case ConnectionResult.SERVICE_UPDATING: msg="SERVICE_UPDATING";break;
+				case ConnectionResult.SERVICE_MISSING_PERMISSION: msg="SERVICE_MISSING_PERMISSION";break;
+				case ConnectionResult.RESTRICTED_PROFILE: msg="RESTRICTED_PROFILE";break;
+
+				}
+			}
+
+			msg = getString( R.string.play_service_connection_failed,code,  msg);
 			Toast.makeText( ActMain.this, msg, Toast.LENGTH_SHORT ).show();
+
+			if( code == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED ){
+				try{
+					Intent intent = new Intent( Intent.ACTION_VIEW );
+					intent.setData( Uri.parse( "market://details?id=com.google.android.gms" ) );
+					startActivity( intent );
+				}catch(Throwable ex){
+					ex.printStackTrace(  );
+				}
+
+			}
 		}
 	};
 	final GoogleApiClient.ConnectionCallbacks connection_callback = new GoogleApiClient.ConnectionCallbacks(){

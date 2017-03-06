@@ -3,13 +3,9 @@ package jp.juggler.fadownloader;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.location.Location;
-import android.net.ConnectivityManager;
-import android.net.Network;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -39,32 +35,13 @@ public class DownloadService extends Service{
 	static final String EXTRA_LOCATION_INTERVAL_DESIRED = "location_interval_desired";
 	static final String EXTRA_LOCATION_INTERVAL_MIN = "location_interval_min";
 	static final String EXTRA_LOCATION_MODE = "location_mode";
+	static final String EXTRA_FORCE_WIFI = "force_wifi";
+	static final String EXTRA_SSID = "ssid";
 
 	static final int NOTIFICATION_ID_SERVICE = 1;
 
 	LogWriter log;
 
-	final BroadcastReceiver receiver = new BroadcastReceiver(){
-		@Override public void onReceive( Context context, Intent intent ){
-			try{
-				String action = intent.getAction();
-				if( ConnectivityManager.CONNECTIVITY_ACTION.equals( action ) ){
-					Network n = Utils.getWiFiNetwork( context );
-					if( n != null ){
-						log.v( getString(R.string.wifi_event_connected)  );
-						int last_mode = Pref.pref( context ).getInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP );
-						if( last_mode != Pref.LAST_MODE_STOP ){
-							worker_wakeup();
-						}
-					}else{
-						log.v( getString(R.string.wifi_event_disconnected)  );
-					}
-				}
-			}catch( Throwable ex ){
-				ex.printStackTrace();
-			}
-		}
-	};
 
 	boolean is_alive;
 	boolean allow_cancel_alarm;
@@ -74,6 +51,7 @@ public class DownloadService extends Service{
 	Handler handler;
 
 	LocationTracker location_tracker;
+	WifiTracker wifi_tracker;
 
 	@Override public void onCreate(){
 		super.onCreate();
@@ -95,7 +73,6 @@ public class DownloadService extends Service{
 		wifi_lock = wm.createWifiLock( WifiManager.WIFI_MODE_FULL, getPackageName() );
 		wifi_lock.setReferenceCounted( false );
 
-		registerReceiver( receiver, new IntentFilter( ConnectivityManager.CONNECTIVITY_ACTION ) );
 
 		setServiceNotification(getString(R.string.service_idle));
 
@@ -108,6 +85,17 @@ public class DownloadService extends Service{
 		mGoogleApiClient.connect();
 
 		location_tracker = new LocationTracker(log,mGoogleApiClient);
+
+		wifi_tracker = new WifiTracker( this, log, new WifiTracker.Callback(){
+			@Override public void onConnectionEvent(boolean is_connected){
+				if( is_connected ){
+					int last_mode = Pref.pref( DownloadService.this ).getInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP );
+					if( last_mode != Pref.LAST_MODE_STOP ){
+						worker_wakeup();
+					}
+				}
+			}
+		} );
 	}
 
 	@Override public void onDestroy(){
@@ -115,6 +103,7 @@ public class DownloadService extends Service{
 		is_alive = false;
 
 		location_tracker.dispose();
+		wifi_tracker.dispose();
 
 		if( mGoogleApiClient.isConnected() ){
 			mGoogleApiClient.disconnect();
@@ -140,7 +129,7 @@ public class DownloadService extends Service{
 		wifi_lock.release();
 		wifi_lock = null;
 
-		unregisterReceiver( receiver );
+
 
 		stopForeground( true );
 
@@ -262,7 +251,7 @@ public class DownloadService extends Service{
 			}
 		}
 
-		@Override public void onThreadStart(final LocationTracker.Setting location_setting){
+		@Override public void onThreadStart(){
 			setServiceNotification(getString(R.string.thread_running ));
 		}
 

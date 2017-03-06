@@ -204,6 +204,56 @@
 
         <View style="@style/setting_divider"/>
 
+        <TextView
+
+            style="@style/setting_row_label"
+            android:text="@string/fix_wifi_ap"
+            />
+
+        <LinearLayout style="@style/setting_row_form">
+
+            <Switch
+                android:id="@+id/swForceWifi"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                />
+
+            <Button
+                android:id="@+id/btnForceWifiHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
+
+        <View style="@style/setting_divider"/>
+
+        <TextView
+
+            style="@style/setting_row_label"
+            android:labelFor="@+id/etSSID"
+            android:text="@string/wifi_ap_ssid"
+            />
+
+        <LinearLayout style="@style/setting_row_form">
+
+            <EditText
+                android:id="@+id/etSSID"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+
+                android:inputType="text"
+
+                />
+
+            <Button
+                android:id="@+id/btnSSIDHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
+
+        <View style="@style/setting_divider"/>
 
         <TextView
             android:layout_width="wrap_content"

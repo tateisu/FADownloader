@@ -9,8 +9,10 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
 
 public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnClickListener{
@@ -22,6 +24,8 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 	Spinner spLocationMode;
 	EditText etLocationIntervalDesired;
 	EditText etLocationIntervalMin;
+	Switch swForceWifi;
+	EditText etSSID;
 
 	public Page0( Activity activity, View ignored ){
 		super( activity, ignored );
@@ -36,6 +40,8 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		spLocationMode = (Spinner) root.findViewById( R.id.spLocationMode );
 		etLocationIntervalDesired = (EditText) root.findViewById( R.id.etLocationIntervalDesired );
 		etLocationIntervalMin = (EditText) root.findViewById( R.id.etLocationIntervalMin );
+		swForceWifi = (Switch) root.findViewById( R.id.swForceWifi );
+		etSSID = (EditText) root.findViewById( R.id.etSSID );
 
 		root.findViewById( R.id.btnFolderPicker ).setOnClickListener( this );
 		root.findViewById( R.id.btnFolderPickerHelp ).setOnClickListener( this );
@@ -45,6 +51,8 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		root.findViewById( R.id.btnLocationModeHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnLocationIntervalDesiredHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnLocationIntervalMinHelp ).setOnClickListener( this );
+		root.findViewById( R.id.btnForceWifiHelp ).setOnClickListener( this );
+		root.findViewById( R.id.btnSSIDHelp ).setOnClickListener( this );
 
 		ArrayAdapter<CharSequence> location_mode_adapter = new ArrayAdapter<>(
 			activity
@@ -69,6 +77,11 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 				updateFormEnabled();
 			}
 		} );
+		swForceWifi.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener(){
+			@Override public void onCheckedChanged( CompoundButton buttonView, boolean isChecked ){
+				updateFormEnabled();
+			}
+		} );
 
 		ui_value_load();
 		folder_view_update();
@@ -87,24 +100,29 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 			( (ActMain) activity ).openHelp( R.layout.help_local_folder );
 			break;
 		case R.id.btnFlashAirURLHelp:
-			( (ActMain) activity ).openHelp( R.layout.help_flashair_url );
+			( (ActMain) activity ).openHelp( activity.getString(R.string.help_flashair_url_text) );
 			break;
 		case R.id.btnIntervalHelp:
-			( (ActMain) activity ).openHelp( R.layout.help_interval );
+			( (ActMain) activity ).openHelp( activity.getString(R.string.help_repeat_interval_text) );
 			break;
 		case R.id.btnFileTypeHelp:
-			( (ActMain) activity ).openHelp( R.layout.help_file_type );
+			( (ActMain) activity ).openHelp( activity.getString(R.string.help_file_type_text) );
 			break;
 		case R.id.btnLocationModeHelp:
-			( (ActMain) activity ).openHelp( R.layout.help_location_mode );
+			( (ActMain) activity ).openHelp( activity.getString(R.string.help_location_mode) );
 			break;
 		case R.id.btnLocationIntervalDesiredHelp:
-			( (ActMain) activity ).openHelp( R.layout.help_location_interval_desired );
+			( (ActMain) activity ).openHelp( activity.getString(R.string.help_location_interval_desired) );
 			break;
 		case R.id.btnLocationIntervalMinHelp:
-			( (ActMain) activity ).openHelp( R.layout.help_location_interval_min );
+			( (ActMain) activity ).openHelp( activity.getString(R.string.help_location_interval_min) );
 			break;
-
+		case R.id.btnForceWifiHelp:
+			( (ActMain) activity ).openHelp( activity.getString(R.string.help_force_wifi) );
+			break;
+		case R.id.btnSSIDHelp:
+			( (ActMain) activity ).openHelp( activity.getString(R.string.help_ssid) );
+			break;
 		}
 	}
 
@@ -131,6 +149,12 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		//
 		sv = pref.getString( Pref.UI_LOCATION_INTERVAL_MIN, null );
 		if( sv != null ) etLocationIntervalMin.setText( sv );
+		//
+		boolean bv = pref.getBoolean( Pref.UI_FORCE_WIFI, false );
+		swForceWifi.setChecked( bv );
+		//
+		sv = pref.getString( Pref.UI_SSID, "" );
+		if( sv != null ) etSSID.setText( sv );
 
 		updateFormEnabled();
 	}
@@ -139,6 +163,9 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		boolean location_enabled = ( spLocationMode.getSelectedItemPosition() > 0 );
 		etLocationIntervalDesired.setEnabled( location_enabled );
 		etLocationIntervalMin.setEnabled( location_enabled );
+
+		boolean force_wifi_enabled = swForceWifi.isChecked();
+		etSSID.setEnabled( force_wifi_enabled );
 	}
 
 	// UIフォームの値を設定ファイルに保存
@@ -150,6 +177,8 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 			.putInt( Pref.UI_LOCATION_MODE, spLocationMode.getSelectedItemPosition() )
 			.putString( Pref.UI_LOCATION_INTERVAL_DESIRED, etLocationIntervalDesired.getText().toString() )
 			.putString( Pref.UI_LOCATION_INTERVAL_MIN, etLocationIntervalMin.getText().toString() )
+			.putBoolean( Pref.UI_FORCE_WIFI, swForceWifi.isChecked() )
+			.putString( Pref.UI_SSID, etSSID.getText().toString() )
 			.apply();
 	}
 

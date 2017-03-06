@@ -34,7 +34,7 @@ public class Page2 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 			break;
 
 		case R.id.btnOSSLicence:
-			( (ActMain) activity ).openHelp( R.layout.help_oss_license );
+			( (ActMain) activity ).openHelp( activity.getString(R.string.help_oss_license_long ) );
 			break;
 
 		case R.id.btnRemoveAd:

@@ -32,7 +32,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 		void acquireWakeLock();
 
-		void onThreadStart(LocationTracker.Setting location_setting);
+		void onThreadStart();
 
 		void onThreadEnd( boolean allow_stop_service );
 
@@ -49,7 +49,6 @@ public class DownloadWorker extends Thread implements CancelChecker{
 	final String file_type;
 	final LogWriter log;
 	final ArrayList<Pattern> file_type_list;
-	final LocationTracker.Setting location_setting;
 
 	public DownloadWorker( DownloadService service, Intent intent, Callback callback ){
 		this.service = service;
@@ -62,8 +61,10 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		this.folder_uri = intent.getStringExtra( DownloadService.EXTRA_FOLDER_URI );
 		this.interval = intent.getIntExtra( DownloadService.EXTRA_INTERVAL, 86400 );
 		this.file_type = intent.getStringExtra( DownloadService.EXTRA_FILE_TYPE );
+		boolean force_wifi = intent.getBooleanExtra( DownloadService.EXTRA_FORCE_WIFI ,false);
+		String ssid =intent.getStringExtra( DownloadService.EXTRA_SSID );
 
-		location_setting = new LocationTracker.Setting();
+		LocationTracker.Setting location_setting = new LocationTracker.Setting();
 		location_setting.interval_desired = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_DESIRED ,LocationTracker.DEFAULT_INTERVAL_DESIRED);
 		location_setting.interval_min = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_MIN ,LocationTracker.DEFAULT_INTERVAL_MIN);
 		location_setting.mode = intent.getIntExtra( DownloadService.EXTRA_LOCATION_MODE ,LocationTracker.DEFAULT_MODE);
@@ -77,9 +78,13 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			.putLong( Pref.WORKER_LOCATION_INTERVAL_DESIRED, location_setting.interval_desired )
 			.putLong( Pref.WORKER_LOCATION_INTERVAL_MIN, location_setting.interval_min  )
 			.putInt( Pref.WORKER_LOCATION_MODE, location_setting.mode )
+			.putBoolean( Pref.WORKER_FORCE_WIFI, force_wifi )
+			.putString( Pref.WORKER_SSID, ssid )
 			.apply();
 
 		file_type_list = file_type_parse();
+
+		service.wifi_tracker.updateSetting(force_wifi,ssid);
 
 		service.location_tracker.updateSetting(location_setting);
 	}
@@ -97,15 +102,19 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		this.interval = pref.getInt( Pref.WORKER_INTERVAL, 86400 );
 		this.file_type = pref.getString( Pref.WORKER_FILE_TYPE, null );
 
-		location_setting = new LocationTracker.Setting();
+		boolean force_wifi = pref.getBoolean( Pref.WORKER_FORCE_WIFI, false );
+		String ssid =pref.getString( Pref.WORKER_SSID, null );
+
+		LocationTracker.Setting location_setting = new LocationTracker.Setting();
 		location_setting.interval_desired = pref.getLong(Pref.WORKER_LOCATION_INTERVAL_DESIRED ,LocationTracker.DEFAULT_INTERVAL_DESIRED);
 		location_setting.interval_min = pref.getLong(Pref.WORKER_LOCATION_INTERVAL_MIN,LocationTracker.DEFAULT_INTERVAL_MIN);
 		location_setting.mode = pref.getInt(Pref.WORKER_LOCATION_MODE ,LocationTracker.DEFAULT_MODE);
 
 		file_type_list = file_type_parse();
 
-		service.location_tracker.updateSetting(location_setting);
+		service.wifi_tracker.updateSetting(force_wifi,ssid);
 
+		service.location_tracker.updateSetting(location_setting);
 	}
 
 	final AtomicReference<String> status = new AtomicReference<>( "?" );
@@ -279,7 +288,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		boolean allow_stop_service = false;
 
 
-		callback.onThreadStart(location_setting);
+		callback.onThreadStart();
 
 		while( ! isCancelled() ){
 			status.set( service.getString( R.string.initializing ) );
@@ -546,6 +555,13 @@ public class DownloadWorker extends Thread implements CancelChecker{
 								// no log.
 							}else if( data == null ){
 								log.e( "FILE %s :HTTP error %s", fname, client.last_error );
+
+								if( client.last_error.contains( "UnknownHostException" ) ){
+									client.last_error = service.getString( R.string.flashair_host_error );
+									cancel( service.getString( R.string.flashair_host_error_short ) );
+									callback.releaseWakeLock();
+								}
+
 								has_error = true;
 							}else{
 								log.i( "FILE %s :download complete. %dms", fname, SystemClock.elapsedRealtime() - time_start );
