@@ -455,9 +455,10 @@ public class DownloadWorker extends Thread implements CancelChecker{
 							int attr = Integer.parseInt( mAttr.group( 2 ), 10 );
 							int date = Integer.parseInt( mAttr.group( 3 ), 10 );
 							int time = Integer.parseInt( mAttr.group( 4 ), 10 );
-							int delm = line.indexOf( ',' );
-							String dir = line.substring( 0, delm );
-							String fname = line.substring( delm + 1, mAttr.start() );
+
+							// https://flashair-developers.com/ja/support/forum/#/discussion/3/%E3%82%AB%E3%83%B3%E3%83%9E%E5%8C%BA%E5%88%87%E3%82%8A
+							String dir = (item.air_path.equals( "/" )? "": item.air_path);
+							String fname = line.substring( dir.length() + 1, mAttr.start() );
 
 							if( ( attr & 2 ) != 0 ){
 								// skip hidden file
