@@ -46,6 +46,7 @@ public class Page2 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 
 	public void updatePurchaseButton(){
 		ActMain act = (ActMain) activity;
+		//noinspection ConstantConditions
 		btnRemoveAd.setVisibility( act.bSetupCompleted && ! act.bRemoveAdPurchased ? View.VISIBLE : View.GONE );
 	}
 }
