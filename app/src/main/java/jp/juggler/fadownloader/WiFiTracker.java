@@ -83,6 +83,7 @@ public class WifiTracker{
 	String last_current_status;
 	String last_force_status;
 	String last_error_status;
+	long last_wifi_ap_change ;
 
 	boolean keep_ap(){
 		if( is_dispose ) return false;
@@ -207,21 +208,27 @@ public class WifiTracker{
 				return false;
 			}
 
-			try{
-				// 先に既存接続を無効にする
-				for( WifiConfiguration wc : wifiManager.getConfiguredNetworks() ){
-					if( wc.networkId != target_config.networkId ){
-						wifiManager.disableNetwork( wc.networkId );
-					}
-				}
-				// 目的のAPに接続する
-				wifiManager.enableNetwork( target_config.networkId, true );
-				log.i( R.string.wifi_ap_force_changed );
+			long now = SystemClock.elapsedRealtime();
+			if( now- last_wifi_ap_change >= 5000L ){
+				last_wifi_ap_change = now;
 
-			}catch( Throwable ex ){
-				ex.printStackTrace();
-				error_status = log.formatError( ex, "disableNetwork() or enableNetwork() failed." );
+				try{
+					// 先に既存接続を無効にする
+					for( WifiConfiguration wc : wifiManager.getConfiguredNetworks() ){
+						if( wc.networkId != target_config.networkId ){
+							wifiManager.disableNetwork( wc.networkId );
+						}
+					}
+					// 目的のAPに接続する
+					wifiManager.enableNetwork( target_config.networkId, true );
+					log.i( R.string.wifi_ap_force_changed );
+
+				}catch( Throwable ex ){
+					ex.printStackTrace();
+					error_status = log.formatError( ex, "disableNetwork() or enableNetwork() failed." );
+				}
 			}
+
 			return false;
 		}finally{
 			if( current_status != null && ! current_status.equals( last_current_status ) ){
