@@ -54,7 +54,7 @@ public class WifiTracker{
 		proc_interval.run();
 	}
 
-	static final int SCAN_INTERVAL = 10000;
+	static final int SCAN_INTERVAL = 100000;
 	long last_scan_start;
 	final LinkedList<Integer> priority_list = new LinkedList<>();
 
@@ -66,7 +66,7 @@ public class WifiTracker{
 			}catch(Throwable ex){
 				log.e(ex,"connection event handling failed.");
 			}
-			handler.postDelayed( proc_interval, SCAN_INTERVAL );
+			handler.postDelayed( proc_interval, 30000L );
 		}
 	};
 
