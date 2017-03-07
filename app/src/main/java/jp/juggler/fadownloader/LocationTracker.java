@@ -60,15 +60,21 @@ public class LocationTracker implements LocationListener{
 		}
 	}
 
+	interface Callback {
+		void onLocationChanged(Location location);
+	}
+
+	final Callback callback;
 	final LogWriter log;
 	final GoogleApiClient mGoogleApiClient;
 	Location mCurrentLocation;
 	Setting location_setting;
 	boolean is_disposed = false;
 
-	public LocationTracker( LogWriter log, GoogleApiClient client ){
+	public LocationTracker( LogWriter log, GoogleApiClient client ,Callback callback){
 		this.log = log;
 		this.mGoogleApiClient = client;
+		this.callback = callback;
 	}
 
 	public void dispose(){
@@ -138,6 +144,7 @@ public class LocationTracker implements LocationListener{
 			mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation( mGoogleApiClient );
 			if( mCurrentLocation != null ){
 				log.v( R.string.location_last_known, date_fmt.format( mCurrentLocation.getTime() ) );
+				callback.onLocationChanged( mCurrentLocation );
 			}
 		}catch( SecurityException ex ){
 			log.e( ex, "getLastLocation() failed." );
@@ -180,6 +187,7 @@ public class LocationTracker implements LocationListener{
 	@Override public synchronized void onLocationChanged( Location location ){
 		log.v( R.string.location_changed, date_fmt.format( location.getTime() ) );
 		mCurrentLocation = location;
+		callback.onLocationChanged( mCurrentLocation );
 	}
 
 	public synchronized Location getLocation(){

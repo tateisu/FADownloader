@@ -81,7 +81,11 @@ public class DownloadService extends Service{
 			.build();
 		mGoogleApiClient.connect();
 
-		location_tracker = new LocationTracker( log, mGoogleApiClient );
+		location_tracker = new LocationTracker( log, mGoogleApiClient, new LocationTracker.Callback(){
+			@Override public void onLocationChanged( Location location ){
+				DownloadService.location = location;
+			}
+		} );
 
 		wifi_tracker = new WifiTracker( this, log, new WifiTracker.Callback(){
 			@Override public void onConnectionEvent( boolean is_connected ){
@@ -334,4 +338,9 @@ public class DownloadService extends Service{
 			location_tracker.onGoogleAPIDisconnected();
 		}
 	};
+
+	static Location location;
+	public static Location getLocation(){
+		return location;
+	}
 }

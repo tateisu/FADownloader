@@ -31,7 +31,13 @@
             android:layout_marginBottom="8dp"
             android:text="@string/wifi_setting"
             />
-
+        <Button
+            android:id="@+id/btnOpenMap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/open_map"
+            />
         <Button
             android:id="@+id/btnLogClear"
             android:layout_width="match_parent"
