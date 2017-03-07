@@ -1,6 +1,8 @@
 package jp.juggler.fadownloader;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.provider.Settings;
 import android.view.View;
 
 public class Page2 extends PagerAdapterBase.PageViewHolder implements View.OnClickListener{
@@ -20,6 +22,7 @@ public class Page2 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 
 
 		root.findViewById( R.id.btnOSSLicence ).setOnClickListener( this );
+		root.findViewById( R.id.btnWifiSetting ).setOnClickListener( this );
 
 		updatePurchaseButton();
 	}
@@ -40,6 +43,12 @@ public class Page2 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		case R.id.btnRemoveAd:
 			( (ActMain) activity ).startRemoveAdPurchase();
 			break;
+		case R.id.btnWifiSetting:
+			try{
+				activity.startActivity( new Intent( Settings.ACTION_WIFI_SETTINGS ) );
+			}catch(Throwable ex){
+				ex.printStackTrace(  );
+			}
 
 		}
 	}

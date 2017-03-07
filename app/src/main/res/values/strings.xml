@@ -129,5 +129,6 @@
     <string name="folder_not_directory">it is not directory</string>
     <string name="folder_not_writable">folder is not writable</string>
     <string name="local_folder_list_failed">local folder listing failed.</string>
+    <string name="wifi_setting">Wi-Fi setting</string>
 
 </resources>

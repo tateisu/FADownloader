@@ -124,4 +124,5 @@
     <string name="folder_not_directory">フォルダを確認できません</string>
     <string name="folder_not_writable">フォルダへの書き込み権限がありません</string>
     <string name="local_folder_list_failed">local folder listing failed.</string>
+    <string name="wifi_setting">Wi-Fiの設定</string>
 </resources>
