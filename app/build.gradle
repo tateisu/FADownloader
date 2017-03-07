@@ -57,6 +57,7 @@ dependencies {
     compile 'com.google.firebase:firebase-ads:10.2.0'
 
     compile project(':exif')
+    compile project(':billing')
 
     testCompile 'junit:junit:4.12'
 }

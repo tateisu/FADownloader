@@ -3,7 +3,7 @@
           xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application android:name="jp.juggler.fadownloader.App1"
-                 tools:ignore="AllowBackup"
+                 tools:ignore="AllowBackup,GoogleAppIndexingWarning"
         >
         <provider
             android:name="jp.juggler.fadownloader.DataProvider"

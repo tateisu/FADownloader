@@ -42,7 +42,6 @@ public class DownloadService extends Service{
 
 	LogWriter log;
 
-
 	boolean is_alive;
 	boolean allow_cancel_alarm;
 	PowerManager.WakeLock wake_lock;
@@ -63,7 +62,7 @@ public class DownloadService extends Service{
 		allow_cancel_alarm = false;
 
 		log = new LogWriter( this );
-		log.d( getString(R.string.service_start) );
+		log.d( getString( R.string.service_start ) );
 
 		PowerManager pm = (PowerManager) getApplicationContext().getSystemService( Context.POWER_SERVICE );
 		wake_lock = pm.newWakeLock( PowerManager.PARTIAL_WAKE_LOCK, getPackageName() );
@@ -73,21 +72,19 @@ public class DownloadService extends Service{
 		wifi_lock = wm.createWifiLock( WifiManager.WIFI_MODE_FULL, getPackageName() );
 		wifi_lock.setReferenceCounted( false );
 
+		setServiceNotification( getString( R.string.service_idle ) );
 
-		setServiceNotification(getString(R.string.service_idle));
-
-
-		mGoogleApiClient = new GoogleApiClient.Builder(this)
-			.addConnectionCallbacks(connection_callback)
-			.addOnConnectionFailedListener(connection_fail_callback)
-			.addApi( LocationServices.API)
+		mGoogleApiClient = new GoogleApiClient.Builder( this )
+			.addConnectionCallbacks( connection_callback )
+			.addOnConnectionFailedListener( connection_fail_callback )
+			.addApi( LocationServices.API )
 			.build();
 		mGoogleApiClient.connect();
 
-		location_tracker = new LocationTracker(log,mGoogleApiClient);
+		location_tracker = new LocationTracker( log, mGoogleApiClient );
 
 		wifi_tracker = new WifiTracker( this, log, new WifiTracker.Callback(){
-			@Override public void onConnectionEvent(boolean is_connected){
+			@Override public void onConnectionEvent( boolean is_connected ){
 				if( is_connected ){
 					int last_mode = Pref.pref( DownloadService.this ).getInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP );
 					if( last_mode != Pref.LAST_MODE_STOP ){
@@ -110,7 +107,7 @@ public class DownloadService extends Service{
 		}
 
 		if( worker != null && worker.isAlive() ){
-			worker.cancel( getString(R.string.service_end));
+			worker.cancel( getString( R.string.service_end ) );
 		}
 
 		if( allow_cancel_alarm ){
@@ -129,11 +126,9 @@ public class DownloadService extends Service{
 		wifi_lock.release();
 		wifi_lock = null;
 
-
-
 		stopForeground( true );
 
-		log.d( getString(R.string.service_end) );
+		log.d( getString( R.string.service_end ) );
 		log.dispose();
 		log = null;
 
@@ -150,7 +145,7 @@ public class DownloadService extends Service{
 					Intent broadcast_intent = intent.getParcelableExtra( EXTRA_BROADCAST_INTENT );
 					if( broadcast_intent != null ){
 						action = broadcast_intent.getAction();
-						log.d( getString(R.string.broadcast_received,action) );
+						log.d( getString( R.string.broadcast_received, action ) );
 
 						if( Receiver1.ACTION_ALARM.equals( action ) ){
 							worker_wakeup();
@@ -166,12 +161,12 @@ public class DownloadService extends Service{
 				try{
 					will_restart = true;
 					if( worker != null ){
-						worker.cancel( getString(R.string.manual_restart) );
+						worker.cancel( getString( R.string.manual_restart ) );
 						worker = null;
 					}
 				}catch( Throwable ex ){
 					ex.printStackTrace();
-					log.e( getString(R.string.thread_cancel_failed, ex.getClass().getSimpleName(), ex.getMessage() ));
+					log.e( ex, "thread cancel failed." );
 				}finally{
 					will_restart = false;
 				}
@@ -186,10 +181,10 @@ public class DownloadService extends Service{
 					worker.start();
 				}catch( Throwable ex ){
 					ex.printStackTrace();
-					log.e( getString(R.string.thread_start_failed, ex.getClass().getSimpleName(), ex.getMessage() ));
+					log.e( ex, "thread start failed." );
 				}
 			}else{
-				log.d( getString(R.string.unsupported_intent_received, action ));
+				log.d( getString( R.string.unsupported_intent_received, action ) );
 			}
 		}
 
@@ -213,7 +208,7 @@ public class DownloadService extends Service{
 			worker.start();
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			log.e( getString( R.string.thread_start_failed, ex.getClass().getSimpleName(), ex.getMessage() ));
+			log.e( ex, "thread start failed." );
 		}
 	}
 
@@ -225,13 +220,13 @@ public class DownloadService extends Service{
 				wake_lock.release();
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				log.e( getString( R.string.wake_lock_release_failed, ex.getClass().getSimpleName(), ex.getMessage() ));
+				log.e( ex, "WakeLock release failed." );
 			}
 			try{
 				wifi_lock.release();
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				log.e( getString( R.string.wifi_lock_release_failed, ex.getClass().getSimpleName(), ex.getMessage() ));
+				log.e( ex, "WifiLock release failed." );
 			}
 		}
 
@@ -241,27 +236,27 @@ public class DownloadService extends Service{
 				wake_lock.acquire();
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				log.e(  getString( R.string.wake_lock_acquire_failed,  ex.getClass().getSimpleName(), ex.getMessage() ));
+				log.e( ex, "WakeLock acquire failed." );
 			}
 			try{
 				wifi_lock.acquire();
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				log.e(  getString( R.string.wifi_lock_acquire_failed, ex.getClass().getSimpleName(), ex.getMessage() ));
+				log.e( ex, "WifiLock acquire failed." );
 			}
 		}
 
 		@Override public void onThreadStart(){
-			setServiceNotification(getString(R.string.thread_running ));
+			setServiceNotification( getString( R.string.thread_running ) );
 		}
 
 		@Override public void onThreadEnd( boolean allow_stop_service ){
-			if(!will_restart){
+			if( ! will_restart ){
 				if( allow_stop_service ){
 					allow_cancel_alarm = true;
 					stopSelf();
 				}else{
-					setServiceNotification( getString(R.string.service_idle ));
+					setServiceNotification( getString( R.string.service_idle ) );
 				}
 			}
 		}
@@ -274,22 +269,22 @@ public class DownloadService extends Service{
 
 	static DownloadService service_instance;
 
-	public static String getStatusForActivity(Context context){
+	public static String getStatusForActivity( Context context ){
 		if( service_instance == null ){
-			return context.getString(R.string.service_not_running);
+			return context.getString( R.string.service_not_running );
 		}
 
 		StringBuilder sb = new StringBuilder();
-		sb.append( context.getString(R.string.service_running_status
+		sb.append( context.getString( R.string.service_running_status
 			, service_instance.wake_lock.isHeld() ? "ON" : "OFF"
 			, service_instance.wifi_lock.isHeld() ? "ON" : "OFF"
 
 		) );
 
 		if( service_instance.worker == null || ! service_instance.worker.isAlive() ){
-			sb.append( context.getString(R.string.thread_not_running_status));
+			sb.append( context.getString( R.string.thread_not_running_status ) );
 		}else{
-			sb.append( context.getString(R.string.thread_running_status) );
+			sb.append( context.getString( R.string.thread_running_status ) );
 			sb.append( service_instance.worker.getStatus() );
 		}
 
@@ -317,22 +312,24 @@ public class DownloadService extends Service{
 
 	final GoogleApiClient.OnConnectionFailedListener connection_fail_callback = new GoogleApiClient.OnConnectionFailedListener(){
 		@Override public void onConnectionFailed( @NonNull ConnectionResult connectionResult ){
-			log.w(R.string.play_service_connection_failed,connectionResult.getErrorCode(),connectionResult.getErrorMessage());
-
+			String msg = Utils.getConnectionResultErrorMessage( connectionResult );
+			log.w( R.string.play_service_connection_failed, connectionResult.getErrorCode(), msg );
 			location_tracker.onGoogleAPIDisconnected();
 		}
 	};
+
 	final GoogleApiClient.ConnectionCallbacks connection_callback = new GoogleApiClient.ConnectionCallbacks(){
 		@Override public void onConnected( @Nullable Bundle bundle ){
-			if(!is_alive) return;
+			if( ! is_alive ) return;
 			// TODO
 			location_tracker.onGoogleAPIConnected();
 		}
+
 		// Playサービスとの接続が失われた
 		@Override public void onConnectionSuspended( int i ){
-			if(!is_alive) return;
+			if( ! is_alive ) return;
 
-			log.w( R.string.play_service_connection_suspended,i );
+			log.w( R.string.play_service_connection_suspended, i );
 			mGoogleApiClient.connect();
 			location_tracker.onGoogleAPIDisconnected();
 		}

@@ -140,10 +140,10 @@ public class LocationTracker implements LocationListener{
 				log.v( R.string.location_last_known, date_fmt.format( mCurrentLocation.getTime() ) );
 			}
 		}catch( SecurityException ex ){
-			log.e( R.string.get_last_location_failed, ex.getClass().getSimpleName(), ex.getMessage() );
+			log.e( ex, "getLastLocation() failed." );
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			log.e( R.string.get_last_location_failed, ex.getClass().getSimpleName(), ex.getMessage() );
+			log.e( ex, "getLastLocation() failed." );
 		}
 
 		if( location_setting != null && location_setting.isUpdateRequired() ){
@@ -167,10 +167,10 @@ public class LocationTracker implements LocationListener{
 					}
 				} );
 			}catch( SecurityException ex ){
-				log.e( R.string.location_update_request_failed, ex.getClass().getSimpleName(), ex.getMessage() );
+				log.e( ex,"requestLocationUpdates() failed." );
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				log.e( R.string.location_update_request_failed, ex.getClass().getSimpleName(), ex.getMessage() );
+				log.e( ex,"requestLocationUpdates() failed." );
 			}
 		}
 	}

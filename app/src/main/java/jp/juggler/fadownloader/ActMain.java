@@ -195,6 +195,7 @@ public class ActMain
 					String path = resultData.getStringExtra( FolderPicker.EXTRA_FOLDER );
 					String dummy = Thread.currentThread().getId() + "." + android.os.Process.myPid();
 					File test_dir = new File( new File( path ), dummy );
+					//noinspection ResultOfMethodCallIgnored
 					test_dir.mkdir();
 					try{
 						File test_file = new File( test_dir, dummy );
@@ -206,9 +207,11 @@ public class ActMain
 								fos.close();
 							}
 						}finally{
+							//noinspection ResultOfMethodCallIgnored
 							test_file.delete();
 						}
 					}finally{
+						//noinspection ResultOfMethodCallIgnored
 						test_dir.delete();
 					}
 					// 覚えておく
@@ -238,7 +241,7 @@ public class ActMain
 		setupIabHelper();
 
 		mAdView = (AdView) findViewById( R.id.adView );
-		if( BuildVariant.IS_ADFREE ){
+		if( BuildVariant.AD_FREE ){
 			( (ViewGroup) mAdView.getParent() ).removeView( mAdView );
 			mAdView = null;
 		}else{
@@ -593,73 +596,7 @@ public class ActMain
 	final GoogleApiClient.OnConnectionFailedListener connection_fail_callback = new GoogleApiClient.OnConnectionFailedListener(){
 		@Override public void onConnectionFailed( @NonNull ConnectionResult connectionResult ){
 			int code = connectionResult.getErrorCode();
-			String msg = connectionResult.getErrorMessage();
-			if( TextUtils.isEmpty( msg ) ){
-				switch( code ){
-				case ConnectionResult.SUCCESS:
-					msg = "SUCCESS";
-					break;
-				case ConnectionResult.SERVICE_MISSING:
-					msg = "SERVICE_MISSING";
-					break;
-				case ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED:
-					msg = "SERVICE_VERSION_UPDATE_REQUIRED";
-					break;
-				case ConnectionResult.SERVICE_DISABLED:
-					msg = "SERVICE_DISABLED";
-					break;
-				case ConnectionResult.SIGN_IN_REQUIRED:
-					msg = "SIGN_IN_REQUIRED";
-					break;
-				case ConnectionResult.INVALID_ACCOUNT:
-					msg = "INVALID_ACCOUNT";
-					break;
-				case ConnectionResult.RESOLUTION_REQUIRED:
-					msg = "RESOLUTION_REQUIRED";
-					break;
-				case ConnectionResult.NETWORK_ERROR:
-					msg = "NETWORK_ERROR";
-					break;
-				case ConnectionResult.INTERNAL_ERROR:
-					msg = "INTERNAL_ERROR";
-					break;
-				case ConnectionResult.SERVICE_INVALID:
-					msg = "SERVICE_INVALID";
-					break;
-				case ConnectionResult.DEVELOPER_ERROR:
-					msg = "DEVELOPER_ERROR";
-					break;
-				case ConnectionResult.LICENSE_CHECK_FAILED:
-					msg = "LICENSE_CHECK_FAILED";
-					break;
-				case ConnectionResult.CANCELED:
-					msg = "CANCELED";
-					break;
-				case ConnectionResult.TIMEOUT:
-					msg = "TIMEOUT";
-					break;
-				case ConnectionResult.INTERRUPTED:
-					msg = "INTERRUPTED";
-					break;
-				case ConnectionResult.API_UNAVAILABLE:
-					msg = "API_UNAVAILABLE";
-					break;
-				case ConnectionResult.SIGN_IN_FAILED:
-					msg = "SIGN_IN_FAILED";
-					break;
-				case ConnectionResult.SERVICE_UPDATING:
-					msg = "SERVICE_UPDATING";
-					break;
-				case ConnectionResult.SERVICE_MISSING_PERMISSION:
-					msg = "SERVICE_MISSING_PERMISSION";
-					break;
-				case ConnectionResult.RESTRICTED_PROFILE:
-					msg = "RESTRICTED_PROFILE";
-					break;
-
-				}
-			}
-
+			String msg = Utils.getConnectionResultErrorMessage(connectionResult);
 			msg = getString( R.string.play_service_connection_failed, code, msg );
 			Toast.makeText( ActMain.this, msg, Toast.LENGTH_SHORT ).show();
 
@@ -675,6 +612,7 @@ public class ActMain
 			}
 		}
 	};
+
 	final GoogleApiClient.ConnectionCallbacks connection_callback = new GoogleApiClient.ConnectionCallbacks(){
 		@Override public void onConnected( @Nullable Bundle bundle ){
 			permission_request();
@@ -699,7 +637,7 @@ public class ActMain
 	// onCreateから呼ばれる
 	void setupIabHelper(){
 		//noinspection SimplifiableIfStatement
-		if( BuildVariant.IS_ADFREE ){
+		if( BuildVariant.AD_FREE ){
 			bRemoveAdPurchased = true;
 		}else{
 			bRemoveAdPurchased = Pref.pref( this ).getBoolean( Pref.REMOVE_AD_PURCHASED, false );

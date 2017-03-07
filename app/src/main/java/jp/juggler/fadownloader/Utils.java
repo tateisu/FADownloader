@@ -1,52 +1,24 @@
 package jp.juggler.fadownloader;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.PendingIntent;
-import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkInfo;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.DocumentsContract;
-import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.Log;
 import android.util.SparseBooleanArray;
+
+import com.google.android.gms.common.ConnectionResult;
 
 public class Utils{
 
@@ -234,17 +206,6 @@ public class Utils{
 		return null;
 	}
 
-	//! デバイス名の正規化. デバイス名に使えない文字を潰す
-	static final Pattern reFixDevice1 = Pattern.compile( "[^A-Za-z0-9_\\.\\-]+" );
-	//! デバイス名の正規化. 始端と終端の記号を潰す
-	static final Pattern reFixDevice2 = Pattern.compile( "\\A[^A-Za-z0-9]+|[^A-Za-z0-9]+\\Z" );
-
-	//! デバイス名の正規化
-	public static String normalizeDeviceName( String s ){
-		s = reFixDevice1.matcher( s ).replaceAll( "_" );
-		s = reFixDevice2.matcher( s ).replaceAll( "" );
-		return s;
-	}
 
 	/////////////////////////////////////////////
 
@@ -314,177 +275,7 @@ public class Utils{
 		return sb.toString();
 	}
 
-	////////////////////////////////////////////////////////
-	// XML
 
-	public static void getTextContent_rec( StringBuilder sb, Node node, boolean trim ){
-		int type = node.getNodeType();
-		if( type == Node.TEXT_NODE ){
-			String s = node.getNodeValue();
-			if( trim ) s = s.trim();
-			sb.append( s );
-		}else{
-			NodeList list = node.getChildNodes();
-			for( int k = 0 ; k < list.getLength() ; k++ ){
-				getTextContent_rec( sb, list.item( k ), trim );
-			}
-		}
-	}
-
-	// AndroidのDOM API で、テキストコンテンツを求める
-	public static String getTextContent( Node node, boolean trim ){
-		StringBuilder sb = new StringBuilder();
-		getTextContent_rec( sb, node, trim );
-		return sb.toString();
-	}
-
-	public static String getAttrValue( NamedNodeMap map, String attr_name ){
-		if( map == null || TextUtils.isEmpty( attr_name ) ) return null;
-		Node node = map.getNamedItem( attr_name );
-		return node == null ? null : node.getNodeValue();
-	}
-
-	////////////////////////////////////////////////////////////
-
-	static final Object factory_lock = new Object();
-	static DocumentBuilderFactory factory = null;
-
-	public static Element xml_document( byte[] data ) throws SAXException, IOException, ParserConfigurationException{
-		synchronized( factory_lock ){
-			if( factory == null ) factory = DocumentBuilderFactory.newInstance();
-			return factory.newDocumentBuilder().parse( new ByteArrayInputStream( data ) ).getDocumentElement();
-		}
-	}
-
-	public static Element xml_document( String data ) throws SAXException, IOException, ParserConfigurationException{
-		synchronized( factory_lock ){
-			if( factory == null ) factory = DocumentBuilderFactory.newInstance();
-			return factory.newDocumentBuilder().parse( new InputSource( new StringReader( data ) ) ).getDocumentElement();
-		}
-	}
-
-	public static Element xml_document( File file ) throws SAXException, IOException, ParserConfigurationException{
-		synchronized( factory_lock ){
-			if( factory == null ) factory = DocumentBuilderFactory.newInstance();
-			return factory.newDocumentBuilder().parse( file ).getDocumentElement();
-		}
-	}
-
-	// JSONObject.optString("string")は、nullリテラルが存在した場合に文字列"null"を返す
-	// この挙動は都合が悪いので、nullリテラルの場合はdefvalに指定した文字列を返すようなメソッドを用意する
-	public static String optString( JSONObject o, String key, String defval ){
-		if( o == null || o.isNull( key ) ) return defval;
-		return o.optString( key, defval );
-	}
-
-	public static String optString( JSONObject o, String key ){
-		return optString( o, key, null );
-	}
-
-	public static String optString( JSONArray o, int key, String defval ){
-		if( o == null || o.isNull( key ) ) return defval;
-		return o.optString( key, defval );
-	}
-
-	public static String optString( JSONArray o, int key ){
-		return optString( o, key, null );
-	}
-
-	public static class NodeListIterator implements Iterator<Node>{
-
-		int i;
-		int ie;
-		NodeList list;
-
-		@Override
-		public boolean hasNext(){
-			return i < ie;
-		}
-
-		@Override
-		public Node next(){
-			return list.item( i++ );
-		}
-
-		@Override
-		public void remove(){
-			// 実装しない
-		}
-	}
-
-	public static class NodeListIterable implements Iterable<Node>{
-
-		Node n;
-
-		@Override
-		public Iterator<Node> iterator(){
-			NodeListIterator it = new NodeListIterator();
-			it.list = n.getChildNodes();
-			it.i = 0;
-			it.ie = it.list.getLength();
-			return it;
-		}
-	}
-
-	public static NodeListIterable childNodes( Node n ){
-		NodeListIterable v = new NodeListIterable();
-		v.n = n;
-		return v;
-	}
-
-	static final Pattern reControlChar = Pattern.compile( "[\\x00-\\x1f\\x7f]" );
-	static final Pattern reEscape = Pattern.compile( "\\\\(\\\\|n)" );
-
-	public static String unescape_lf( String text ){
-		// メッセージ中の制御文字を全て除去する
-		text = reControlChar.matcher( text ).replaceAll( "" );
-
-		//  \\,\n を \ および改行に変換する。改行はダイアログ上で正しく表示されていればOK。
-		Matcher m = reEscape.matcher( text );
-		StringBuilder sb = new StringBuilder();
-		int pre_end = 0;
-		while( m.find() ){
-			sb.append( text.substring( pre_end, m.start() ) );
-			pre_end = m.end();
-			switch( m.group( 1 ).charAt( 0 ) ){
-			default:
-			case '\\':
-				sb.append( '\\' );
-				break;
-			case 'n':
-				sb.append( '\n' );
-				break;
-			}
-		}
-		sb.append( text.substring( pre_end, text.length() ) );
-		text = sb.toString();
-
-		//  メッセージ始端と終端の空白文字及び制御文字を全て除去する。
-		text = text.trim();
-
-		return text;
-	}
-
-	////////////////////////////////////////////////////////
-	// AndroidのDOM API で、テキストコンテンツを求める
-
-	public static void getTextContent_rec( StringBuilder sb, Node node ){
-		int type = node.getNodeType();
-		if( type == Node.TEXT_NODE ){
-			sb.append( node.getNodeValue() );
-		}else{
-			NodeList list = node.getChildNodes();
-			for( int k = 0 ; k < list.getLength() ; k++ ){
-				getTextContent_rec( sb, list.item( k ) );
-			}
-		}
-	}
-
-	public static String getTextContent( Node node ){
-		StringBuilder sb = new StringBuilder();
-		getTextContent_rec( sb, node );
-		return sb.toString();
-	}
 
 	////////////////////////////
 
@@ -505,25 +296,6 @@ public class Utils{
 		}catch( Throwable ignored ){
 		}
 		return defval;
-	}
-
-	public static JSONArray encodeJSONStringList( Iterable<String> list ){
-		if( list == null ) return null;
-		JSONArray array = new JSONArray();
-		for( String s : list ){
-			array.put( s );
-		}
-		return array;
-	}
-
-	public static ArrayList<String> decodeJSONStringList( JSONArray src ){
-		if( src == null ) return null;
-		ArrayList<String> list = new ArrayList<>();
-		for( int i = 0, ie = src.length() ; i < ie ; ++ i ){
-			Object o = src.opt( i );
-			if( o instanceof String ) list.add( (String) o );
-		}
-		return list;
 	}
 
 	public static byte[] loadFile( File file ) throws IOException{
@@ -559,5 +331,77 @@ public class Utils{
 //		log.e("missing resid for %s",name);
 //		return R.string.Dialog_Cancel;
 //	}
+
+
+	public static String getConnectionResultErrorMessage(ConnectionResult connectionResult ){
+		int code = connectionResult.getErrorCode();
+		String msg = connectionResult.getErrorMessage();
+		if( TextUtils.isEmpty( msg ) ){
+			switch( code ){
+			case ConnectionResult.SUCCESS:
+				msg = "SUCCESS";
+				break;
+			case ConnectionResult.SERVICE_MISSING:
+				msg = "SERVICE_MISSING";
+				break;
+			case ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED:
+				msg = "SERVICE_VERSION_UPDATE_REQUIRED";
+				break;
+			case ConnectionResult.SERVICE_DISABLED:
+				msg = "SERVICE_DISABLED";
+				break;
+			case ConnectionResult.SIGN_IN_REQUIRED:
+				msg = "SIGN_IN_REQUIRED";
+				break;
+			case ConnectionResult.INVALID_ACCOUNT:
+				msg = "INVALID_ACCOUNT";
+				break;
+			case ConnectionResult.RESOLUTION_REQUIRED:
+				msg = "RESOLUTION_REQUIRED";
+				break;
+			case ConnectionResult.NETWORK_ERROR:
+				msg = "NETWORK_ERROR";
+				break;
+			case ConnectionResult.INTERNAL_ERROR:
+				msg = "INTERNAL_ERROR";
+				break;
+			case ConnectionResult.SERVICE_INVALID:
+				msg = "SERVICE_INVALID";
+				break;
+			case ConnectionResult.DEVELOPER_ERROR:
+				msg = "DEVELOPER_ERROR";
+				break;
+			case ConnectionResult.LICENSE_CHECK_FAILED:
+				msg = "LICENSE_CHECK_FAILED";
+				break;
+			case ConnectionResult.CANCELED:
+				msg = "CANCELED";
+				break;
+			case ConnectionResult.TIMEOUT:
+				msg = "TIMEOUT";
+				break;
+			case ConnectionResult.INTERRUPTED:
+				msg = "INTERRUPTED";
+				break;
+			case ConnectionResult.API_UNAVAILABLE:
+				msg = "API_UNAVAILABLE";
+				break;
+			case ConnectionResult.SIGN_IN_FAILED:
+				msg = "SIGN_IN_FAILED";
+				break;
+			case ConnectionResult.SERVICE_UPDATING:
+				msg = "SERVICE_UPDATING";
+				break;
+			case ConnectionResult.SERVICE_MISSING_PERMISSION:
+				msg = "SERVICE_MISSING_PERMISSION";
+				break;
+			case ConnectionResult.RESTRICTED_PROFILE:
+				msg = "RESTRICTED_PROFILE";
+				break;
+
+			}
+		}
+		return msg;
+	}
 
 }

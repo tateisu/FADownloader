@@ -60,7 +60,7 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 	ListView lvFileList;
 	Button btnSelectFolder;
 	File showing_folder;
-	ArrayAdapter<CharSequence> list_adapter;
+	ArrayAdapter<String> list_adapter;
 
 	@Override public void onClick( View v ){
 		switch( v.getId() ){
@@ -77,13 +77,16 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 	}
 
 	@Override public void onItemClick( AdapterView<?> parent, View view, int position, long id ){
-		File folder = new File( showing_folder, list_adapter.getItem( position ).toString() );
-		if( ! folder.isDirectory() ){
-			Toast.makeText( this, getString( R.string.folder_not_directory ), Toast.LENGTH_SHORT ).show();
-		}else if( ! folder.canWrite() ){
-			Toast.makeText( this, getString( R.string.folder_not_writable ), Toast.LENGTH_SHORT ).show();
-		}else{
-			loadFolder( folder );
+		String name = list_adapter.getItem( position );
+		if( name != null ){
+			File folder = new File( showing_folder, name );
+			if( ! folder.isDirectory() ){
+				Toast.makeText( this, getString( R.string.folder_not_directory ), Toast.LENGTH_SHORT ).show();
+			}else if( ! folder.canWrite() ){
+				Toast.makeText( this, getString( R.string.folder_not_writable ), Toast.LENGTH_SHORT ).show();
+			}else{
+				loadFolder( folder );
+			}
 		}
 	}
 
@@ -117,7 +120,7 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 	}
 
 	private void loadFolder( final File folder ){
-		tvCurrentFolder.setText( "(loading..)" );
+		tvCurrentFolder.setText( R.string.loading );
 		btnFolderUp.setEnabled( false );
 		btnSelectFolder.setEnabled( false );
 		list_adapter.clear();

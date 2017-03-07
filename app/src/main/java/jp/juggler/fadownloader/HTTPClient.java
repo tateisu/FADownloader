@@ -22,8 +22,6 @@ import java.util.regex.Pattern;
 
 import javax.net.ssl.SSLHandshakeException;
 
-import org.w3c.dom.Element;
-
 import android.net.Network;
 import android.os.Build;
 import android.os.SystemClock;
@@ -638,23 +636,6 @@ public class HTTPClient{
 		return null;
 	}
 
-	@SuppressWarnings( "unused" )
-	public Element getXML( LogWriter log, File cache_dir, String[] url_list ){
-		File file = getFile( log, cache_dir, url_list, null );
-		if( file == null ){
-			log.d( "getXML: fail to get http" );
-			return null;
-		}
-		//
-		try{
-			return Utils.xml_document( file );
-		}catch( Throwable ex ){
-			log.d( "getXML: fail to parse xml" );
-			setError( 0, "XML parse error." );
-			return null;
-		}
-	}
-
 	///////////////////////////////////////////////////////////////////
 
 	public boolean setError( int i, String string ){
@@ -679,9 +660,9 @@ public class HTTPClient{
 
 	//! HTTPレスポンスのヘッダを読む
 	public String getHeaderString( String key, String defval ){
-		List<String> vlist = response_header.get( key );
-		if( vlist != null && vlist.size() > 0 ){
-			String v = vlist.get( 0 );
+		List<String> list = response_header.get( key );
+		if( list != null && list.size() > 0 ){
+			String v = list.get( 0 );
 			if( v != null ) return v;
 		}
 		return defval;

@@ -9,7 +9,6 @@ public class Page2 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 
 	View btnRemoveAd;
 
-
 	public Page2( Activity activity, View ignored ){
 		super( activity, ignored );
 	}
@@ -19,7 +18,6 @@ public class Page2 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		btnRemoveAd.setOnClickListener( this );
 
 		root.findViewById( R.id.btnLogClear ).setOnClickListener( this );
-
 
 		root.findViewById( R.id.btnOSSLicence ).setOnClickListener( this );
 		root.findViewById( R.id.btnWifiSetting ).setOnClickListener( this );
@@ -37,7 +35,7 @@ public class Page2 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 			break;
 
 		case R.id.btnOSSLicence:
-			( (ActMain) activity ).openHelp( activity.getString(R.string.help_oss_license_long ) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.help_oss_license_long ) );
 			break;
 
 		case R.id.btnRemoveAd:
@@ -46,8 +44,8 @@ public class Page2 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		case R.id.btnWifiSetting:
 			try{
 				activity.startActivity( new Intent( Settings.ACTION_WIFI_SETTINGS ) );
-			}catch(Throwable ex){
-				ex.printStackTrace(  );
+			}catch( Throwable ex ){
+				ex.printStackTrace();
 			}
 
 		}

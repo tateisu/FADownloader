@@ -260,7 +260,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			long network_check_start = SystemClock.elapsedRealtime();
 			Object network = null;
 			while( ! isCancelled() ){
-				network = (Object) getWiFiNetwork( service );
+				network = getWiFiNetwork( service );
 				if( network != null ) break;
 				//
 				long er_now = SystemClock.elapsedRealtime();
@@ -311,12 +311,12 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			}
 
 			// フォルダを探索する
+
 			final LinkedList<Item> job_queue = new LinkedList<>();
-			{
-				LocalFile local_path = new LocalFile( service, folder_uri );
-				job_queue.add( new Item( "/", local_path, false, 0L ) );
-			}
+			job_queue.add( new Item( "/", new LocalFile( service, folder_uri ), false, 0L ) );
+
 			boolean has_error = false;
+
 			while( ! isCancelled() ){
 
 				if( job_queue.isEmpty() ){
@@ -342,9 +342,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				callback.acquireWakeLock();
 
 				Item item = job_queue.removeFirst();
-				if( item.is_file ){
-					// TODO ファイル転送
-				}else{
+				if( ! item.is_file ){
 					status.set( service.getString( R.string.progress_folder, item.air_path ) );
 					// フォルダを読む
 					String cgi_url = flashair_url + "command.cgi?op=100&DIR=" + Uri.encode( item.air_path );
@@ -369,8 +367,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 						try{
 							long size = Long.parseLong( mAttr.group( 1 ), 10 );
 							int attr = Integer.parseInt( mAttr.group( 2 ), 10 );
-							int date = Integer.parseInt( mAttr.group( 3 ), 10 );
-							int time = Integer.parseInt( mAttr.group( 4 ), 10 );
+//							int date = Integer.parseInt( mAttr.group( 3 ), 10 );
+//							int time = Integer.parseInt( mAttr.group( 4 ), 10 );
 
 							// https://flashair-developers.com/ja/support/forum/#/discussion/3/%E3%82%AB%E3%83%B3%E3%83%9E%E5%8C%BA%E5%88%87%E3%82%8A
 							String dir = ( item.air_path.equals( "/" ) ? "" : item.air_path );
@@ -412,7 +410,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 								log.e( "%s//%s :skip. can not prepare local file.", item.air_path, file_name );
 								continue;
 							}else if( local_child.length() >= size ){
-								// log.f( "%s//%s :skip. same file size.",item.air_path, fname );
+								// log.f( "%s//%s :skip. same file size.",item.air_path, file_name );
 								continue;
 							}
 
@@ -454,9 +452,10 @@ public class DownloadWorker extends Thread implements CancelChecker{
 									return null;
 								}
 							} );
-							if( isCancelled() ){
-								// no log.
-							}else if( data == null ){
+
+							if( isCancelled() ) break;
+
+							if( data == null ){
 								log.e( "FILE %s :HTTP error %s", file_name, client.last_error );
 
 								if( client.last_error.contains( "UnknownHostException" ) ){
@@ -477,7 +476,6 @@ public class DownloadWorker extends Thread implements CancelChecker{
 									status.set( service.getString( R.string.exif_update, child_air_path ) );
 									updateFileLocation( location, local_child );
 								}
-
 							}
 
 						}catch( Throwable ex ){

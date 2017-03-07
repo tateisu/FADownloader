@@ -118,7 +118,7 @@ public class LocalFile{
 					child_list = result;
 				}catch( Throwable ex ){
 					ex.printStackTrace();
-					log.e( ex, R.string.local_folder_list_failed );
+					log.e( ex, "listFiles() failed." );
 				}
 			}
 		}
@@ -152,6 +152,7 @@ public class LocalFile{
 		return local_file != null;
 	}
 
+	@SuppressWarnings( "BooleanMethodIsAlwaysInverted" )
 	public boolean prepareFile( LogWriter log ){
 		try{
 			if( local_file == null && parent != null ){

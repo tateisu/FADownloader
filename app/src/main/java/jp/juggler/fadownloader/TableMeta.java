@@ -48,8 +48,8 @@ public abstract class TableMeta{
 	public String table;
 	public String authority;
 	public Uri content_uri;
-	public String mimetype_dir;
-	public String mimetype_item;
+	public String mime_type_dir;
+	public String mime_type_item;
 
 	public TableMeta(){
 	}
@@ -76,8 +76,8 @@ public abstract class TableMeta{
 
 		this.authority = authority;
 		this.content_uri = Uri.parse( "content://" + authority + "/" + table );
-		this.mimetype_dir = "vnd.android.cursor.dir/" + authority + "." + table;
-		this.mimetype_item = "vnd.android.cursor.item/" + authority + "." + table;
+		this.mime_type_dir = "vnd.android.cursor.dir/" + authority + "." + table;
+		this.mime_type_item = "vnd.android.cursor.item/" + authority + "." + table;
 
 		// uri for group
 		sUriHandlerList.add( new MatchResult( this, false ) );
@@ -94,7 +94,7 @@ public abstract class TableMeta{
 
 	@SuppressWarnings( "UnusedParameters" )
 	public String getType( Uri uri, MatchResult match ){
-		return match.is_item ? match.meta.mimetype_item : match.meta.mimetype_dir;
+		return match.is_item ? match.meta.mime_type_item : match.meta.mime_type_dir;
 	}
 
 	@SuppressWarnings( "UnusedParameters" )
