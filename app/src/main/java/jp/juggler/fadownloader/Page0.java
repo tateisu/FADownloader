@@ -1,5 +1,6 @@
 package jp.juggler.fadownloader;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -102,28 +103,28 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 			( (ActMain) activity ).openHelp( R.layout.help_local_folder );
 			break;
 		case R.id.btnFlashAirURLHelp:
-			( (ActMain) activity ).openHelp( activity.getString(R.string.help_flashair_url_text) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.help_flashair_url_text ) );
 			break;
 		case R.id.btnIntervalHelp:
-			( (ActMain) activity ).openHelp( activity.getString(R.string.help_repeat_interval_text) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.help_repeat_interval_text ) );
 			break;
 		case R.id.btnFileTypeHelp:
-			( (ActMain) activity ).openHelp( activity.getString(R.string.help_file_type_text) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.help_file_type_text ) );
 			break;
 		case R.id.btnLocationModeHelp:
-			( (ActMain) activity ).openHelp( activity.getString(R.string.help_location_mode) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.help_location_mode ) );
 			break;
 		case R.id.btnLocationIntervalDesiredHelp:
-			( (ActMain) activity ).openHelp( activity.getString(R.string.help_location_interval_desired) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.help_location_interval_desired ) );
 			break;
 		case R.id.btnLocationIntervalMinHelp:
-			( (ActMain) activity ).openHelp( activity.getString(R.string.help_location_interval_min) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.help_location_interval_min ) );
 			break;
 		case R.id.btnForceWifiHelp:
-			( (ActMain) activity ).openHelp( activity.getString(R.string.help_force_wifi) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.help_force_wifi ) );
 			break;
 		case R.id.btnSSIDHelp:
-			( (ActMain) activity ).openHelp( activity.getString(R.string.help_ssid) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.help_ssid ) );
 			break;
 		}
 	}
@@ -185,11 +186,11 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 
 	// 転送先フォルダの選択を開始
 	void folder_pick(){
-		if( Build.VERSION.SDK_INT >= 21){
-			Intent intent = new Intent( Intent.ACTION_OPEN_DOCUMENT_TREE );
+		if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
+			@SuppressLint( "InlinedApi" ) Intent intent = new Intent( Intent.ACTION_OPEN_DOCUMENT_TREE );
 			activity.startActivityForResult( intent, ActMain.REQUEST_CODE_DOCUMENT );
 		}else{
-			FolderPicker.open(activity,ActMain.REQUEST_FOLDER_PICKER,tvFolder.getText().toString());
+			FolderPicker.open( activity, ActMain.REQUEST_FOLDER_PICKER, tvFolder.getText().toString() );
 
 		}
 	}
@@ -198,8 +199,8 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 	void folder_view_update(){
 		String name = null;
 		String sv = Pref.pref( activity ).getString( Pref.UI_FOLDER_URI, null );
-		if( ! TextUtils.isEmpty( sv) ){
-			if( Build.VERSION.SDK_INT >= 21){
+		if( ! TextUtils.isEmpty( sv ) ){
+			if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
 				DocumentFile folder;
 				folder = DocumentFile.fromTreeUri( activity, Uri.parse( sv ) );
 				if( folder != null ){
@@ -213,6 +214,6 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		}
 
 		tvFolder.setText( TextUtils.isEmpty( name )
-			?  activity.getString(R.string.not_selected) : name  );
+			? activity.getString( R.string.not_selected ) : name );
 	}
 }

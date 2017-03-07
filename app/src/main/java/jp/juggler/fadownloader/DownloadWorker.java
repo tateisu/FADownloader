@@ -175,11 +175,11 @@ public class DownloadWorker extends Thread implements CancelChecker{
 	static class Item{
 
 		final String air_path;
-		final FilePathX local_file;
+		final LocalFile local_file;
 		final boolean is_file;
 		final long size;
 
-		Item( String air_path, FilePathX local_file, boolean is_file, long size ){
+		Item( String air_path, LocalFile local_file, boolean is_file, long size ){
 			this.air_path = air_path;
 			this.local_file = local_file;
 			this.is_file = is_file;
@@ -189,7 +189,6 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 	static final Pattern reLine = Pattern.compile( "([^\\x0d\\x0a]+)" );
 	static final Pattern reAttr = Pattern.compile( ",(\\d+),(\\d+),(\\d+),(\\d+)$" );
-
 
 	@Override public void run(){
 
@@ -314,7 +313,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			// フォルダを探索する
 			final LinkedList<Item> job_queue = new LinkedList<>();
 			{
-				FilePathX local_path = new FilePathX(service,folder_uri);
+				LocalFile local_path = new LocalFile( service, folder_uri );
 				job_queue.add( new Item( "/", local_path, false, 0L ) );
 			}
 			boolean has_error = false;
@@ -387,7 +386,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 							String child_air_path = dir + "/" + file_name;
 
-							final FilePathX local_child = new FilePathX(item.local_file,file_name);
+							final LocalFile local_child = new LocalFile( item.local_file, file_name );
 
 							if( ( attr & 0x10 ) != 0 ){
 								// サブフォルダはキューに追加する
@@ -412,7 +411,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 							if( ! local_child.prepareFile( log ) ){
 								log.e( "%s//%s :skip. can not prepare local file.", item.air_path, file_name );
 								continue;
-							}else if( local_child.length()  >= size ){
+							}else if( local_child.length() >= size ){
 								// log.f( "%s//%s :skip. same file size.",item.air_path, fname );
 								continue;
 							}
@@ -425,7 +424,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 								public byte[] onHTTPClientStream( LogWriter log, CancelChecker cancel_checker, InputStream in, int content_length ){
 									try{
-										OutputStream os = local_child.openOutputStream(service);
+										OutputStream os = local_child.openOutputStream( service );
 										if( os == null ){
 											log.e( "cannot open local output file." );
 										}else{
@@ -494,18 +493,18 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		callback.onThreadEnd( allow_stop_service );
 	}
 
-	private void updateFileLocation( final Location location, FilePathX file ){
+	private void updateFileLocation( final Location location, LocalFile file ){
 
 		try{
-			FilePathX tmp_path = new FilePathX(file.parent,"tmp-" + currentThread().getId() + "-" + android.os.Process.myPid() + "-" + file.name);
+			LocalFile tmp_path = new LocalFile( file.getParent(), "tmp-" + currentThread().getId() + "-" + android.os.Process.myPid() + "-" + file.getName() );
 
-			if(!tmp_path.prepareFile( log )){
+			if( ! tmp_path.prepareFile( log ) ){
 				throw new RuntimeException( "create file failed." );
 			}else{
 				boolean bModifyFailed = false;
 				OutputStream os = tmp_path.openOutputStream( service );
 				try{
-					InputStream is = file.openInputStream(service);
+					InputStream is = file.openInputStream( service );
 					try{
 						ExifInterface.modifyExifTag( is, ExifInterface.Options.OPTION_ALL
 							, os, new ExifInterface.ModifyExifTagCallback(){
@@ -554,10 +553,10 @@ public class DownloadWorker extends Thread implements CancelChecker{
 						}else{
 							if( ! file.delete() ){
 								log.e( "EXIF追加後のファイル操作に失敗" );
-							}else if( ! tmp_path.renameTo( file.name ) ){
+							}else if( ! tmp_path.renameTo( file.getName() ) ){
 								log.e( "EXIF追加後のファイル操作に失敗" );
 							}else{
-								log.i( "%s に位置情報を付与しました", file.name );
+								log.i( "%s に位置情報を付与しました", file.getName() );
 							}
 						}
 

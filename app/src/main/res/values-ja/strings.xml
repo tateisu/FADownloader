@@ -8,7 +8,7 @@
     <string name="file_type_caption">File Type</string>
     <string name="app_permission_required">アプリに権限が必要です</string>
     <string name="request_permission">request</string>
-    <string name="cancel">cancel</string>
+    <string name="cancel">キャンセル</string>
     <string name="setting">設定</string>
     <string name="dotdotdot">…</string>
     <string name="not_selected">(選択されてません)</string>
@@ -54,8 +54,8 @@
     <string name="file_type_parse_error">ファイル種別を解釈できません %1$s %2$s %3$s</string>
     <string name="thread_cancelled">スレッドキャンセル。理由：%1$s</string>
     <string name="folder_create">%1$s フォルダ作成</string>
-    <string name="folder_create_failed">ディレクトリ作成失敗: %1$s %2$s</string>
-    <string name="file_create_failed">ファイル作成失敗: %1$s %2$s</string>
+    <string name="folder_create_failed">ディレクトリ作成失敗.</string>
+    <string name="file_create_failed">ファイル作成失敗.</string>
     <string name="thread_start">スレッド開始</string>
     <string name="initializing">初期化中…</string>
     <string name="wait_short">短い待機 あと%1$s</string>
@@ -108,7 +108,7 @@
     <string name="oss_license_info">OSSライセンス情報</string>
     <string name="help_force_wifi">Wi-Fi強制機能をONにしてFlashAir APのSSIDを入力すると、Wi-Fi接続がより安定します。\n・Wi-FiがOFFになっていたらONにします\n・指定したSSIDの優先度を上げます\n・指定したSSIDと現在の接続先が異なる場合、Wi-Fi APのスキャンを定期的に行います\n・指定したSSIDがスキャン結果に含まれる場合、そのWi-Fi AP に接続先を切り替えます\n</string>
     <string name="help_ssid">SSIDにはFlashAir Wi-Fi APのSSIDを指定してください\n</string>
-    <string name="fix_wifi_ap">Wi-Fi AP強制変更</string>
+    <string name="fix_wifi_ap">Wi-Fi AP半強制</string>
     <string name="ssid_empty">SSIDを指定してください</string>
     <string name="wifi_ap_force_changed">Wi-Fi APを切り替えました</string>
     <string name="wifi_ap_ssid">Wi-Fi APのSSID</string>
@@ -123,4 +123,5 @@
     <string name="folder_up">上のフォルダ階層へ</string>
     <string name="folder_not_directory">フォルダを確認できません</string>
     <string name="folder_not_writable">フォルダへの書き込み権限がありません</string>
+    <string name="local_folder_list_failed">local folder listing failed.</string>
 </resources>

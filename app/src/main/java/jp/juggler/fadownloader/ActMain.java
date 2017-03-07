@@ -1,5 +1,6 @@
 package jp.juggler.fadownloader;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Dialog;
@@ -163,13 +164,14 @@ public class ActMain
 		}
 	}
 
+	@SuppressLint( "NewApi" )
 	@Override public void onActivityResult( int requestCode, int resultCode, Intent resultData ){
 		// mIabHelper が結果を処理した
 		if( mIabHelper != null && mIabHelper.handleActivityResult( requestCode, resultCode, resultData ) ) return;
 
 		if( requestCode == REQUEST_CODE_DOCUMENT ){
 			if( resultCode == Activity.RESULT_OK ){
-				if( Build.VERSION.SDK_INT >= 21){
+				if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
 					try{
 						Uri treeUri = resultData.getData();
 						// 永続的な許可を取得
@@ -178,20 +180,20 @@ public class ActMain
 						Pref.pref( this ).edit()
 							.putString( Pref.UI_FOLDER_URI, treeUri.toString() )
 							.apply();
-					}catch(Throwable ex){
-						ex.printStackTrace(  );
-						Toast.makeText(this,String.format("folder access failed. %s %s",ex.getClass().getSimpleName(),ex.getMessage()),Toast.LENGTH_LONG).show();
+					}catch( Throwable ex ){
+						ex.printStackTrace();
+						Toast.makeText( this, String.format( "folder access failed. %s %s", ex.getClass().getSimpleName(), ex.getMessage() ), Toast.LENGTH_LONG ).show();
 					}
 				}
 			}
 			Page0 page = pager_adapter.getPage( 0 );
 			if( page != null ) page.folder_view_update();
 			return;
-		}else if ( requestCode == REQUEST_FOLDER_PICKER ){
+		}else if( requestCode == REQUEST_FOLDER_PICKER ){
 			if( resultCode == Activity.RESULT_OK ){
 				try{
 					String path = resultData.getStringExtra( FolderPicker.EXTRA_FOLDER );
-					String dummy = Thread.currentThread().getId()+"."+android.os.Process.myPid();
+					String dummy = Thread.currentThread().getId() + "." + android.os.Process.myPid();
 					File test_dir = new File( new File( path ), dummy );
 					test_dir.mkdir();
 					try{
@@ -213,9 +215,9 @@ public class ActMain
 					Pref.pref( this ).edit()
 						.putString( Pref.UI_FOLDER_URI, path )
 						.apply();
-				}catch(Throwable ex){
-					ex.printStackTrace(  );
-					Toast.makeText(this,String.format("folder access failed. %s %s",ex.getClass().getSimpleName(),ex.getMessage()),Toast.LENGTH_LONG).show();
+				}catch( Throwable ex ){
+					ex.printStackTrace();
+					Toast.makeText( this, String.format( "folder access failed. %s %s", ex.getClass().getSimpleName(), ex.getMessage() ), Toast.LENGTH_LONG ).show();
 				}
 			}
 			Page0 page = pager_adapter.getPage( 0 );
@@ -441,7 +443,7 @@ public class ActMain
 		String folder_uri = null;
 		sv = pref.getString( Pref.UI_FOLDER_URI, null );
 		if( ! TextUtils.isEmpty( sv ) ){
-			if( Build.VERSION.SDK_INT >= 21 ){
+			if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
 				DocumentFile folder = DocumentFile.fromTreeUri( this, Uri.parse( sv ) );
 				if( folder != null ){
 					if( folder.exists() && folder.canWrite() ){
@@ -511,7 +513,7 @@ public class ActMain
 		boolean force_wifi = pref.getBoolean( Pref.UI_FORCE_WIFI, false );
 
 		String ssid;
-		if( !force_wifi){
+		if( ! force_wifi ){
 			ssid = "";
 		}else{
 			sv = pref.getString( Pref.UI_SSID, "" );
@@ -569,9 +571,10 @@ public class ActMain
 			}
 		} );
 	}
+
 	void openHelp( String text ){
 		View v = getLayoutInflater().inflate( R.layout.help_single_text, null, false );
-		((TextView)v.findViewById( R.id.text )).setText(text);
+		( (TextView) v.findViewById( R.id.text ) ).setText( text );
 
 		final Dialog d = new Dialog( this );
 		d.requestWindowFeature( Window.FEATURE_NO_TITLE );
@@ -584,39 +587,80 @@ public class ActMain
 			}
 		} );
 	}
+
 	GoogleApiClient mGoogleApiClient;
 
 	final GoogleApiClient.OnConnectionFailedListener connection_fail_callback = new GoogleApiClient.OnConnectionFailedListener(){
 		@Override public void onConnectionFailed( @NonNull ConnectionResult connectionResult ){
 			int code = connectionResult.getErrorCode();
 			String msg = connectionResult.getErrorMessage();
-			if( TextUtils.isEmpty( msg )){
-				switch(code){
-				case ConnectionResult.SUCCESS: msg="SUCCESS";break;
-				case ConnectionResult.SERVICE_MISSING: msg="SERVICE_MISSING";break;
-				case ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED: msg="SERVICE_VERSION_UPDATE_REQUIRED";break;
-				case ConnectionResult.SERVICE_DISABLED: msg="SERVICE_DISABLED";break;
-				case ConnectionResult.SIGN_IN_REQUIRED: msg="SIGN_IN_REQUIRED";break;
-				case ConnectionResult.INVALID_ACCOUNT: msg="INVALID_ACCOUNT";break;
-				case ConnectionResult.RESOLUTION_REQUIRED: msg="RESOLUTION_REQUIRED";break;
-				case ConnectionResult.NETWORK_ERROR: msg="NETWORK_ERROR";break;
-				case ConnectionResult.INTERNAL_ERROR: msg="INTERNAL_ERROR";break;
-				case ConnectionResult.SERVICE_INVALID: msg="SERVICE_INVALID";break;
-				case ConnectionResult.DEVELOPER_ERROR: msg="DEVELOPER_ERROR";break;
-				case ConnectionResult.LICENSE_CHECK_FAILED: msg="LICENSE_CHECK_FAILED";break;
-				case ConnectionResult.CANCELED: msg="CANCELED";break;
-				case ConnectionResult.TIMEOUT: msg="TIMEOUT";break;
-				case ConnectionResult.INTERRUPTED: msg="INTERRUPTED";break;
-				case ConnectionResult.API_UNAVAILABLE: msg="API_UNAVAILABLE";break;
-				case ConnectionResult.SIGN_IN_FAILED: msg="SIGN_IN_FAILED";break;
-				case ConnectionResult.SERVICE_UPDATING: msg="SERVICE_UPDATING";break;
-				case ConnectionResult.SERVICE_MISSING_PERMISSION: msg="SERVICE_MISSING_PERMISSION";break;
-				case ConnectionResult.RESTRICTED_PROFILE: msg="RESTRICTED_PROFILE";break;
+			if( TextUtils.isEmpty( msg ) ){
+				switch( code ){
+				case ConnectionResult.SUCCESS:
+					msg = "SUCCESS";
+					break;
+				case ConnectionResult.SERVICE_MISSING:
+					msg = "SERVICE_MISSING";
+					break;
+				case ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED:
+					msg = "SERVICE_VERSION_UPDATE_REQUIRED";
+					break;
+				case ConnectionResult.SERVICE_DISABLED:
+					msg = "SERVICE_DISABLED";
+					break;
+				case ConnectionResult.SIGN_IN_REQUIRED:
+					msg = "SIGN_IN_REQUIRED";
+					break;
+				case ConnectionResult.INVALID_ACCOUNT:
+					msg = "INVALID_ACCOUNT";
+					break;
+				case ConnectionResult.RESOLUTION_REQUIRED:
+					msg = "RESOLUTION_REQUIRED";
+					break;
+				case ConnectionResult.NETWORK_ERROR:
+					msg = "NETWORK_ERROR";
+					break;
+				case ConnectionResult.INTERNAL_ERROR:
+					msg = "INTERNAL_ERROR";
+					break;
+				case ConnectionResult.SERVICE_INVALID:
+					msg = "SERVICE_INVALID";
+					break;
+				case ConnectionResult.DEVELOPER_ERROR:
+					msg = "DEVELOPER_ERROR";
+					break;
+				case ConnectionResult.LICENSE_CHECK_FAILED:
+					msg = "LICENSE_CHECK_FAILED";
+					break;
+				case ConnectionResult.CANCELED:
+					msg = "CANCELED";
+					break;
+				case ConnectionResult.TIMEOUT:
+					msg = "TIMEOUT";
+					break;
+				case ConnectionResult.INTERRUPTED:
+					msg = "INTERRUPTED";
+					break;
+				case ConnectionResult.API_UNAVAILABLE:
+					msg = "API_UNAVAILABLE";
+					break;
+				case ConnectionResult.SIGN_IN_FAILED:
+					msg = "SIGN_IN_FAILED";
+					break;
+				case ConnectionResult.SERVICE_UPDATING:
+					msg = "SERVICE_UPDATING";
+					break;
+				case ConnectionResult.SERVICE_MISSING_PERMISSION:
+					msg = "SERVICE_MISSING_PERMISSION";
+					break;
+				case ConnectionResult.RESTRICTED_PROFILE:
+					msg = "RESTRICTED_PROFILE";
+					break;
 
 				}
 			}
 
-			msg = getString( R.string.play_service_connection_failed,code,  msg);
+			msg = getString( R.string.play_service_connection_failed, code, msg );
 			Toast.makeText( ActMain.this, msg, Toast.LENGTH_SHORT ).show();
 
 			if( code == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED ){
@@ -624,8 +668,8 @@ public class ActMain
 					Intent intent = new Intent( Intent.ACTION_VIEW );
 					intent.setData( Uri.parse( "market://details?id=com.google.android.gms" ) );
 					startActivity( intent );
-				}catch(Throwable ex){
-					ex.printStackTrace(  );
+				}catch( Throwable ex ){
+					ex.printStackTrace();
 				}
 
 			}

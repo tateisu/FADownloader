@@ -7,6 +7,6 @@ public class App1 extends Application{
 	@Override public void onCreate(){
 		super.onCreate();
 
-		Pref.initialize(getApplicationContext());
+		Pref.initialize( getApplicationContext() );
 	}
 }
