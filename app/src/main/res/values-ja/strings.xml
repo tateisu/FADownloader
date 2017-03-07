@@ -118,4 +118,9 @@
     <string name="wifi_status_unknown">Wi-Fiの状態が不明です</string>
     <string name="wifi_target_ssid_not_found">Wi-Fi AP %1$s への接続設定がありません</string>
     <string name="wifi_target_ssid_not_scanned">Wi-Fiスキャン結果に%1$sがありません</string>
+    <string name="folder_picker">フォルダ選択</string>
+    <string name="folder_select">「%1$s」を選択</string>
+    <string name="folder_up">上のフォルダ階層へ</string>
+    <string name="folder_not_directory">フォルダを確認できません</string>
+    <string name="folder_not_writable">フォルダへの書き込み権限がありません</string>
 </resources>

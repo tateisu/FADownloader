@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -47,6 +48,8 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
@@ -61,6 +64,7 @@ public class ActMain
 	static final int REQUEST_CODE_DOCUMENT = 2;
 	static final int REQUEST_CHECK_SETTINGS = 3;
 	static final int REQUEST_PURCHASE = 4;
+	static final int REQUEST_FOLDER_PICKER = 5;
 
 	TextView tvStatus;
 
@@ -165,15 +169,55 @@ public class ActMain
 
 		if( requestCode == REQUEST_CODE_DOCUMENT ){
 			if( resultCode == Activity.RESULT_OK ){
-				Uri treeUri = resultData.getData();
-				// 永続的な許可を取得
-				getContentResolver().takePersistableUriPermission( treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION );
-				// 覚えておく
-				Pref.pref( this ).edit()
-					.putString( Pref.UI_FOLDER_URI, treeUri.toString() )
-					.apply();
+				if( Build.VERSION.SDK_INT >= 21){
+					try{
+						Uri treeUri = resultData.getData();
+						// 永続的な許可を取得
+						getContentResolver().takePersistableUriPermission( treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION );
+						// 覚えておく
+						Pref.pref( this ).edit()
+							.putString( Pref.UI_FOLDER_URI, treeUri.toString() )
+							.apply();
+					}catch(Throwable ex){
+						ex.printStackTrace(  );
+						Toast.makeText(this,String.format("folder access failed. %s %s",ex.getClass().getSimpleName(),ex.getMessage()),Toast.LENGTH_LONG).show();
+					}
+				}
 			}
-
+			Page0 page = pager_adapter.getPage( 0 );
+			if( page != null ) page.folder_view_update();
+			return;
+		}else if ( requestCode == REQUEST_FOLDER_PICKER ){
+			if( resultCode == Activity.RESULT_OK ){
+				try{
+					String path = resultData.getStringExtra( FolderPicker.EXTRA_FOLDER );
+					String dummy = Thread.currentThread().getId()+"."+android.os.Process.myPid();
+					File test_dir = new File( new File( path ), dummy );
+					test_dir.mkdir();
+					try{
+						File test_file = new File( test_dir, dummy );
+						try{
+							FileOutputStream fos = new FileOutputStream( test_file );
+							try{
+								fos.write( Utils.encodeUTF8( "TEST" ) );
+							}finally{
+								fos.close();
+							}
+						}finally{
+							test_file.delete();
+						}
+					}finally{
+						test_dir.delete();
+					}
+					// 覚えておく
+					Pref.pref( this ).edit()
+						.putString( Pref.UI_FOLDER_URI, path )
+						.apply();
+				}catch(Throwable ex){
+					ex.printStackTrace(  );
+					Toast.makeText(this,String.format("folder access failed. %s %s",ex.getClass().getSimpleName(),ex.getMessage()),Toast.LENGTH_LONG).show();
+				}
+			}
 			Page0 page = pager_adapter.getPage( 0 );
 			if( page != null ) page.folder_view_update();
 			return;
@@ -397,14 +441,18 @@ public class ActMain
 		String folder_uri = null;
 		sv = pref.getString( Pref.UI_FOLDER_URI, null );
 		if( ! TextUtils.isEmpty( sv ) ){
-			DocumentFile folder = DocumentFile.fromTreeUri( this, Uri.parse( sv ) );
-			if( folder != null ){
-				if( folder.exists() && folder.canWrite() ){
-					folder_uri = sv;
+			if( Build.VERSION.SDK_INT >= 21 ){
+				DocumentFile folder = DocumentFile.fromTreeUri( this, Uri.parse( sv ) );
+				if( folder != null ){
+					if( folder.exists() && folder.canWrite() ){
+						folder_uri = sv;
+					}
 				}
+			}else{
+				folder_uri = sv;
 			}
 		}
-		if( folder_uri == null ){
+		if( TextUtils.isEmpty( folder_uri ) ){
 			Toast.makeText( this, getString( R.string.folder_not_ok ), Toast.LENGTH_SHORT ).show();
 			return;
 		}

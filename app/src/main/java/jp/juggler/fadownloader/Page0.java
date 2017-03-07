@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
 import android.support.v4.provider.DocumentFile;
 import android.text.TextUtils;
 import android.view.View;
@@ -153,8 +155,7 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		boolean bv = pref.getBoolean( Pref.UI_FORCE_WIFI, false );
 		swForceWifi.setChecked( bv );
 		//
-		sv = pref.getString( Pref.UI_SSID, "" );
-		if( sv != null ) etSSID.setText( sv );
+		etSSID.setText( pref.getString( Pref.UI_SSID, "" ) );
 
 		updateFormEnabled();
 	}
@@ -184,28 +185,34 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 
 	// 転送先フォルダの選択を開始
 	void folder_pick(){
-		Intent intent = new Intent( Intent.ACTION_OPEN_DOCUMENT_TREE );
-		activity.startActivityForResult( intent, ActMain.REQUEST_CODE_DOCUMENT );
+		if( Build.VERSION.SDK_INT >= 21){
+			Intent intent = new Intent( Intent.ACTION_OPEN_DOCUMENT_TREE );
+			activity.startActivityForResult( intent, ActMain.REQUEST_CODE_DOCUMENT );
+		}else{
+			FolderPicker.open(activity,ActMain.REQUEST_FOLDER_PICKER,tvFolder.getText().toString());
+
+		}
 	}
 
 	// フォルダの表示を更新
 	void folder_view_update(){
-		String folder_uri = null;
-
+		String name = null;
 		String sv = Pref.pref( activity ).getString( Pref.UI_FOLDER_URI, null );
-		if( ! TextUtils.isEmpty( sv ) ){
-			DocumentFile folder;
-			folder = DocumentFile.fromTreeUri( activity, Uri.parse( sv ) );
-			if( folder != null ){
-				if( folder.exists() && folder.canWrite() ){
-					folder_uri = sv;
-					tvFolder.setText( folder.getName() );
+		if( ! TextUtils.isEmpty( sv) ){
+			if( Build.VERSION.SDK_INT >= 21){
+				DocumentFile folder;
+				folder = DocumentFile.fromTreeUri( activity, Uri.parse( sv ) );
+				if( folder != null ){
+					if( folder.exists() && folder.canWrite() ){
+						name = folder.getName();
+					}
 				}
+			}else{
+				name = sv;
 			}
 		}
 
-		if( folder_uri == null ){
-			tvFolder.setText( R.string.not_selected );
-		}
+		tvFolder.setText( TextUtils.isEmpty( name )
+			?  activity.getString(R.string.not_selected) : name  );
 	}
 }

@@ -6,19 +6,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.net.ConnectivityManager;
 import android.net.Network;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.SystemClock;
-import android.support.v4.provider.DocumentFile;
 
 import it.sephiroth.android.library.exif2.ExifInterface;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -61,13 +60,13 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		this.folder_uri = intent.getStringExtra( DownloadService.EXTRA_FOLDER_URI );
 		this.interval = intent.getIntExtra( DownloadService.EXTRA_INTERVAL, 86400 );
 		this.file_type = intent.getStringExtra( DownloadService.EXTRA_FILE_TYPE );
-		boolean force_wifi = intent.getBooleanExtra( DownloadService.EXTRA_FORCE_WIFI ,false);
-		String ssid =intent.getStringExtra( DownloadService.EXTRA_SSID );
+		boolean force_wifi = intent.getBooleanExtra( DownloadService.EXTRA_FORCE_WIFI, false );
+		String ssid = intent.getStringExtra( DownloadService.EXTRA_SSID );
 
 		LocationTracker.Setting location_setting = new LocationTracker.Setting();
-		location_setting.interval_desired = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_DESIRED ,LocationTracker.DEFAULT_INTERVAL_DESIRED);
-		location_setting.interval_min = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_MIN ,LocationTracker.DEFAULT_INTERVAL_MIN);
-		location_setting.mode = intent.getIntExtra( DownloadService.EXTRA_LOCATION_MODE ,LocationTracker.DEFAULT_MODE);
+		location_setting.interval_desired = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_DESIRED, LocationTracker.DEFAULT_INTERVAL_DESIRED );
+		location_setting.interval_min = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_MIN, LocationTracker.DEFAULT_INTERVAL_MIN );
+		location_setting.mode = intent.getIntExtra( DownloadService.EXTRA_LOCATION_MODE, LocationTracker.DEFAULT_MODE );
 
 		Pref.pref( service ).edit()
 			.putBoolean( Pref.WORKER_REPEAT, repeat )
@@ -76,7 +75,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			.putInt( Pref.WORKER_INTERVAL, interval )
 			.putString( Pref.WORKER_FILE_TYPE, file_type )
 			.putLong( Pref.WORKER_LOCATION_INTERVAL_DESIRED, location_setting.interval_desired )
-			.putLong( Pref.WORKER_LOCATION_INTERVAL_MIN, location_setting.interval_min  )
+			.putLong( Pref.WORKER_LOCATION_INTERVAL_MIN, location_setting.interval_min )
 			.putInt( Pref.WORKER_LOCATION_MODE, location_setting.mode )
 			.putBoolean( Pref.WORKER_FORCE_WIFI, force_wifi )
 			.putString( Pref.WORKER_SSID, ssid )
@@ -84,9 +83,9 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 		file_type_list = file_type_parse();
 
-		service.wifi_tracker.updateSetting(force_wifi,ssid);
+		service.wifi_tracker.updateSetting( force_wifi, ssid );
 
-		service.location_tracker.updateSetting(location_setting);
+		service.location_tracker.updateSetting( location_setting );
 	}
 
 	public DownloadWorker( DownloadService service, Callback callback ){
@@ -103,18 +102,18 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		this.file_type = pref.getString( Pref.WORKER_FILE_TYPE, null );
 
 		boolean force_wifi = pref.getBoolean( Pref.WORKER_FORCE_WIFI, false );
-		String ssid =pref.getString( Pref.WORKER_SSID, null );
+		String ssid = pref.getString( Pref.WORKER_SSID, null );
 
 		LocationTracker.Setting location_setting = new LocationTracker.Setting();
-		location_setting.interval_desired = pref.getLong(Pref.WORKER_LOCATION_INTERVAL_DESIRED ,LocationTracker.DEFAULT_INTERVAL_DESIRED);
-		location_setting.interval_min = pref.getLong(Pref.WORKER_LOCATION_INTERVAL_MIN,LocationTracker.DEFAULT_INTERVAL_MIN);
-		location_setting.mode = pref.getInt(Pref.WORKER_LOCATION_MODE ,LocationTracker.DEFAULT_MODE);
+		location_setting.interval_desired = pref.getLong( Pref.WORKER_LOCATION_INTERVAL_DESIRED, LocationTracker.DEFAULT_INTERVAL_DESIRED );
+		location_setting.interval_min = pref.getLong( Pref.WORKER_LOCATION_INTERVAL_MIN, LocationTracker.DEFAULT_INTERVAL_MIN );
+		location_setting.mode = pref.getInt( Pref.WORKER_LOCATION_MODE, LocationTracker.DEFAULT_MODE );
 
 		file_type_list = file_type_parse();
 
-		service.wifi_tracker.updateSetting(force_wifi,ssid);
+		service.wifi_tracker.updateSetting( force_wifi, ssid );
 
-		service.location_tracker.updateSetting(location_setting);
+		service.location_tracker.updateSetting( location_setting );
 	}
 
 	final AtomicReference<String> status = new AtomicReference<>( "?" );
@@ -173,88 +172,16 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		}
 	}
 
-	static class FilePathX{
-
-		DocumentFile document_file;
-		String name;
-		FilePathX parent;
-		ArrayList<DocumentFile> file_list;
-
-		public ArrayList<DocumentFile> getFileList(){
-			if( document_file != null ){
-				if( file_list != null ) return file_list;
-				ArrayList<DocumentFile> result = new ArrayList<>();
-				Collections.addAll( result, document_file.listFiles() );
-				Collections.sort( result, new Comparator<DocumentFile>(){
-					@Override public int compare( DocumentFile a, DocumentFile b ){
-						return a.getName().compareTo( b.getName() );
-					}
-				} );
-				return file_list = result;
-			}else if( parent != null ){
-				ArrayList<DocumentFile> parent_childs = parent.getFileList();
-				if( parent_childs != null ){
-					DocumentFile file = bsearch( parent_childs, name );
-					if( file != null ){
-						this.document_file = file;
-						return getFileList();
-					}
-				}
-			}
-			return null;
-		}
-
-		private DocumentFile prepareDirectory( LogWriter log ){
-			try{
-				if( document_file != null ) return document_file;
-				if( parent != null ){
-					DocumentFile parent_dir = parent.prepareDirectory( log );
-					if( parent_dir == null ) return null;
-
-					ArrayList<DocumentFile> parent_list = parent.getFileList();
-					DocumentFile file = bsearch( parent_list, name );
-					if( file == null ){
-						log.i( R.string.folder_create, name );
-						file = parent_dir.createDirectory( name );
-					}
-					return document_file = file;
-				}
-			}catch( Throwable ex ){
-				log.e( R.string.folder_create_failed, ex.getClass().getSimpleName(), ex.getMessage() );
-			}
-			return null;
-		}
-
-		public DocumentFile prepareFile( LogWriter log ){
-			try{
-				if( document_file != null ) return document_file;
-				if( parent != null ){
-					DocumentFile parent_dir = parent.prepareDirectory( log );
-					if( parent_dir == null ) return null;
-
-					DocumentFile file = bsearch( parent.getFileList(), name );
-					if( file == null ){
-						file = parent_dir.createFile( "application/octet-stream", name );
-					}
-					return document_file = file;
-				}
-			}catch( Throwable ex ){
-				log.e( R.string.file_create_failed, ex.getClass().getSimpleName(), ex.getMessage() );
-			}
-			return null;
-		}
-	}
-
 	static class Item{
 
 		final String air_path;
-		final FilePathX local_path;
+		final FilePathX local_file;
 		final boolean is_file;
 		final long size;
 
-		Item( String air_path, FilePathX local_path, boolean is_file, long size ){
+		Item( String air_path, FilePathX local_file, boolean is_file, long size ){
 			this.air_path = air_path;
-			this.local_path = local_path;
+			this.local_file = local_file;
 			this.is_file = is_file;
 			this.size = size;
 		}
@@ -263,30 +190,12 @@ public class DownloadWorker extends Thread implements CancelChecker{
 	static final Pattern reLine = Pattern.compile( "([^\\x0d\\x0a]+)" );
 	static final Pattern reAttr = Pattern.compile( ",(\\d+),(\\d+),(\\d+),(\\d+)$" );
 
-	private static DocumentFile bsearch( ArrayList<DocumentFile> local_files, String fname ){
-		int start = 0;
-		int end = local_files.size();
-		while( ( end - start ) > 0 ){
-			int mid = ( ( start + end ) >> 1 );
-			DocumentFile x = local_files.get( mid );
-			int i = fname.compareTo( x.getName() );
-			if( i < 0 ){
-				end = mid;
-			}else if( i > 0 ){
-				start = mid + 1;
-			}else{
-				return x;
-			}
-		}
-		return null;
-	}
 
 	@Override public void run(){
 
 		status.set( service.getString( R.string.thread_start ) );
 
 		boolean allow_stop_service = false;
-
 
 		callback.onThreadStart();
 
@@ -349,10 +258,10 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			status.set( service.getString( R.string.wifi_check ) );
 
 			// 通信の安定を確認
-			Network network = null;
 			long network_check_start = SystemClock.elapsedRealtime();
+			Object network = null;
 			while( ! isCancelled() ){
-				network = Utils.getWiFiNetwork( service );
+				network = (Object) getWiFiNetwork( service );
 				if( network != null ) break;
 				//
 				long er_now = SystemClock.elapsedRealtime();
@@ -405,8 +314,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			// フォルダを探索する
 			final LinkedList<Item> job_queue = new LinkedList<>();
 			{
-				FilePathX local_path = new FilePathX();
-				local_path.document_file = DocumentFile.fromTreeUri( service, Uri.parse( folder_uri ) );
+				FilePathX local_path = new FilePathX(service,folder_uri);
 				job_queue.add( new Item( "/", local_path, false, 0L ) );
 			}
 			boolean has_error = false;
@@ -466,8 +374,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 							int time = Integer.parseInt( mAttr.group( 4 ), 10 );
 
 							// https://flashair-developers.com/ja/support/forum/#/discussion/3/%E3%82%AB%E3%83%B3%E3%83%9E%E5%8C%BA%E5%88%87%E3%82%8A
-							String dir = (item.air_path.equals( "/" )? "": item.air_path);
-							String fname = line.substring( dir.length() + 1, mAttr.start() );
+							String dir = ( item.air_path.equals( "/" ) ? "" : item.air_path );
+							String file_name = line.substring( dir.length() + 1, mAttr.start() );
 
 							if( ( attr & 2 ) != 0 ){
 								// skip hidden file
@@ -477,11 +385,9 @@ public class DownloadWorker extends Thread implements CancelChecker{
 								continue;
 							}
 
-							String child_air_path = dir + "/" + fname;
+							String child_air_path = dir + "/" + file_name;
 
-							FilePathX local_child = new FilePathX();
-							local_child.parent = item.local_path;
-							local_child.name = fname;
+							final FilePathX local_child = new FilePathX(item.local_file,file_name);
 
 							if( ( attr & 0x10 ) != 0 ){
 								// サブフォルダはキューに追加する
@@ -495,7 +401,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 							// file type matching
 							boolean bMatch = false;
 							for( Pattern re : file_type_list ){
-								if( ! re.matcher( fname ).find() ) continue;
+								if( ! re.matcher( file_name ).find() ) continue;
 								bMatch = true;
 								break;
 							}
@@ -503,25 +409,23 @@ public class DownloadWorker extends Thread implements CancelChecker{
 								continue;
 							}
 
-							DocumentFile file = local_child.prepareFile( log );
-							if( file == null ){
-								log.e( "%s//%s :skip. can not prepare local file.", item.air_path, fname );
+							if( ! local_child.prepareFile( log ) ){
+								log.e( "%s//%s :skip. can not prepare local file.", item.air_path, file_name );
 								continue;
-							}else if( file.length() >= size ){
+							}else if( local_child.length()  >= size ){
 								// log.f( "%s//%s :skip. same file size.",item.air_path, fname );
 								continue;
 							}
 
 							status.set( service.getString( R.string.download_file, child_air_path ) );
 
-							final Uri file_uri = file.getUri();
 							final String get_url = flashair_url + Uri.encode( child_air_path );
 							data = client.getHTTP( log, network, get_url, new HTTPClientReceiver(){
 								final byte[] buf = new byte[ 2048 ];
 
 								public byte[] onHTTPClientStream( LogWriter log, CancelChecker cancel_checker, InputStream in, int content_length ){
 									try{
-										OutputStream os = service.getContentResolver().openOutputStream( file_uri );
+										OutputStream os = local_child.openOutputStream(service);
 										if( os == null ){
 											log.e( "cannot open local output file." );
 										}else{
@@ -554,7 +458,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 							if( isCancelled() ){
 								// no log.
 							}else if( data == null ){
-								log.e( "FILE %s :HTTP error %s", fname, client.last_error );
+								log.e( "FILE %s :HTTP error %s", file_name, client.last_error );
 
 								if( client.last_error.contains( "UnknownHostException" ) ){
 									client.last_error = service.getString( R.string.flashair_host_error );
@@ -564,13 +468,13 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 								has_error = true;
 							}else{
-								log.i( "FILE %s :download complete. %dms", fname, SystemClock.elapsedRealtime() - time_start );
+								log.i( "FILE %s :download complete. %dms", file_name, SystemClock.elapsedRealtime() - time_start );
 
 								// 位置情報を取得する時にファイルの日時が使えないかと思ったけど
 								// タイムゾーンがわからん…
 
 								Location location = callback.getLocation();
-								if( location != null && reJPEG.matcher( fname ).find() ){
+								if( location != null && reJPEG.matcher( file_name ).find() ){
 									status.set( service.getString( R.string.exif_update, child_air_path ) );
 									updateFileLocation( location, local_child );
 								}
@@ -593,16 +497,15 @@ public class DownloadWorker extends Thread implements CancelChecker{
 	private void updateFileLocation( final Location location, FilePathX file ){
 
 		try{
-			FilePathX tmp_path = new FilePathX();
-			tmp_path.parent = file.parent;
-			tmp_path.name =  "tmp-" + currentThread().getId() + "-" + android.os.Process.myPid()  + "-" +file.name;
+			FilePathX tmp_path = new FilePathX(file.parent,"tmp-" + currentThread().getId() + "-" + android.os.Process.myPid() + "-" + file.name);
 
-			DocumentFile tmp_file = tmp_path.prepareFile( log );
-			if( tmp_file != null ){
+			if(!tmp_path.prepareFile( log )){
+				throw new RuntimeException( "create file failed." );
+			}else{
 				boolean bModifyFailed = false;
-				OutputStream os = service.getContentResolver().openOutputStream( tmp_file.getUri() );
+				OutputStream os = tmp_path.openOutputStream( service );
 				try{
-					InputStream is = service.getContentResolver().openInputStream( file.document_file.getUri() );
+					InputStream is = file.openInputStream(service);
 					try{
 						ExifInterface.modifyExifTag( is, ExifInterface.Options.OPTION_ALL
 							, os, new ExifInterface.ModifyExifTagCallback(){
@@ -639,27 +542,22 @@ public class DownloadWorker extends Thread implements CancelChecker{
 					}
 				}
 
-
-
 				if( bModifyFailed ){
-					try{
-						tmp_file.delete();
-					}catch( Throwable ignored ){
+					tmp_path.delete();
 
-					}
 				}else{
 					try{
 						// 更新後の方がファイルが小さいことがあるのか？
-						if(tmp_file.length() < file.document_file.length() ){
-							log.e("EXIF付与したファイルの方が小さい!付与前後のファイルを残しておく");
+						if( tmp_path.length() < file.length() ){
+							log.e( "EXIF付与したファイルの方が小さい!付与前後のファイルを残しておく" );
 							// この場合両方のファイルを残しておく
 						}else{
-							if( ! file.document_file.delete() ){
+							if( ! file.delete() ){
 								log.e( "EXIF追加後のファイル操作に失敗" );
-							}else if( ! tmp_file.renameTo( file.name ) ){
+							}else if( ! tmp_path.renameTo( file.name ) ){
 								log.e( "EXIF追加後のファイル操作に失敗" );
 							}else{
-								log.i("%s に位置情報を付与しました",file.name );
+								log.i( "%s に位置情報を付与しました", file.name );
 							}
 						}
 
@@ -676,4 +574,19 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 	}
 
+	@SuppressWarnings( "deprecation" )
+	public static Object getWiFiNetwork( Context context ){
+		ConnectivityManager cm = (ConnectivityManager) context.getSystemService( Context.CONNECTIVITY_SERVICE );
+		if( Build.VERSION.SDK_INT >= 21 ){
+			for( Network n : cm.getAllNetworks() ){
+				NetworkInfo info = cm.getNetworkInfo( n );
+				if( info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI ) return n;
+			}
+		}else{
+			for( NetworkInfo info : cm.getAllNetworkInfo() ){
+				if( info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI ) return info;
+			}
+		}
+		return null;
+	}
 }

@@ -11,10 +11,12 @@
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:paddingBottom="24dp"
-        android:paddingEnd="12dp"
-        android:paddingStart="12dp"
         android:paddingTop="24dp"
+        android:paddingBottom="24dp"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
         >
 
         <TextView

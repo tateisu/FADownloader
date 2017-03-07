@@ -123,5 +123,10 @@
     <string name="wifi_target_ssid_not_scanned">Wi-Fi SSID %1$s not in scan result.</string>
     <string name="wifi_scan_start">Wi-Fi scan start.</string>
     <string name="wifi_ap_force_changed">Wi-Fi AP force changed.</string>
+    <string name="folder_up">go parent folder</string>
+    <string name="folder_select">「%1$s」を選択</string>
+    <string name="folder_picker">folder picker</string>
+    <string name="folder_not_directory">it is not directory</string>
+    <string name="folder_not_writable">folder is not writable</string>
 
 </resources>

@@ -25,6 +25,7 @@ import javax.net.ssl.SSLHandshakeException;
 import org.w3c.dom.Element;
 
 import android.net.Network;
+import android.os.Build;
 import android.os.SystemClock;
 
 //! リトライつきHTTPクライアント
@@ -148,12 +149,12 @@ public class HTTPClient{
 	// HTTPリクエスト処理
 
 	@SuppressWarnings( "unused" )
-	public byte[] getHTTP( LogWriter log, Network network, String url ){
+	public byte[] getHTTP( LogWriter log, Object network, String url ){
 		return getHTTP( log, network, url, default_receiver );
 	}
 
 	@SuppressWarnings( "ConstantConditions" )
-	public byte[] getHTTP( LogWriter log, Network network, String url, HTTPClientReceiver receiver ){
+	public byte[] getHTTP( LogWriter log, Object network, String url, HTTPClientReceiver receiver ){
 
 //		// http://android-developers.blogspot.jp/2011/09/androids-http-clients.html
 //		// HTTP connection reuse which was buggy pre-froyo
@@ -190,12 +191,14 @@ public class HTTPClient{
 					if( cancel_checker.isCancelled() ) return null;
 
 					// http connection
-					HttpURLConnection conn;
-					if( network == null ){
-						conn = (HttpURLConnection) urlObject.openConnection();
-					}else{
-						conn = (HttpURLConnection) network.openConnection( urlObject );
+					HttpURLConnection conn = null;
+					if( Build.VERSION.SDK_INT >= 21 ){
+						if( network instanceof Network ){
+							conn = (HttpURLConnection) ((Network)network).openConnection( urlObject );
+						}
 					}
+					if( conn == null) conn = (HttpURLConnection) urlObject.openConnection();
+
 					if( user_agent != null ) conn.setRequestProperty( "User-Agent", user_agent );
 
 					// 追加ヘッダがあれば記録する

@@ -54,6 +54,14 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <activity
+            android:name="jp.juggler.fadownloader.FolderPicker"
+            android:icon="@drawable/ic_launcher"
+            android:label="@string/folder_picker"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
+            android:screenOrientation="sensorPortrait"
+            />
     </application>
 
 </manifest>

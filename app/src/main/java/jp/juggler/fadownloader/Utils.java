@@ -1,9 +1,12 @@
 package jp.juggler.fadownloader;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.PendingIntent;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
@@ -34,21 +37,18 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Base64;
+import android.util.Log;
 import android.util.SparseBooleanArray;
 
 public class Utils{
-
-	public static Network getWiFiNetwork( Context context ){
-		ConnectivityManager cm = (ConnectivityManager) context.getSystemService( Context.CONNECTIVITY_SERVICE );
-		for( Network n : cm.getAllNetworks() ){
-			NetworkInfo info = cm.getNetworkInfo( n );
-			if( info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI ) return n;
-		}
-		return null;
-	}
 
 	@SuppressLint( "DefaultLocale" )
 	public static String formatTimeDuration( long t ){
@@ -559,4 +559,5 @@ public class Utils{
 //		log.e("missing resid for %s",name);
 //		return R.string.Dialog_Cancel;
 //	}
+
 }

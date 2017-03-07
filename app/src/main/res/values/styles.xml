@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -20,7 +20,12 @@
     <style name="setting_row_label">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:paddingStart">12dp</item>
+
+        <item name="android:paddingLeft">12dp</item>
+        <item name="android:paddingRight">0dp</item>
+
+        <item name="android:paddingStart"  tools:ignore="NewApi">12dp</item>
+        <item name="android:paddingEnd"  tools:ignore="NewApi">0dp</item>
     </style>
 
     <style name="setting_row_form">
@@ -28,17 +33,29 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:orientation">horizontal</item>
         <item name="android:baselineAligned">true</item>
-        <item name="android:paddingStart">48dp</item>
+
+        <item name="android:paddingLeft">48dp</item>
+        <item name="android:paddingRight">0dp</item>
+
+        <item name="android:paddingStart" tools:ignore="NewApi">48dp</item>
+        <item name="android:paddingEnd" tools:ignore="NewApi">0dp</item>
+
     </style>
 
     <style name="setting_row_help">
-        <item name="android:background">@drawable/btn_borderless_material</item>
+        <item name="android:background">@drawable/btn_help_bg</item>
         <item name="android:textColor">@color/colorAccent</item>
         <item name="android:layout_width">40dp</item>
         <item name="android:layout_height">40dp</item>
         <item name="android:minWidth">32dp</item>
         <item name="android:minHeight">32dp</item>
-        <item name="android:layout_marginStart">8dp</item>
+
+        <item name="android:layout_marginLeft">8dp</item>
+        <item name="android:layout_marginRight">0dp</item>
+
+        <item name="android:layout_marginStart" tools:ignore="NewApi">8dp</item>
+        <item name="android:layout_marginEnd" tools:ignore="NewApi">0dp</item>
+
         <item name="android:text">@string/question</item>
     </style>
 

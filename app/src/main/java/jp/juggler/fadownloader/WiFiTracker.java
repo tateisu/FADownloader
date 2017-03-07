@@ -109,12 +109,15 @@ public class WifiTracker{
 			WifiConfiguration target_config = null;
 
 			boolean current_connection_found = false;
-
+			int priority_max = 0;
 			try{
 				// 設定済みのAPを列挙
 				for( WifiConfiguration wc : wifiManager.getConfiguredNetworks() ){
 					String ssid = wc.SSID.replace( "\"", "" );
 
+					if( wc.priority >priority_max){
+						priority_max = wc.priority;
+					}
 					// 目的のAPを覚えておく
 					if( target_ssid != null && target_ssid.equals( ssid ) ){
 						target_config = wc;
@@ -151,16 +154,18 @@ public class WifiTracker{
 			try{
 				// priority の変更
 				int p = target_config.priority;
-				priority_list.add( p );
-				if( priority_list.size() > 5 ) priority_list.removeFirst();
-				if( priority_list.size() < 5
-					|| priority_list.getFirst().intValue() != priority_list.getLast().intValue()
-					){
-					// まだ上がるか試してみる
-					target_config.priority = p * 2;
-					wifiManager.updateNetwork( target_config );
-					wifiManager.saveConfiguration();
-					////頻出するのでログ出さない log.d( R.string.wifi_ap_priority_changed );
+				if( p != priority_max ){
+					priority_list.add( p );
+					if( priority_list.size() > 5 ) priority_list.removeFirst();
+					if( priority_list.size() < 5
+						|| priority_list.getFirst().intValue() != priority_list.getLast().intValue()
+						){
+						// まだ上がるか試してみる
+						target_config.priority = priority_max + 1;
+						wifiManager.updateNetwork( target_config );
+						wifiManager.saveConfiguration();
+						////頻出するのでログ出さない log.d( R.string.wifi_ap_priority_changed );
+					}
 				}
 			}catch( Throwable ex ){
 				ex.printStackTrace();
