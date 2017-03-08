@@ -389,7 +389,7 @@ public class ActMain
 		}else if( mGoogleApiClient.isConnected() ){
 			startLocationSettingCheck();
 		}else{
-			showToast( false, getString( R.string.google_api_not_connected ));
+			showToast( false, getString( R.string.geo_tagging_not_enabled ));
 		}
 	}
 
@@ -613,6 +613,11 @@ public class ActMain
 	final GoogleApiClient.OnConnectionFailedListener connection_fail_callback = new GoogleApiClient.OnConnectionFailedListener(){
 		@Override public void onConnectionFailed( @NonNull ConnectionResult connectionResult ){
 			int code = connectionResult.getErrorCode();
+			if( code == ConnectionResult.SERVICE_INVALID){
+				// Kindle端末で発生
+				return;
+			}
+
 			String msg = Utils.getConnectionResultErrorMessage(connectionResult);
 			msg = getString( R.string.play_service_connection_failed, code, msg );
 			Toast.makeText( ActMain.this, msg, Toast.LENGTH_SHORT ).show();

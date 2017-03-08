@@ -73,7 +73,7 @@
     <string name="thread_end">thread stopped</string>
     <string name="flashair_update_status_error">FlashAir update status data error</string>
     <string name="exif_update">EXIF update: %1$s</string>
-    <string name="google_api_not_connected">google api not connected</string>
+    <string name="geo_tagging_not_enabled">GeoTagging not enabled because this device can not use Location API of Google Play service</string>
     <string name="resolution_request_failed">resolution request failed.</string>
     <string name="location_setting_change_unavailable">location setting change unavailable</string>
     <string name="location_setting_returns_unknown_status">location setting returns unknown status %1$d</string>
@@ -84,7 +84,7 @@
     <string name="location_mode">GeoTagging Mode</string>
     <string name="location_interval_desired">location update interval(desired)</string>
     <string name="location_interval_min">location update interval(min)</string>
-    <string name="help_location_mode">GeoTagging Modeを設定すると、スマホから位置情報を取得してJPEGファイルのEXIF情報に位置データを付与します。\nサービス起動中はずっと位置情報を要求し続けます。\n位置精度が高いモードほどバッテリー消費が大きいことに注意してください。\n</string>
+    <string name="help_location_mode">GeoTagging Modeを設定すると、スマホから位置情報を取得してJPEGファイルのEXIF情報に位置データを付与します。\nサービス起動中はずっと位置情報を要求し続けます。\n位置精度が高いモードほどバッテリー消費が大きいことに注意してください。\n\nGoogle Play サービスの位置情報APIを利用しているため、Playサービスのない端末では位置情報の埋め込みは使えません。</string>
     <string name="help_location_interval_min">location interval min には位置情報を更新する時間間隔の最低値を秒数で指定します。\n少ない数字ほど位置情報の精度は良くなりますが、バッテリー消費も大きくなります。</string>
     <string name="help_location_interval_desired">location interval desired には位置情報を更新する時間間隔の希望値を秒数で指定します。\n短い方が位置情報の精度は良くなりますが、バッテリー消費は大きくなります。\n\n端末やPlayサービスにより調整が行われるため、希望通りの時間間隔になるとは限りません。\n</string>
 

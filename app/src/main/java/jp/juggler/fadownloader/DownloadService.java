@@ -316,8 +316,14 @@ public class DownloadService extends Service{
 
 	final GoogleApiClient.OnConnectionFailedListener connection_fail_callback = new GoogleApiClient.OnConnectionFailedListener(){
 		@Override public void onConnectionFailed( @NonNull ConnectionResult connectionResult ){
+			int code = connectionResult.getErrorCode();
+			if( code == ConnectionResult.SERVICE_INVALID ){
+				// Kindle端末で発生
+				return;
+			}
+
 			String msg = Utils.getConnectionResultErrorMessage( connectionResult );
-			log.w( R.string.play_service_connection_failed, connectionResult.getErrorCode(), msg );
+			log.w( R.string.play_service_connection_failed, code, msg );
 			location_tracker.onGoogleAPIDisconnected();
 		}
 	};
@@ -334,8 +340,8 @@ public class DownloadService extends Service{
 		@Override public void onConnectionSuspended( int i ){
 			if( ! is_alive ) return;
 
-			String msg = Utils.getConnectionSuspendedMessage(i);
-			log.w( R.string.play_service_connection_suspended, i ,msg);
+			String msg = Utils.getConnectionSuspendedMessage( i );
+			log.w( R.string.play_service_connection_suspended, i, msg );
 
 			// 再接続は自動で行われるらしい
 
@@ -345,6 +351,7 @@ public class DownloadService extends Service{
 	};
 
 	static Location location;
+
 	public static Location getLocation(){
 		return location;
 	}
