@@ -88,11 +88,11 @@ public class DownloadService extends Service{
 		} );
 
 		wifi_tracker = new WifiTracker( this, log, new WifiTracker.Callback(){
-			@Override public void onConnectionEvent( boolean is_connected ){
+			@Override public void onConnectionEvent( boolean is_connected ,String cause){
 				if( is_connected ){
 					int last_mode = Pref.pref( DownloadService.this ).getInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP );
 					if( last_mode != Pref.LAST_MODE_STOP ){
-						worker_wakeup();
+						worker_wakeup( cause );
 					}
 				}
 			}
@@ -149,12 +149,13 @@ public class DownloadService extends Service{
 					Intent broadcast_intent = intent.getParcelableExtra( EXTRA_BROADCAST_INTENT );
 					if( broadcast_intent != null ){
 						action = broadcast_intent.getAction();
-						log.d( getString( R.string.broadcast_received, action ) );
 
 						if( Receiver1.ACTION_ALARM.equals( action ) ){
-							worker_wakeup();
+							worker_wakeup( "Alarm" );
 						}else if( Intent.ACTION_BOOT_COMPLETED.equals( action ) ){
-							worker_wakeup();
+							worker_wakeup( "Boot completed" );
+						}else{
+							log.d( getString( R.string.broadcast_received, action ) );
 						}
 					}
 				}finally{
@@ -183,6 +184,7 @@ public class DownloadService extends Service{
 						.apply();
 					worker = new DownloadWorker( this, intent, worker_callback );
 					worker.start();
+
 				}catch( Throwable ex ){
 					ex.printStackTrace();
 					log.e( ex, "thread start failed." );
@@ -204,12 +206,13 @@ public class DownloadService extends Service{
 	DownloadWorker worker;
 	boolean will_restart;
 
-	void worker_wakeup(){
+	void worker_wakeup( String cause ){
 		if( worker != null && worker.isAlive() ) return;
 
 		try{
-			worker = new DownloadWorker( this, worker_callback );
+			worker = new DownloadWorker( this, cause, worker_callback );
 			worker.start();
+
 		}catch( Throwable ex ){
 			ex.printStackTrace();
 			log.e( ex, "thread start failed." );

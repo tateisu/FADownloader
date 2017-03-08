@@ -26,9 +26,11 @@ public class PagerAdapterBase extends PagerAdapter{
 			return is_destroyed.get() || activity.isFinishing();
 		}
 
-		protected abstract void onPageCreate( int page_idx, View root ) throws Throwable;
+		@SuppressWarnings( "RedundantThrows" )
+		protected abstract void onPageCreate( @SuppressWarnings( "UnusedParameters" ) int page_idx, View root ) throws Throwable;
 
-		protected abstract void onPageDestroy( int page_idx, View root ) throws Throwable;
+		@SuppressWarnings( "RedundantThrows" )
+		protected abstract void onPageDestroy( @SuppressWarnings( "UnusedParameters" ) int page_idx, @SuppressWarnings( "UnusedParameters" ) View root ) throws Throwable;
 	}
 
 	public final Activity activity;

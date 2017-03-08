@@ -202,6 +202,7 @@ public class ActMain
 						try{
 							FileOutputStream fos = new FileOutputStream( test_file );
 							try{
+								//noinspection ConstantConditions
 								fos.write( Utils.encodeUTF8( "TEST" ) );
 							}finally{
 								fos.close();
@@ -583,6 +584,7 @@ public class ActMain
 		final Dialog d = new Dialog( this );
 		d.requestWindowFeature( Window.FEATURE_NO_TITLE );
 		d.setContentView( v );
+		//noinspection ConstantConditions
 		d.getWindow().setLayout( WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT );
 		d.show();
 		v.findViewById( R.id.btnClose ).setOnClickListener( new View.OnClickListener(){
@@ -599,6 +601,7 @@ public class ActMain
 		final Dialog d = new Dialog( this );
 		d.requestWindowFeature( Window.FEATURE_NO_TITLE );
 		d.setContentView( v );
+		//noinspection ConstantConditions
 		d.getWindow().setLayout( WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT );
 		d.show();
 		v.findViewById( R.id.btnClose ).setOnClickListener( new View.OnClickListener(){
@@ -653,6 +656,7 @@ public class ActMain
 
 
 
+	@SuppressWarnings( "SpellCheckingInspection" )
 	static final String APP_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkTbDT+kbberoRK6QHAKNzuKsFh0zSVJk97trga30ZHHyQHPsHtIJCvIibgHmm5QL6xr9TualN5iYMfNKA4bZM3x25kNiJ0NVuP86sravHdTyVuZyIu2WUI1CNdGRun5GYSGtxXNOuZujRkPtIMGjl750Z18CirrXYkl85KHDLgiOAu+d7HjssQ215+Qfo7iJIl30CYgcBl+szfH42MQK2Jd03LeTMf+5MA/ve/6iL2I1nyZrtWrC6Sw1uqOqjB9jx8cJALOrX+CmDa+si9krAI7gcOV/E8CJvVyC7cPxxooB425S8xHTr/MPjkEmwnu7ppMk5MyO+G1XP927fVg0ywIDAQAB";
 	static final String REMOVE_AD_PRODUCT_ID = "remove_ad";
 	static final String TAG = "ActMain";

@@ -25,6 +25,12 @@
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:id="@+id/btnSubFolder"
+        android:text="@string/create_sub_folder"
+        />
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:id="@+id/btnSelectFolder"
         />
 </LinearLayout>

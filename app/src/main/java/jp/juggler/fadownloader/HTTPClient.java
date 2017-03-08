@@ -181,7 +181,7 @@ public class HTTPClient{
 */
 			long timeStart = SystemClock.elapsedRealtime();
 			for( int nTry = 0 ; nTry < max_try ; ++ nTry ){
-				long t1, t2, t3, lap;
+				long t1, t2, lap;
 				try{
 					this.rcode = 0;
 					// キャンセルされたか確認
@@ -328,6 +328,12 @@ public class HTTPClient{
 							log.d( "Please check device's date and time." );
 							this.rcode = 401;
 							return null;
+						}else if( ex instanceof ConnectException
+							&& ex.getMessage() != null
+							&& ex.getMessage().contains( "ENETUNREACH" )
+							){
+							// このアプリの場合は network unreachable はリトライしない
+							return null;
 						}
 						if( quit_network_error ) return null;
 
@@ -351,8 +357,6 @@ public class HTTPClient{
 						byte[] data = receiver.onHTTPClientStream( log, cancel_checker, in, content_length );
 						if( data == null ) continue;
 						if( data.length > 0 ){
-							t3 = SystemClock.elapsedRealtime();
-							lap = t3 - t2;
 							if( nTry > 0 ) log.w( "[%s] OK. retry=%d,time=%dms"
 								, caption
 								, nTry

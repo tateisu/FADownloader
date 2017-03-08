@@ -1,6 +1,7 @@
 package jp.juggler.fadownloader;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -8,10 +9,14 @@ import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -55,8 +60,23 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 		}
 	}
 
+	void showToast(boolean bLong,String s){
+		Toast.makeText( this
+			, s
+			, bLong ?Toast.LENGTH_LONG:Toast.LENGTH_SHORT
+		).show();
+	}
+
+	void showToast(Throwable ex,String s){
+		Toast.makeText( this
+			, s+String.format(":%s %s",ex.getClass().getSimpleName(),ex.getMessage())
+			, Toast.LENGTH_LONG
+		).show();
+	}
+
 	TextView tvCurrentFolder;
 	View btnFolderUp;
+	View btnSubFolder;
 	ListView lvFileList;
 	Button btnSelectFolder;
 	File showing_folder;
@@ -70,8 +90,11 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 		case R.id.btnSelectFolder:
 			Intent intent = new Intent();
 			intent.putExtra( EXTRA_FOLDER, showing_folder.getAbsolutePath() );
-			setResult( Activity.RESULT_OK ,intent);
+			setResult( Activity.RESULT_OK, intent );
 			finish();
+			break;
+		case R.id.btnSubFolder:
+			openFolderCreateDialog();
 			break;
 		}
 	}
@@ -81,9 +104,9 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 		if( name != null ){
 			File folder = new File( showing_folder, name );
 			if( ! folder.isDirectory() ){
-				Toast.makeText( this, getString( R.string.folder_not_directory ), Toast.LENGTH_SHORT ).show();
+				showToast(false,getString( R.string.folder_not_directory ));
 			}else if( ! folder.canWrite() ){
-				Toast.makeText( this, getString( R.string.folder_not_writable ), Toast.LENGTH_SHORT ).show();
+				showToast(false,getString( R.string.folder_not_writable ));
 			}else{
 				loadFolder( folder );
 			}
@@ -101,12 +124,13 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 
 		tvCurrentFolder = (TextView) findViewById( R.id.tvCurrentFolder );
 		btnFolderUp = findViewById( R.id.btnFolderUp );
+		btnSubFolder = findViewById( R.id.btnSubFolder );
 		lvFileList = (ListView) findViewById( R.id.lvFileList );
 		btnSelectFolder = (Button) findViewById( R.id.btnSelectFolder );
 
 		btnFolderUp.setOnClickListener( this );
 		btnSelectFolder.setOnClickListener( this );
-
+		btnSubFolder.setOnClickListener( this );
 		list_adapter = new ArrayAdapter<>( this, android.R.layout.simple_list_item_1 );
 		lvFileList.setAdapter( list_adapter );
 		lvFileList.setOnItemClickListener( this );
@@ -122,6 +146,7 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 	private void loadFolder( final File folder ){
 		tvCurrentFolder.setText( R.string.loading );
 		btnFolderUp.setEnabled( false );
+		btnSubFolder.setEnabled( false );
 		btnSelectFolder.setEnabled( false );
 		list_adapter.clear();
 		new AsyncTask<Void, Void, ArrayList<String>>(){
@@ -147,11 +172,61 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 					showing_folder = folder;
 					tvCurrentFolder.setText( folder.getAbsolutePath() );
 					btnFolderUp.setEnabled( ! folder.getAbsolutePath().equals( "/" ) );
+					btnSubFolder.setEnabled( true );
 					btnSelectFolder.setText( getString( R.string.folder_select, folder.getAbsolutePath() ) );
 					btnSelectFolder.setEnabled( true );
 					list_adapter.addAll( result );
 				}
 			}
 		}.execute();
+	}
+
+	private void openFolderCreateDialog(){
+		View root = getLayoutInflater().inflate(R.layout.folder_create_dialog,null,false);
+		final View btnCancel = root.findViewById( R.id.btnCancel );
+		final View btnOk = root.findViewById( R.id.btnOk );
+		final EditText etName = (EditText) root.findViewById( R.id.etName );
+		final Dialog d = new Dialog(this);
+		d.setTitle( getString(R.string.create_sub_folder) );
+		d.setContentView( root );
+		//noinspection ConstantConditions
+		d.getWindow().setLayout( WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT );
+		d.show();
+		etName.setOnEditorActionListener( new TextView.OnEditorActionListener(){
+			@Override public boolean onEditorAction( TextView v, int actionId, KeyEvent event ){
+				if( actionId == EditorInfo.IME_ACTION_DONE ){
+					btnOk.performClick();
+					return true;
+				}
+				return false;
+			}
+		} );
+		btnCancel.setOnClickListener( new View.OnClickListener(){
+			@Override public void onClick( View v ){
+				d.dismiss();
+			}
+		} );
+		btnOk.setOnClickListener( new View.OnClickListener(){
+			@Override public void onClick( View v ){
+				try{
+					String name = etName.getText().toString().trim();
+					if( TextUtils.isEmpty( name ) ){
+						showToast( false, getString( R.string.folder_name_empty ) );
+					}else{
+						File folder = new File( showing_folder, name );
+						if( folder.exists() ){
+							showToast( false, getString( R.string.folder_already_exist ) );
+						}else if( ! folder.mkdir() ){
+							showToast( false, getString( R.string.folder_creation_failed ) );
+						}else{
+							d.dismiss();
+							loadFolder( showing_folder );
+						}
+					}
+				}catch(Throwable ex){
+					showToast(ex,"folder creation failed.");
+				}
+			}
+		} );
 	}
 }

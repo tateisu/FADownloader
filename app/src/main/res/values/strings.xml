@@ -47,7 +47,7 @@
     <string name="thread_not_running_status">thread not running. maybe start when Wi-Fi state changed, or alarm resumed.</string>
     <string name="thread_running_status">thread running\n\n</string>
     <string name="thread_ctor_params">thread created with parameter.</string>
-    <string name="thread_ctor_restart">thread created with previous parameter.</string>
+    <string name="thread_ctor_restart">thread restart. event=%1$s</string>
     <string name="file_type_parse_error">file type parse error. %1$s %2$s %3$s</string>
     <string name="thread_cancelled">thread cancelled. reason:%1$s</string>
     <string name="folder_create">%1$s folder create</string>
@@ -58,7 +58,7 @@
     <string name="wait_short">wait short time. remain=%1$s</string>
     <string name="wait_alarm">wait for alarm. remain=%1$s</string>
     <string name="wifi_check">Wi-Fi check</string>
-    <string name="wifi_not_connected">Wi-Fi not connected.</string>
+    <string name="wifi_no_ap_associated">Wi-Fi AP not associated.</string>
     <string name="flashair_update_status_check">FlashAir update check</string>
     <string name="flashair_host_error">could not resolve remote host. perhaps:device\'s Wi-Fi is not connected to FlashAir AP</string>
     <string name="flashair_host_error_short">missing FlashAir host.</string>
@@ -112,11 +112,10 @@
     <string name="ssid_empty">SSID is empty.</string>
     <string name="wifi_not_enabled">現在 Wi-Fiが有効ではありません</string>
     <string name="wifi_status_unknown">wifi status unknown</string>
-    <string name="wifi_current_connection">接続中のWi-Fi APは%1$sです。id=%2$d,priority=%3$d</string>
+    <string name="wifi_current_connection">WI-Fi AP:SSID=%1$s,id=%2$s,priority=%3$s,state=%4$s</string>
     <string name="wifi_target_ssid_not_found">Wi-Fi AP %1$s is not configured.</string>
     <string name="wifi_target_ssid_not_scanned">Wi-Fi SSID %1$s not in scan result.</string>
     <string name="wifi_scan_start">Wi-Fi scan start.</string>
-    <string name="wifi_ap_force_changed">Wi-Fi AP force changed.</string>
     <string name="folder_up">go parent folder</string>
     <string name="folder_select">「%1$s」を選択</string>
     <string name="folder_picker">folder picker</string>
@@ -126,5 +125,13 @@
     <string name="loading">(loading…)</string>
     <string name="open_map">open map app</string>
     <string name="play_store_missing">missing Play Store</string>
+    <string name="create_sub_folder">create sub folder</string>
+    <string name="ok" translatable="false">OK</string>
+    <string name="folder_name">folder name</string>
+    <string name="folder_name_empty">folder name empty</string>
+    <string name="folder_already_exist">folder already exist.</string>
+    <string name="folder_creation_failed">folder creation failed.</string>
+    <string name="network_unreachable">unreachable to FlashAir.</string>
+    <string name="wifi_not_good">Wi-Fi not good.</string>
 
 </resources>

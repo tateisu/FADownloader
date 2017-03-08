@@ -13,6 +13,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Locale;
 
+import android.net.wifi.SupplicantState;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Base64;
@@ -46,15 +47,9 @@ public class Utils{
 			t -= n * 60000L;
 		}
 		// s
-		n = t / 1000L;
-		if( n > 0 || sb.length() > 0 ){
-			sb.append( String.format( "%ds", n ) );
-			t -= n * 1000L;
-		}
-		// ms
-		if( sb.length() == 0 ){
-			sb.append( String.format( "%dms", t ) );
-		}
+		float f = t / 1000f;
+	sb.append( String.format( "%.03fs", f ) );
+
 
 		return sb.toString();
 	}
@@ -411,5 +406,10 @@ public class Utils{
 		case GoogleApiClient.ConnectionCallbacks.CAUSE_NETWORK_LOST: return "NETWORK_LOST";
 		case GoogleApiClient.ConnectionCallbacks.CAUSE_SERVICE_DISCONNECTED: return "SERVICE_DISCONNECTED";
 		}
+	}
+
+	public static String getSupplicantStateString( SupplicantState state ){
+		if( state == null ) return null;
+		return String.format( "(%d)%s", state.ordinal(), state.toString() );
 	}
 }

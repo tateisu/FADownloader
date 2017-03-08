@@ -90,7 +90,7 @@ public abstract class TableMeta{
 
 	abstract public void onDBCreate( SQLiteDatabase db );
 
-	abstract public void onDBUpgrade( SQLiteDatabase db, int v_old, int v_new );
+	abstract public void onDBUpgrade( @SuppressWarnings( "UnusedParameters" ) SQLiteDatabase db, @SuppressWarnings( "UnusedParameters" ) int v_old, @SuppressWarnings( "UnusedParameters" ) int v_new );
 
 	@SuppressWarnings( "UnusedParameters" )
 	public String getType( Uri uri, MatchResult match ){

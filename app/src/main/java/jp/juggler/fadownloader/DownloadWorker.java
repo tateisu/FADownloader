@@ -88,12 +88,12 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		service.location_tracker.updateSetting( location_setting );
 	}
 
-	public DownloadWorker( DownloadService service, Callback callback ){
+	public DownloadWorker( DownloadService service, String cause, Callback callback ){
 		this.service = service;
 		this.callback = callback;
 		this.log = new LogWriter( service );
 
-		log.i( R.string.thread_ctor_restart );
+		log.i( R.string.thread_ctor_restart, cause );
 		SharedPreferences pref = Pref.pref( service );
 		this.repeat = pref.getBoolean( Pref.WORKER_REPEAT, false );
 		this.flashair_url = pref.getString( Pref.WORKER_FLASHAIR_URL, null );
@@ -190,7 +190,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 	static final Pattern reLine = Pattern.compile( "([^\\x0d\\x0a]+)" );
 	static final Pattern reAttr = Pattern.compile( ",(\\d+),(\\d+),(\\d+),(\\d+)$" );
 
-	@Override public void run(){
+	@SuppressWarnings( "ConstantConditions" ) @Override public void run(){
 
 		status.set( service.getString( R.string.thread_start ) );
 
@@ -272,7 +272,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			if( isCancelled() ) break;
 
 			if( network == null ){
-				cancel( service.getString( R.string.wifi_not_connected ) );
+				cancel( service.getString( R.string.wifi_not_good ) );
 				break;
 			}
 
@@ -289,6 +289,10 @@ public class DownloadWorker extends Thread implements CancelChecker{
 					if( client.last_error.contains( "UnknownHostException" ) ){
 						client.last_error = service.getString( R.string.flashair_host_error );
 						cancel( service.getString( R.string.flashair_host_error_short ) );
+						callback.releaseWakeLock();
+					}else if( client.last_error.contains( "ENETUNREACH" ) ){
+						client.last_error = service.getString( R.string.network_unreachable );
+						cancel( service.getString( R.string.network_unreachable ) );
 						callback.releaseWakeLock();
 					}
 					log.e( R.string.flashair_update_check_failed, cgi_url, client.last_error );
@@ -322,7 +326,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				if( job_queue.isEmpty() ){
 					status.set( service.getString( R.string.file_scan_completed ) );
 					if( ! has_error ){
-
+						log.i( "ファイルスキャン完了" );
 						Pref.pref( service ).edit()
 							.putLong( Pref.LAST_SCAN_COMPLETE, System.currentTimeMillis() )
 							.putLong( Pref.FLASHAIR_UPDATE_STATUS_OLD, flashair_update_status )
@@ -351,6 +355,10 @@ public class DownloadWorker extends Thread implements CancelChecker{
 						if( client.last_error.contains( "UnknownHostException" ) ){
 							client.last_error = service.getString( R.string.flashair_host_error );
 							cancel( service.getString( R.string.flashair_host_error_short ) );
+							callback.releaseWakeLock();
+						}else if( client.last_error.contains( "ENETUNREACH" ) ){
+							client.last_error = service.getString( R.string.network_unreachable );
+							cancel( service.getString( R.string.network_unreachable ) );
 							callback.releaseWakeLock();
 						}
 						log.e( R.string.folder_list_failed, item.air_path, cgi_url, client.last_error );
@@ -461,6 +469,10 @@ public class DownloadWorker extends Thread implements CancelChecker{
 								if( client.last_error.contains( "UnknownHostException" ) ){
 									client.last_error = service.getString( R.string.flashair_host_error );
 									cancel( service.getString( R.string.flashair_host_error_short ) );
+									callback.releaseWakeLock();
+								}else if( client.last_error.contains( "ENETUNREACH" ) ){
+									client.last_error = service.getString( R.string.network_unreachable );
+									cancel( service.getString( R.string.network_unreachable ) );
 									callback.releaseWakeLock();
 								}
 

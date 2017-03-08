@@ -5,7 +5,7 @@
     <string name="repeat">Repeat</string>
     <string name="once">Once</string>
     <string name="stop">Stop</string>
-    <string name="file_type_caption">File Type</string>
+    <string name="file_type_caption">ファイル拡張子</string>
     <string name="app_permission_required">アプリに権限が必要です</string>
     <string name="request_permission">request</string>
     <string name="cancel">キャンセル</string>
@@ -15,12 +15,12 @@
     <string name="folder_not_ok">Local Folderを指定してください</string>
     <string name="url_not_ok">FlashAir URLを指定してください</string>
     <string name="interval_not_ok">Repeat Intervalを1以上で指定してください</string>
-    <string name="file_type_empty">File Typeを1つ以上指定してください</string>
+    <string name="file_type_empty">ファイル拡張子を1つ以上指定してください</string>
     <string name="log_clear">ログ消去</string>
     <string name="question">\?</string>
     <string name="close">閉じる</string>
     <string name="help_repeat_interval_text">Repeat IntervalにはREPEAT時の巡回間隔を秒数で指定します。\nデフォルトは30です。\nFlashAirは無線LANにアクセスがない場合に自動的に電源を切るタイムアウト(デフォルト300秒)が存在するため、それより少ない数字を指定することをオススメします。\n</string>
-    <string name="help_file_type_text">File typeには転送するファイルの拡張子を指定します。\n空白で区切って複数書けます。\n* はワイルドカードとして解釈されます。\nデフォルトは「.jp*」です</string>
+    <string name="help_file_type_text">ファイル拡張子には転送するファイルの拡張子の部分を指定します。\n空白で区切って複数書けます。\n* はワイルドカードとして解釈されます。\nデフォルトは「.jp*」です</string>
     <string name="help_flashair_url_text">FlashAir URL には、スマホからFlashAirにアクセスする際に使うFlashAir URLを指定してください。\nデフォルトは「http://flashair/」です。\n末尾の / を忘れないでね。 \nなお、サブフォルダを指定してもうまく動きません。</string>
     <string name="help_mode_text1">REPEATを押すと転送サービスを開始し、ダウンロードを定期的に行います。\n押した直後は必ずフォルダ階層を全てスキャンします。\n2回目以降はスキャンの前にまずFlashAirカードのアップデートステータスを確認して、更新があった場合のみフォルダ階層をスキャンします。\nREPEAT状態の間は、端末再起動時に転送サービスを自動的に開始します。</string>
     <string name="help_mode_text2">ONCEを押すと転送サービスを開始し、ダウンロードを1回だけ行います。\nフォルダ階層を全てスキャンし終えたら転送サービスは自動的に終了します。</string>
@@ -44,7 +44,7 @@
     <string name="thread_not_running_status">スレッド停止中。WiFi通信状態の変化や時間経過で開始するかも</string>
     <string name="thread_running_status">スレッド実行中\n</string>
     <string name="thread_ctor_params">スレッド作成：パラメータ指定あり</string>
-    <string name="thread_ctor_restart">スレッド作成：前回の設定で再開</string>
+    <string name="thread_ctor_restart">スレッド再作成. event=%1$s</string>
     <string name="file_type_parse_error">ファイル種別を解釈できません %1$s %2$s %3$s</string>
     <string name="thread_cancelled">スレッドキャンセル。理由：%1$s</string>
     <string name="folder_create">%1$s フォルダ作成</string>
@@ -55,7 +55,7 @@
     <string name="wait_short">短い待機 あと%1$s</string>
     <string name="wait_alarm">アラーム待機 あと%1$s</string>
     <string name="wifi_check">Wi-Fi確認中</string>
-    <string name="wifi_not_connected">Wi-Fi接続がありません</string>
+    <string name="wifi_no_ap_associated">Wi-Fi APが選択されていません</string>
     <string name="flashair_update_status_check">FlashAir更新チェック</string>
     <string name="flashair_host_error">接続先ホスト名を解決できません。もしかして：端末のWi-FiからFlashAirのAPに接続していない</string>
     <string name="flashair_host_error_short">FlashAirホストが見つからない</string>
@@ -63,10 +63,10 @@
     <string name="flashair_not_updated">FlashAirは更新されてません</string>
     <string name="file_scan_completed">ファイルスキャン完了</string>
     <string name="repeat_off">繰り返さない</string>
-    <string name="progress_folder">フォルダ確認中 %s</string>
+    <string name="progress_folder">フォルダ確認中 %1$s</string>
     <string name="folder_list_failed">一覧取得失敗 %1$s %2$s %3$s</string>
-    <string name="progress_file">ファイル確認中 %s</string>
-    <string name="download_file">ファイル取得中 %s</string>
+    <string name="progress_file">ファイル確認中 %1$s</string>
+    <string name="download_file">ファイル取得中 %1$s</string>
     <string name="thread_end">スレッド終了</string>
     <string name="flashair_update_status_error">FlashAir更新ステータスのデータエラー</string>
     <string name="exif_update">EXIF更新中: %1$s</string>
@@ -102,9 +102,8 @@
     <string name="help_ssid">SSIDにはFlashAir Wi-Fi APのSSIDを指定してください\n</string>
     <string name="fix_wifi_ap">Wi-Fi AP半強制</string>
     <string name="ssid_empty">SSIDを指定してください</string>
-    <string name="wifi_ap_force_changed">Wi-Fi APを切り替えました</string>
     <string name="wifi_ap_ssid">Wi-Fi APのSSID</string>
-    <string name="wifi_current_connection">接続中のWi-Fi APは%1$sです。id=%2$d,priority=%3$d</string>
+    <string name="wifi_current_connection">WI-Fi AP:SSID=%1$s,id=%2$s,priority=%3$s,state=%4$s</string>
     <string name="wifi_not_enabled">現在 Wi-Fiが有効ではありません</string>
     <string name="wifi_scan_start">Wi-Fiスキャンを開始しました</string>
     <string name="wifi_status_unknown">Wi-Fiの状態が不明です</string>
@@ -119,4 +118,12 @@
     <string name="loading">(読み込み中…)</string>
     <string name="location_update_request_result">location update request failed. (%1$d)%2$s</string>
     <string name="open_map">地図アプリを開く</string>
+    <string name="create_sub_folder">サブフォルダを作成</string>
+    <string name="play_store_missing">Playストアがありません</string>
+    <string name="folder_already_exist">フォルダは既に存在します</string>
+    <string name="folder_creation_failed">フォルダ作成に失敗しました.</string>
+    <string name="folder_name">フォルダの名前</string>
+    <string name="folder_name_empty">フォルダの名前を指定してください</string>
+    <string name="network_unreachable">FlashAirに到達できません</string>
+    <string name="wifi_not_good">Wi-Fiの状態が悪いようです</string>
 </resources>
