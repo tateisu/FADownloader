@@ -207,7 +207,10 @@ public class DownloadService extends Service{
 	boolean will_restart;
 
 	void worker_wakeup( String cause ){
-		if( worker != null && worker.isAlive() ) return;
+		if( worker != null && worker.isAlive() ){
+			worker.notifyEx();
+			return;
+		}
 
 		try{
 			worker = new DownloadWorker( this, cause, worker_callback );
