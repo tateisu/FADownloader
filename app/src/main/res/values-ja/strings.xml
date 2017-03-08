@@ -126,4 +126,5 @@
     <string name="folder_name_empty">フォルダの名前を指定してください</string>
     <string name="network_unreachable">FlashAirに到達できません</string>
     <string name="wifi_not_good">Wi-Fiの状態が悪いようです</string>
+    <string name="help_local_folder_kitkat">Local Folder にはスマホ上の、画像をダウンロードして保存するフォルダを指定します\n\nAndroid 4.4.x の場合、このアプリからSDカードに書き込むことはできません。「Pictures」の下あたりにFADownloader用のフォルダを作成してください。\n</string>
 </resources>

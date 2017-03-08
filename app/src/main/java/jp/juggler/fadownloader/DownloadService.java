@@ -261,6 +261,8 @@ public class DownloadService extends Service{
 		}
 
 		@Override public void onThreadEnd( boolean allow_stop_service ){
+			if(!is_alive) return;
+
 			if( ! will_restart ){
 				if( allow_stop_service ){
 					allow_cancel_alarm = true;

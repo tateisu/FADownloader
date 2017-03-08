@@ -99,7 +99,11 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 			folder_pick();
 			break;
 		case R.id.btnFolderPickerHelp:
-			( (ActMain) activity ).openHelp( R.layout.help_local_folder );
+			if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION){
+				( (ActMain) activity ).openHelp( R.layout.help_local_folder );
+			}else{
+				( (ActMain) activity ).openHelp( activity.getString( R.string.help_local_folder_kitkat ) );
+			}
 			break;
 		case R.id.btnFlashAirURLHelp:
 			( (ActMain) activity ).openHelp( activity.getString( R.string.help_flashair_url_text ) );

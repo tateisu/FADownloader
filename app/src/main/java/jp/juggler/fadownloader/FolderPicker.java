@@ -220,7 +220,7 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 							showToast( false, getString( R.string.folder_creation_failed ) );
 						}else{
 							d.dismiss();
-							loadFolder( showing_folder );
+							loadFolder( folder );
 						}
 					}
 				}catch(Throwable ex){
