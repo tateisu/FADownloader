@@ -67,4 +67,15 @@
         <item name="android:layout_marginTop">12dp</item>
         <item name="android:layout_marginBottom">12dp</item>
     </style>
+
+    <style name="setting_horizontal_stretch">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+    </style>
+
+    <style name="setting_edit_text" parent="@style/setting_horizontal_stretch">
+        <item name="android:imeOptions">actionDone</item>
+    </style>
+
 </resources>

@@ -19,6 +19,7 @@ import android.util.Base64;
 import android.util.SparseBooleanArray;
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
 
 public class Utils{
 
@@ -404,4 +405,11 @@ public class Utils{
 		return msg;
 	}
 
+	public static String getConnectionSuspendedMessage( int i ){
+		switch(i){
+		default: return "?";
+		case GoogleApiClient.ConnectionCallbacks.CAUSE_NETWORK_LOST: return "NETWORK_LOST";
+		case GoogleApiClient.ConnectionCallbacks.CAUSE_SERVICE_DISCONNECTED: return "SERVICE_DISCONNECTED";
+		}
+	}
 }

@@ -77,8 +77,8 @@
     <string name="resolution_request_failed">resolution request failed.</string>
     <string name="location_setting_change_unavailable">location setting change unavailable</string>
     <string name="location_setting_returns_unknown_status">location setting returns unknown status %1$d</string>
-    <string name="play_service_connection_failed">play service connection failed (%1$d)%2$s</string>
-    <string name="play_service_connection_suspended">play service connection suspended(%1$d)</string>
+    <string name="play_service_connection_failed">play service connection failed. (%1$d)%2$s</string>
+    <string name="play_service_connection_suspended">play service connection suspended. (%1$d)%2$s</string>
 
     <string name="location_update_request_result">location update request failed. (%1$d)%2$s</string>
     <string name="location_mode">GeoTagging Mode</string>
@@ -125,5 +125,6 @@
     <string name="wifi_setting">Wi-Fi setting</string>
     <string name="loading">(loading…)</string>
     <string name="open_map">open map app</string>
+    <string name="play_store_missing">missing Play Store</string>
 
 </resources>

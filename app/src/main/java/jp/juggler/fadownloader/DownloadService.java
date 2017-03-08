@@ -325,7 +325,8 @@ public class DownloadService extends Service{
 	final GoogleApiClient.ConnectionCallbacks connection_callback = new GoogleApiClient.ConnectionCallbacks(){
 		@Override public void onConnected( @Nullable Bundle bundle ){
 			if( ! is_alive ) return;
-			// TODO
+
+			// 位置情報の追跡状態を更新する
 			location_tracker.onGoogleAPIConnected();
 		}
 
@@ -333,8 +334,12 @@ public class DownloadService extends Service{
 		@Override public void onConnectionSuspended( int i ){
 			if( ! is_alive ) return;
 
-			log.w( R.string.play_service_connection_suspended, i );
-			mGoogleApiClient.connect();
+			String msg = Utils.getConnectionSuspendedMessage(i);
+			log.w( R.string.play_service_connection_suspended, i ,msg);
+
+			// 再接続は自動で行われるらしい
+
+			// 位置情報の追跡状態を更新する
 			location_tracker.onGoogleAPIDisconnected();
 		}
 	};

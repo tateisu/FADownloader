@@ -105,7 +105,7 @@ public class LocationTracker implements LocationListener{
 
 		try{
 			if( ! mGoogleApiClient.isConnected() ){
-				log.w( "tracking_end: api not connected." );
+				log.d( "tracking_end: api not connected." );
 			}else{
 				LocationServices.FusedLocationApi.removeLocationUpdates(
 					mGoogleApiClient,
@@ -116,14 +116,14 @@ public class LocationTracker implements LocationListener{
 							// 正常終了
 							log.h( R.string.location_update_end );
 						}else{
-							log.e( "tracking_end: result %s %s", status.getStatusCode(), status.getStatusMessage() );
+							log.e( "removeLocationUpdates() failed. (%d)%s", status.getStatusCode(), status.getStatusMessage() );
 						}
 					}
 				} );
 			}
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			log.e( "tracking_end: exception: %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+			log.e( ex, "removeLocationUpdates() failed.");
 		}finally{
 			isTracked = false;
 		}
@@ -182,7 +182,7 @@ public class LocationTracker implements LocationListener{
 		}
 	}
 
-	static final SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss.SSS z", Locale.getDefault() );
+	static final SimpleDateFormat date_fmt = new SimpleDateFormat( "HH:mm:ss.SSS", Locale.getDefault() );
 
 	@Override public synchronized void onLocationChanged( Location location ){
 		log.v( R.string.location_changed, date_fmt.format( location.getTime() ) );

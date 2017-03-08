@@ -43,7 +43,6 @@ public class HTTPClient{
 	public String caption;
 	public boolean silent_error = false;
 	public long time_expect_connect = 3000;
-	public long time_expect_read = 3000;
 	public boolean bDisableKeepAlive = false;
 
 	@SuppressWarnings( "unused" )
@@ -354,7 +353,6 @@ public class HTTPClient{
 						if( data.length > 0 ){
 							t3 = SystemClock.elapsedRealtime();
 							lap = t3 - t2;
-							if( lap > time_expect_read ) log.d( "[%s,read] time=%sms %s", caption, lap, toHostName( url ) );
 							if( nTry > 0 ) log.w( "[%s] OK. retry=%d,time=%dms"
 								, caption
 								, nTry

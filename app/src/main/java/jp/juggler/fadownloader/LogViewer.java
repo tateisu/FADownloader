@@ -109,13 +109,13 @@ public class LogViewer implements LoaderManager.LoaderCallbacks<Cursor>{
 
 			int fg;
 			if( level >= LogData.LEVEL_FLOOD ){
-				fg = 0xff777777;
+				fg = 0xffbbbbbb;
 			}else if( level >= LogData.LEVEL_HEARTBEAT ){
-				fg = 0xff555555;
+				fg = 0xff999999;
 			}else if( level >= LogData.LEVEL_DEBUG ){
-				fg = 0xff333333;
+				fg = 0xff777777;
 			}else if( level >= LogData.LEVEL_VERBOSE ){
-				fg = 0xff111111;
+				fg = 0xff555555;
 			}else if( level >= LogData.LEVEL_INFO ){
 				fg = 0xff000000;
 			}else if( level >= LogData.LEVEL_WARNING ){

@@ -182,7 +182,7 @@ public class ActMain
 							.apply();
 					}catch( Throwable ex ){
 						ex.printStackTrace();
-						Toast.makeText( this, String.format( "folder access failed. %s %s", ex.getClass().getSimpleName(), ex.getMessage() ), Toast.LENGTH_LONG ).show();
+						showToast(ex,"folder access failed.");
 					}
 				}
 			}
@@ -220,7 +220,7 @@ public class ActMain
 						.apply();
 				}catch( Throwable ex ){
 					ex.printStackTrace();
-					Toast.makeText( this, String.format( "folder access failed. %s %s", ex.getClass().getSimpleName(), ex.getMessage() ), Toast.LENGTH_LONG ).show();
+					showToast(ex, "folder access failed.");
 				}
 			}
 			Page0 page = pager_adapter.getPage( 0 );
@@ -286,6 +286,23 @@ public class ActMain
 
 		super.onDestroy();
 	}
+
+	/////////////////////////////////////////////////////////////////////////
+
+	void showToast(boolean bLong,String s){
+		Toast.makeText( this
+			, s
+			, bLong ?Toast.LENGTH_LONG:Toast.LENGTH_SHORT
+		).show();
+	}
+
+	void showToast(Throwable ex,String s){
+		Toast.makeText( this
+			, s+String.format(":%s %s",ex.getClass().getSimpleName(),ex.getMessage())
+			, Toast.LENGTH_LONG
+		).show();
+	}
+
 	/////////////////////////////////////////////////////////////////////////
 	// アプリ権限の要求
 
@@ -372,7 +389,7 @@ public class ActMain
 		}else if( mGoogleApiClient.isConnected() ){
 			startLocationSettingCheck();
 		}else{
-			Toast.makeText( this, getString( R.string.google_api_not_connected ), Toast.LENGTH_SHORT ).show();
+			showToast( false, getString( R.string.google_api_not_connected ));
 		}
 	}
 
@@ -439,7 +456,7 @@ public class ActMain
 		// 設定から値を読んでバリデーション
 		String flashair_url = pref.getString( Pref.UI_FLASHAIR_URL, "" ).trim();
 		if( TextUtils.isEmpty( flashair_url ) ){
-			Toast.makeText( this, getString( R.string.url_not_ok ), Toast.LENGTH_SHORT ).show();
+			showToast( true, getString( R.string.url_not_ok ));
 			return;
 		}
 
@@ -458,7 +475,7 @@ public class ActMain
 			}
 		}
 		if( TextUtils.isEmpty( folder_uri ) ){
-			Toast.makeText( this, getString( R.string.folder_not_ok ), Toast.LENGTH_SHORT ).show();
+			showToast( true, getString( R.string.folder_not_ok ));
 			return;
 		}
 
@@ -469,20 +486,20 @@ public class ActMain
 			interval = - 1;
 		}
 		if( repeat && interval < 1 ){
-			Toast.makeText( this, getString( R.string.interval_not_ok ), Toast.LENGTH_SHORT ).show();
+			showToast( true, getString( R.string.interval_not_ok ));
 			return;
 		}
 
 		sv = pref.getString( Pref.UI_FILE_TYPE, "" );
 		String file_type = sv.trim();
 		if( TextUtils.isEmpty( file_type ) ){
-			Toast.makeText( this, getString( R.string.file_type_empty ), Toast.LENGTH_SHORT ).show();
+			showToast( true, getString( R.string.file_type_empty ));
 			return;
 		}
 
 		int location_mode = pref.getInt( Pref.UI_LOCATION_MODE, - 1 );
 		if( location_mode < 0 || location_mode > LocationTracker.LOCATION_HIGH_ACCURACY ){
-			Toast.makeText( this, getString( R.string.location_mode_invalid ), Toast.LENGTH_SHORT ).show();
+			showToast( true, getString( R.string.location_mode_invalid ));
 			return;
 		}
 
@@ -497,7 +514,7 @@ public class ActMain
 				location_update_interval_desired = - 1L;
 			}
 			if( repeat && location_update_interval_desired < 1000L ){
-				Toast.makeText( this, getString( R.string.location_update_interval_not_ok ), Toast.LENGTH_SHORT ).show();
+				showToast( true, getString( R.string.location_update_interval_not_ok ));
 				return;
 			}
 
@@ -508,7 +525,7 @@ public class ActMain
 				location_update_interval_min = - 1L;
 			}
 			if( repeat && location_update_interval_min < 1000L ){
-				Toast.makeText( this, getString( R.string.location_update_interval_not_ok ), Toast.LENGTH_SHORT ).show();
+				showToast( true, getString( R.string.location_update_interval_not_ok ));
 				return;
 			}
 		}
@@ -522,7 +539,7 @@ public class ActMain
 			sv = pref.getString( Pref.UI_SSID, "" );
 			ssid = sv.trim();
 			if( TextUtils.isEmpty( ssid ) ){
-				Toast.makeText( this, getString( R.string.ssid_empty ), Toast.LENGTH_SHORT ).show();
+				showToast( true, getString( R.string.ssid_empty ));
 				return;
 			}
 		}
@@ -620,11 +637,16 @@ public class ActMain
 
 		// Playサービスとの接続が失われた
 		@Override public void onConnectionSuspended( int i ){
-			Toast.makeText( ActMain.this, getString( R.string.play_service_connection_suspended
-				, i ), Toast.LENGTH_SHORT ).show();
-			mGoogleApiClient.connect();
+			String msg = Utils.getConnectionSuspendedMessage(i);
+			Toast.makeText( ActMain.this
+				, getString( R.string.play_service_connection_suspended
+				, i ,msg)
+				, Toast.LENGTH_SHORT ).show();
+			// 再接続は自動で行われるらしい
 		}
 	};
+
+
 
 	static final String APP_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkTbDT+kbberoRK6QHAKNzuKsFh0zSVJk97trga30ZHHyQHPsHtIJCvIibgHmm5QL6xr9TualN5iYMfNKA4bZM3x25kNiJ0NVuP86sravHdTyVuZyIu2WUI1CNdGRun5GYSGtxXNOuZujRkPtIMGjl750Z18CirrXYkl85KHDLgiOAu+d7HjssQ215+Qfo7iJIl30CYgcBl+szfH42MQK2Jd03LeTMf+5MA/ve/6iL2I1nyZrtWrC6Sw1uqOqjB9jx8cJALOrX+CmDa+si9krAI7gcOV/E8CJvVyC7cPxxooB425S8xHTr/MPjkEmwnu7ppMk5MyO+G1XP927fVg0ywIDAQAB";
 	static final String REMOVE_AD_PRODUCT_ID = "remove_ad";
@@ -643,26 +665,31 @@ public class ActMain
 			bRemoveAdPurchased = Pref.pref( this ).getBoolean( Pref.REMOVE_AD_PURCHASED, false );
 		}
 		if( ! bRemoveAdPurchased ){
-			mIabHelper = new IabHelper( this, APP_PUBLIC_KEY );
-			mIabHelper.startSetup( new IabHelper.OnIabSetupFinishedListener(){
-				public void onIabSetupFinished( IabResult result ){
-					// return if activity is destroyed
-					if( mIabHelper == null ) return;
+			try{
+				mIabHelper = new IabHelper( this, APP_PUBLIC_KEY );
+				mIabHelper.startSetup( new IabHelper.OnIabSetupFinishedListener(){
+					public void onIabSetupFinished( IabResult result ){
+						// return if activity is destroyed
+						if( mIabHelper == null ) return;
 
-					if( ! result.isSuccess() ){
-						Log.d( TAG, "onIabSetupFinished: "
-							+ result.getResponse()
-							+ "," + result.getMessage()
-						);
-						return;
+						if( ! result.isSuccess() ){
+							Log.d( TAG, "onIabSetupFinished: "
+								+ result.getResponse()
+								+ "," + result.getMessage()
+							);
+							return;
+						}
+
+						bSetupCompleted = true;
+
+						// セットアップが終わったら購入済みアイテムの確認を開始する
+						mIabHelper.queryInventoryAsync( mGotInventoryListener );
 					}
-
-					bSetupCompleted = true;
-
-					// セットアップが終わったら購入済みアイテムの確認を開始する
-					mIabHelper.queryInventoryAsync( mGotInventoryListener );
-				}
-			} );
+				} );
+			}catch(Throwable ex){
+				ex.printStackTrace(  );
+				// 多分Google Playのない端末
+			}
 		}
 	}
 
@@ -689,6 +716,10 @@ public class ActMain
 	// 購入開始
 	public void startRemoveAdPurchase(){
 		try{
+			if(mIabHelper == null){
+				showToast(false,getString(R.string.play_store_missing));
+			}
+
 			mIabHelper.launchPurchaseFlow(
 				this
 				, REMOVE_AD_PRODUCT_ID

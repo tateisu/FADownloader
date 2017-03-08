@@ -141,7 +141,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		return list;
 	}
 
-	final HTTPClient client = new HTTPClient( 30000, 4, "DownloadWorker", this );
+	final HTTPClient client = new HTTPClient( 30000, 4, "HTTP Client", this );
 	final AtomicReference<String> cancel_reason = new AtomicReference<>( null );
 
 	@Override public boolean isCancelled(){

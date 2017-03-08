@@ -89,8 +89,8 @@
     <string name="location_setting_returns_unknown_status">端末の位置情報設定の変更結果： %1$d</string>
     <string name="location_update_interval_not_ok">位置取得頻度には1以上の整数を指定してください</string>
     <string name="location_update_start">位置取得を開始しました</string>
-    <string name="play_service_connection_failed">Playサービスとの接続に失敗 (%1$d) %2$s</string>
-    <string name="play_service_connection_suspended">Playサービスとの接続が中断されました(%1$d)</string>
+    <string name="play_service_connection_failed">Playサービスとの接続に失敗しました. (%1$d)%2$s</string>
+    <string name="play_service_connection_suspended">Playサービスとの接続が中断されました. (%1$d)%2$s</string>
     <string name="resolution_request_failed">位置情報設定の精度変更要求が失敗しました</string>
     <string name="help_oss_license_long">このアプリは sephiroth74氏の Android-Exif-Extended ライブラリを(SAF対応のために少し改造して)使用しています。\nhttps://github.com/sephiroth74/Android-Exif-Extended\nThis software is licensed under the Apache 2 license, quoted below.\nLicensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. You may obtain a copy of the License at\nhttp://www.apache.org/licenses/LICENSE-2.0\nUnless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.\n</string>
     <string name="location_update_end">位置取得を終了しました</string>
