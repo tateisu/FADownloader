@@ -130,10 +130,16 @@ public class LocationTracker implements LocationListener{
 	}
 
 	private void tracking_start(){
+
+		if( location_setting ==null || !location_setting.isUpdateRequired()){
+			return;
+		}
+
 		if( is_disposed ){
 			log.d( "tracking_start: tracker is already disposed." );
 			return;
 		}
+		
 		if( ! mGoogleApiClient.isConnected() ){
 			log.d( "tracking_start: api not connected." );
 			return;

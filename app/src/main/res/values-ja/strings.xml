@@ -34,7 +34,7 @@
     <string name="log">ログ</string>
     <string name="service_start">サービス開始</string>
     <string name="service_idle">待機中</string>
-    <string name="service_end">サービス終了</string>
+    <string name="service_end">サービス停止</string>
     <string name="broadcast_received">ブロードキャスト受信：%1$s</string>
     <string name="manual_restart">手動リスタート</string>
     <string name="unsupported_intent_received">未対応のインテント受信. action=%1$s</string>
