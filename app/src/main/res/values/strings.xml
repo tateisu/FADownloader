@@ -1,6 +1,6 @@
 <resources  xmlns:tools="http://schemas.android.com/tools">
 
-    <string name="flashair_url">FlashAir URL</string>
+    <string name="flashair_url">Camera URL</string>
 
     <string name="local_folder">Local Folder</string>
     <string name="repeat_interval">Repeat Interval</string>
@@ -15,16 +15,16 @@
     <string name="dot_dot">…</string>
     <string name="not_selected">(not selected)</string>
     <string name="folder_not_ok">please specify Local Folder.</string>
-    <string name="url_not_ok">please specify FlashAir URL.</string>
+    <string name="url_not_ok">please specify Camera URL.</string>
     <string name="interval_not_ok">please specify interval as integer greater than 0.</string>
     <string name="file_type_empty">missing file type.</string>
     <string name="log_clear">clear log</string>
     <string name="question">\?</string>
     <string name="close">Close</string>
-    <string name="help_repeat_interval_text">Repeat IntervalにはREPEAT時の巡回間隔を秒数で指定します。\nデフォルトは30です。\nFlashAirは無線LANにアクセスがない場合に自動的に電源を切るタイムアウト(デフォルト300秒)が存在するため、それより少ない数字を指定することをオススメします。\n</string>
+    <string name="help_repeat_interval_text">Repeat IntervalにはREPEAT時の巡回間隔を秒数で指定します。\nデフォルトは30です。</string>
     <string name="help_file_type_text">File type には、転送するファイルの拡張子を指定します。\n空白で区切って複数書けます。\n* はワイルドカードとして解釈されます。\nデフォルトは「.jp*」です</string>
-    <string name="help_flashair_url_text">FlashAir URL には、スマホからFlashAirにアクセスする際に使うFlashAir URLを指定してください。\nデフォルトは「http://flashair/」です。\n末尾の / を忘れないでね。 \nなお、サブフォルダを指定してもうまく動きません。</string>
-    <string name="help_mode_text1">REPEATを押すと転送サービスを開始し、ダウンロードを定期的に行います。\n押した直後は必ずフォルダ階層を全てスキャンします。\n2回目以降はスキャンの前にまずFlashAirカードのアップデートステータスを確認して、更新があった場合のみフォルダ階層をスキャンします。\nREPEAT状態の間は、端末再起動時に転送サービスを自動的に開始します。</string>
+    <string name="help_flashair_url_text">Camera URL には、スマホからCameraにアクセスする際に使うURLを指定してください。\nデフォルトは「http://192.168.0.1/」です。\n末尾の / を忘れないでね。 \nなお、サブフォルダを指定してもうまく動きません。</string>
+    <string name="help_mode_text1">REPEATを押すと転送サービスを開始し、ダウンロードを定期的に行います。\n押した直後は必ずフォルダ階層を全てスキャンします。\n2回目以降はスキャンの前にまずカメラの更新チェックを行います。更新があった場合のみフォルダ階層をスキャンします。\nREPEAT状態の間は、端末再起動時に転送サービスを自動的に開始します。</string>
     <string name="help_mode_text2">ONCEを押すと転送サービスを開始し、ダウンロードを1回だけ行います。\nフォルダ階層を全てスキャンし終えたら転送サービスは自動的に終了します。</string>
     <string name="help_mode_text3">STOPを押すと転送サービスを終了します。\n実行中の転送処理は中断されます。\nバッテリー消費を軽減するため、使わない時はサービスを停止させましょう。</string>
     <string name="help_local_folder_text1">Local Folder にはスマホ上の、画像をダウンロードして保存するフォルダを指定します</string>
@@ -55,14 +55,14 @@
     <string name="file_create_failed">file create failed.</string>
     <string name="thread_start">thread start</string>
     <string name="initializing">initializing</string>
-    <string name="wait_short">wait short time. remain=%1$s</string>
+    <string name="wait_short">wait. remain=%1$s</string>
     <string name="wait_alarm">wait for alarm. remain=%1$s</string>
     <string name="wifi_check">Wi-Fi check</string>
     <string name="wifi_no_ap_associated">Wi-Fi AP not associated.</string>
-    <string name="flashair_update_status_check">FlashAir update check</string>
-    <string name="flashair_host_error">could not resolve remote host. perhaps:device\'s Wi-Fi is not connected to FlashAir AP</string>
-    <string name="flashair_host_error_short">missing FlashAir host.</string>
-    <string name="flashair_update_check_failed">FlashAir update check failed. %1$s %2$s</string>
+    <string name="flashair_update_status_check">Camera Data update check</string>
+    <string name="flashair_host_error">could not resolve remote host. perhaps:device\'s Wi-Fi is not connected to Camera Wi-Fi AP</string>
+    <string name="flashair_host_error_short">missing Camera host.</string>
+    <string name="flashair_update_check_failed">Camera Data update check failed. %1$s %2$s</string>
     <string name="flashair_not_updated">FlashAir is not updated.</string>
     <string name="file_scan_completed">file scan completed.</string>
     <string name="repeat_off">not repeat</string>
@@ -71,7 +71,7 @@
     <string name="progress_file">FILE %1$s</string>
     <string name="download_file">DOWNLOADING: %1$s</string>
     <string name="thread_end">thread stopped</string>
-    <string name="flashair_update_status_error">FlashAir update status data error</string>
+    <string name="flashair_update_status_error">Camera Data update status data error</string>
     <string name="exif_update">EXIF update: %1$s</string>
     <string name="geo_tagging_not_enabled">GeoTagging not enabled because this device can not use Location API of Google Play service</string>
     <string name="resolution_request_failed">resolution request failed.</string>
@@ -107,8 +107,8 @@
     <string name="other">Other</string>
     <string name="fix_wifi_ap">Fix Wi-Fi AP</string>
     <string name="wifi_ap_ssid">SSID for Wi-Fi AP</string>
-    <string name="help_force_wifi">Wi-Fi強制機能をONにしてFlashAir APのSSIDを入力すると、Wi-Fi接続がより安定します。\n・Wi-FiがOFFになっていたらONにします\n・指定したSSIDの優先度を上げます\n・指定したSSIDと現在の接続先が異なる場合、Wi-Fi APのスキャンを定期的に行います\n・指定したSSIDがスキャン結果に含まれる場合、そのWi-Fi AP に接続先を切り替えます\n</string>
-    <string name="help_ssid">SSIDにはFlashAir Wi-Fi APのSSIDを指定してください\n</string>
+    <string name="help_force_wifi">Wi-Fi強制機能をONにしてカメラのWi-Fi APのSSIDを入力すると、Wi-Fi接続がより安定します。\n・Wi-FiがOFFになっていたらONにします\n・指定したSSIDの優先度を上げます\n・指定したSSIDと現在の接続先が異なる場合、Wi-Fi APのスキャンを定期的に行います\n・指定したSSIDがスキャン結果に含まれる場合、そのWi-Fi AP に接続先を切り替えます\n</string>
+    <string name="help_ssid">SSIDにはカメラのWi-Fi APのSSIDを指定してください\n</string>
     <string name="ssid_empty">SSID is empty.</string>
     <string name="wifi_not_enabled">現在 Wi-Fiが有効ではありません</string>
     <string name="wifi_status_unknown">wifi status unknown</string>
@@ -131,8 +131,10 @@
     <string name="folder_name_empty">folder name empty</string>
     <string name="folder_already_exist">folder already exist.</string>
     <string name="folder_creation_failed">folder creation failed.</string>
-    <string name="network_unreachable">unreachable to FlashAir.</string>
+    <string name="network_unreachable">unreachable to Camera.</string>
     <string name="wifi_not_good">Wi-Fi not good.</string>
     <string name="help_local_folder_kitkat">Local Folder にはスマホ上の、画像をダウンロードして保存するフォルダを指定します\n\nAndroid 4.4.x の場合、このアプリからSDカードに書き込むことはできません。「Pictures」の下あたりにFADownloader用のフォルダを作成してください。\n</string>
+    <string name="camera_file_listing">camera file listing</string>
+    <string name="camera_file_list_parse_error">camera file list parse error</string>
 
 </resources>

@@ -1,7 +1,7 @@
 <resources
     xmlns:tools="http://schemas.android.com/tools"
     >
-    <string name="app_name" translatable="false" tools:ignore="MissingTranslation">FA Downloader</string>
-    <string name="banner_ad_unit_id" translatable="false" tools:ignore="MissingTranslation">ca-app-pub-5890454442862024/8139349992</string>
+    <string name="app_name" translatable="false" tools:ignore="MissingTranslation">KP Downloader</string>
+    <string name="banner_ad_unit_id" translatable="false" tools:ignore="MissingTranslation">ca-app-pub-5890454442862024/6273520398</string>
 
 </resources>

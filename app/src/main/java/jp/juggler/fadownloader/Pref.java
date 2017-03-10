@@ -35,7 +35,7 @@ public class Pref{
 		sv = pref.getString( Pref.UI_FLASHAIR_URL, null );
 		if( TextUtils.isEmpty( sv ) ){
 			bChanged = true;
-			e.putString( Pref.UI_FLASHAIR_URL, "http://flashair/" );
+			e.putString( Pref.UI_FLASHAIR_URL, "http://192.168.0.1/" );
 		}
 		//
 		sv = pref.getString( Pref.UI_INTERVAL, null );
@@ -80,9 +80,6 @@ public class Pref{
 	public static final int LAST_MODE_ONCE = 1;
 	public static final int LAST_MODE_REPEAT = 2;
 
-	// 処理を前回開始した時刻
-	public static final String LAST_START = "last_start";
-
 	// 最後にWorkerを手動開始した時の設定
 	public static final String WORKER_REPEAT = "worker_repeat";
 	public static final String WORKER_FLASHAIR_URL = "worker_flashair_url";
@@ -94,10 +91,6 @@ public class Pref{
 	public static final String WORKER_LOCATION_MODE = "worker_location_mode";
 	public static final String WORKER_FORCE_WIFI = "worker_force_wifi";
 	public static final String WORKER_SSID = "worker_ssid";
-
-	// ファイルスキャンが完了した時刻
-	public static final String LAST_SCAN_COMPLETE = "last_scan_complete";
-	public static final String FLASHAIR_UPDATE_STATUS_OLD = "flashair_update_status_old";
 
 	public static final String REMOVE_AD_PURCHASED = "remove_ad_purchased";
 
