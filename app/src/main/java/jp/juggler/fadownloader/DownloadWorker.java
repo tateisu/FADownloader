@@ -379,11 +379,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 					String changed = info.optString( "changed" );
 					if( "camera".equals( changed ) ){
 						// 何もしていない状態でも定期的に発生する
-						return;
-					}
-					log.d( "WebSocket onTextMessage %s", text );
-
-					if( "cameraDirect".equals( changed ) ){
+					}else if( "cameraDirect".equals( changed ) ){
 						bBusy = info.optBoolean( "capturing", false )
 							|| ! "idle".equals( info.optString( "stateStill" ) )
 							|| ! "idle".equals( info.optString( "stateMovie" ) )
@@ -399,6 +395,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 						mLastFileListing.set( 0L );
 						mCameraUpdateTime.set( System.currentTimeMillis() );
 						notifyEx();
+					}else{
+						log.d( "WebSocket onTextMessage %s", text );
 					}
 				}
 			}catch( Throwable ex ){
@@ -429,12 +427,10 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 			// 通信の安定を確認
 			status.set( service.getString( R.string.wifi_check ) );
-
 			Object network = null;
 			while( ! isCancelled() ){
 				network = getWiFiNetwork( service );
 				if( network != null ) break;
-				//
 				waitEx( 1000L );
 			}
 			if( isCancelled() ) break;
@@ -460,12 +456,18 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				}catch( OpeningHandshakeException ex ){
 					ex.printStackTrace();
 					log.e( ex, "WebSocket connection failed(1)." );
+					waitEx( 5000L );
+					continue;
 				}catch( WebSocketException ex ){
 					ex.printStackTrace();
 					log.e( ex, "WebSocket connection failed(2)." );
+					waitEx( 5000L );
+					continue;
 				}catch( IOException ex ){
 					ex.printStackTrace();
 					log.e( ex, "WebSocket connection failed(3)." );
+					waitEx( 5000L );
+					continue;
 				}
 			}
 			if( isCancelled() ) break;
