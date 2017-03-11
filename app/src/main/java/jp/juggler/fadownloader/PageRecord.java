@@ -4,19 +4,19 @@ import android.app.Activity;
 import android.view.View;
 import android.widget.ListView;
 
-public class Page1 extends PagerAdapterBase.PageViewHolder{
+public class PageRecord extends PagerAdapterBase.PageViewHolder{
 
-	ListView lvLog;
-	LogViewer log_viewer;
+	ListView listView;
+	DownloadRecordViewer viewer;
 
 
-	public Page1( Activity activity, View ignored ){
+	public PageRecord( Activity activity, View ignored ){
 		super( activity, ignored );
 	}
 
 	@Override protected void onPageCreate( int page_idx, View root ) throws Throwable{
-		lvLog = (ListView) root.findViewById( R.id.lvLog );
-		log_viewer = new LogViewer();
+		listView = (ListView) root.findViewById( R.id.lvRecord );
+		viewer = new DownloadRecordViewer();
 
 		if( ( (ActMain) activity ).is_start ){
 			onStart();
@@ -28,11 +28,11 @@ public class Page1 extends PagerAdapterBase.PageViewHolder{
 	}
 
 	void onStart(){
-		log_viewer.onStart( (ActMain) activity, lvLog, 0 );
+		viewer.onStart( (ActMain) activity, listView,ActMain.LOADER_ID_RECORD );
 	}
 
 	void onStop(){
-		log_viewer.onStop();
+		viewer.onStop();
 	}
 
 }

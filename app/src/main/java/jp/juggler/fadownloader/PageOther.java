@@ -9,23 +9,23 @@ import android.view.View;
 
 import java.util.Locale;
 
-public class Page2 extends PagerAdapterBase.PageViewHolder implements View.OnClickListener{
+public class PageOther extends PagerAdapterBase.PageViewHolder implements View.OnClickListener{
 
 	View btnRemoveAd;
 
-	public Page2( Activity activity, View ignored ){
+	public PageOther( Activity activity, View ignored ){
 		super( activity, ignored );
 	}
 
 	@Override protected void onPageCreate( int page_idx, View root ) throws Throwable{
 		btnRemoveAd = root.findViewById( R.id.btnRemoveAd );
-		btnRemoveAd.setOnClickListener( this );
 
 		root.findViewById( R.id.btnLogClear ).setOnClickListener( this );
-
 		root.findViewById( R.id.btnOSSLicence ).setOnClickListener( this );
 		root.findViewById( R.id.btnWifiSetting ).setOnClickListener( this );
 		root.findViewById( R.id.btnOpenMap ).setOnClickListener( this );
+		root.findViewById( R.id.btnRecordClear ).setOnClickListener( this );
+		root.findViewById( R.id.btnRemoveAd ).setOnClickListener( this );
 
 		updatePurchaseButton();
 	}
@@ -39,6 +39,11 @@ public class Page2 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		case R.id.btnLogClear:
 			activity.getContentResolver().delete( LogData.meta.content_uri, null, null );
 			break;
+
+		case R.id.btnRecordClear:
+			activity.getContentResolver().delete( DownloadRecord.meta.content_uri, null, null );
+			break;
+
 
 		case R.id.btnOSSLicence:
 			( (ActMain) activity ).openHelp( activity.getString( R.string.help_oss_license_long ) );

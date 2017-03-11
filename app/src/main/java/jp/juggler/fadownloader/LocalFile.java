@@ -1,9 +1,13 @@
 package jp.juggler.fadownloader;
 
+import android.content.ContentResolver;
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.support.v4.provider.DocumentFile;
+import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -218,6 +222,15 @@ public class LocalFile{
 			return ( (File) local_file ).renameTo(
 				new File( ( (File) local_file ).getParentFile(), name )
 			);
+		}
+	}
+
+	public String getFileUri(LogWriter log){
+		if( !prepareFile( log) ) return null;
+		if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
+			return ( (DocumentFile) local_file ).getUri().toString();
+		}else{
+			return ( (File) local_file ).getAbsolutePath();
 		}
 	}
 

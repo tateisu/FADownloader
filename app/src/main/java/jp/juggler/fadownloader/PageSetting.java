@@ -17,7 +17,7 @@ import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 
-public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnClickListener{
+public class PageSetting extends PagerAdapterBase.PageViewHolder implements View.OnClickListener{
 
 	EditText etURL;
 	TextView tvFolder;
@@ -29,7 +29,7 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 	Switch swForceWifi;
 	EditText etSSID;
 
-	public Page0( Activity activity, View ignored ){
+	public PageSetting( Activity activity, View ignored ){
 		super( activity, ignored );
 	}
 
@@ -55,6 +55,7 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		root.findViewById( R.id.btnLocationIntervalMinHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnForceWifiHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnSSIDHelp ).setOnClickListener( this );
+		root.findViewById( R.id.btnSSIDPicker ).setOnClickListener( this );
 
 		ArrayAdapter<CharSequence> location_mode_adapter = new ArrayAdapter<>(
 			activity
@@ -98,6 +99,10 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 		case R.id.btnFolderPicker:
 			folder_pick();
 			break;
+		case R.id.btnSSIDPicker:
+			ssid_pick();
+			break;
+
 		case R.id.btnFolderPickerHelp:
 			if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION){
 				( (ActMain) activity ).openHelp( R.layout.help_local_folder );
@@ -131,6 +136,7 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 			break;
 		}
 	}
+
 
 	// UIフォームの値を設定から読み出す
 	void ui_value_load(){
@@ -187,6 +193,8 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 			.apply();
 	}
 
+
+
 	// 転送先フォルダの選択を開始
 	void folder_pick(){
 		if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
@@ -218,5 +226,14 @@ public class Page0 extends PagerAdapterBase.PageViewHolder implements View.OnCli
 
 		tvFolder.setText( TextUtils.isEmpty( name )
 			? activity.getString( R.string.not_selected ) : name );
+	}
+
+	private void ssid_pick(){
+		SSIDPicker.open( activity, ActMain.REQUEST_SSID_PICKER );
+
+	}
+	public void ssid_view_update(){
+		SharedPreferences pref = Pref.pref( activity );
+		etSSID.setText( pref.getString( Pref.UI_SSID, "" ) );
 	}
 }

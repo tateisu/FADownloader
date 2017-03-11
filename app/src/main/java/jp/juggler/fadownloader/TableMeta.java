@@ -101,7 +101,7 @@ public abstract class TableMeta{
 	public Uri insert( ContentResolver cr, SQLiteDatabase db, MatchResult match, Uri uri, ContentValues values ){
 
 		if( match.is_item ) return null;
-		final long id = db.insertOrThrow( table, null, values );
+		final long id = db.replaceOrThrow( table, null, values );
 
 		// 変更を通知する
 		final Uri newUri = ContentUris.withAppendedId( content_uri, id );

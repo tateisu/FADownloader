@@ -62,6 +62,13 @@
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="sensorPortrait"
             />
+        <activity
+            android:name="jp.juggler.fadownloader.SSIDPicker"
+            android:icon="@drawable/ic_launcher"
+            android:label="@string/ssid_picker"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
+            android:screenOrientation="sensorPortrait"
+            />
     </application>
 
 </manifest>

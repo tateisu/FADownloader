@@ -80,8 +80,6 @@ public class Pref{
 	public static final int LAST_MODE_ONCE = 1;
 	public static final int LAST_MODE_REPEAT = 2;
 
-	// 処理を前回開始した時刻
-	public static final String LAST_START = "last_start";
 
 	// 最後にWorkerを手動開始した時の設定
 	public static final String WORKER_REPEAT = "worker_repeat";
@@ -96,7 +94,7 @@ public class Pref{
 	public static final String WORKER_SSID = "worker_ssid";
 
 	// ファイルスキャンが完了した時刻
-	public static final String LAST_SCAN_COMPLETE = "last_scan_complete";
+	public static final String LAST_IDLE_START = "last_idle_start";
 	public static final String FLASHAIR_UPDATE_STATUS_OLD = "flashair_update_status_old";
 
 	public static final String REMOVE_AD_PURCHASED = "remove_ad_purchased";

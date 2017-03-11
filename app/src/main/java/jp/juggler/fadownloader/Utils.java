@@ -1,6 +1,7 @@
 package jp.juggler.fadownloader;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -21,6 +22,25 @@ import android.util.SparseBooleanArray;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+
+
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.database.Cursor;
+import android.database.DatabaseUtils;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
+import android.util.Log;
+import android.webkit.MimeTypeMap;
+
+
+import java.io.FileFilter;
+import java.text.DecimalFormat;
+import java.util.Comparator;
 
 public class Utils{
 
@@ -412,4 +432,6 @@ public class Utils{
 		if( state == null ) return null;
 		return String.format( "(%d)%s", state.ordinal(), state.toString() );
 	}
+
+
 }

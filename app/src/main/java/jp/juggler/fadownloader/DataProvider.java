@@ -17,7 +17,7 @@ public class DataProvider extends ContentProvider{
 	static final String AUTHORITY = BuildVariant.DATA_PROVIDER_AUTHORITY;
 
 	static final String DB_NAME = "data";
-	static final int DB_SCHEMA_VERSION = 1;
+	static final int DB_SCHEMA_VERSION = 2;
 
 	static class DBHelper1 extends SQLiteOpenHelper{
 
@@ -27,15 +27,18 @@ public class DataProvider extends ContentProvider{
 
 		@Override public void onCreate( SQLiteDatabase db ){
 			LogData.meta.onDBCreate( db );
+			DownloadRecord.meta.onDBCreate( db );
 		}
 
 		@Override public void onUpgrade( SQLiteDatabase db, int v_old, int v_new ){
 			LogData.meta.onDBUpgrade( db, v_old, v_new );
+			DownloadRecord.meta.onDBUpgrade( db, v_old, v_new );
 		}
 	}
 
 	static{
 		LogData.meta.registerUri( AUTHORITY, "log" );
+		DownloadRecord.meta.registerUri( AUTHORITY, "dr" );
 	}
 
 	private DBHelper1 mDBHelper;

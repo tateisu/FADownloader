@@ -178,8 +178,7 @@ public class DownloadService extends Service{
 
 				try{
 					Pref.pref( this ).edit()
-						.remove( Pref.LAST_START )
-						.remove( Pref.LAST_SCAN_COMPLETE )
+						.remove( Pref.LAST_IDLE_START )
 						.remove( Pref.FLASHAIR_UPDATE_STATUS_OLD )
 						.apply();
 					worker = new DownloadWorker( this, intent, worker_callback );

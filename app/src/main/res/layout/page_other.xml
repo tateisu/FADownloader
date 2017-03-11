@@ -45,7 +45,13 @@
             android:layout_marginBottom="8dp"
             android:text="@string/log_clear"
             />
-
+        <Button
+            android:id="@+id/btnRecordClear"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/download_record_clear"
+            />
         <Button
             android:id="@+id/btnOSSLicence"
             android:layout_width="match_parent"

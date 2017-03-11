@@ -134,5 +134,10 @@
     <string name="network_unreachable">unreachable to FlashAir.</string>
     <string name="wifi_not_good">Wi-Fi not good.</string>
     <string name="help_local_folder_kitkat">Local Folder にはスマホ上の、画像をダウンロードして保存するフォルダを指定します\n\nAndroid 4.4.x の場合、このアプリからSDカードに書き込むことはできません。「Pictures」の下あたりにFADownloader用のフォルダを作成してください。\n</string>
+    <string name="download_record">download record</string>
+    <string name="download_record_clear">clear download record</string>
+    <string name="non_primary_storage_viewer">if you can not show image on non-primary storage, please try pre-installed image viewer.</string>
+    <string name="reload">reload</string>
+    <string name="ssid_picker">SSID picker</string>
 
 </resources>

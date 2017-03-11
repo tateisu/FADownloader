@@ -66,6 +66,10 @@ public class ActMain
 	static final int REQUEST_CHECK_SETTINGS = 3;
 	static final int REQUEST_PURCHASE = 4;
 	static final int REQUEST_FOLDER_PICKER = 5;
+	static final int REQUEST_SSID_PICKER = 6;
+
+	static final int LOADER_ID_LOG = 0;
+	static final int LOADER_ID_RECORD = 1;
 
 	TextView tvStatus;
 
@@ -106,7 +110,7 @@ public class ActMain
 			mAdView.resume();
 		}
 
-		Page0 page = pager_adapter.getPage( 0 );
+		PageSetting page = pager_adapter.getPage( page_idx_setting );
 		if( page != null ){
 			page.ui_value_load();
 			page.folder_view_update();
@@ -122,7 +126,7 @@ public class ActMain
 			mAdView.pause();
 		}
 
-		Page0 page = pager_adapter.getPage( 0 );
+		PageSetting page = pager_adapter.getPage( page_idx_setting );
 		if( page != null ) page.ui_value_save();
 
 		super.onPause();
@@ -134,8 +138,11 @@ public class ActMain
 		super.onStart();
 		is_start = true;
 
-		Page1 page = pager_adapter.getPage( 1 );
+		PageLog page = pager_adapter.getPage( page_idx_log );
 		if( page != null ) page.onStart();
+
+		PageRecord pageR = pager_adapter.getPage( page_idx_record );
+		if( pageR != null ) pageR.onStart();
 
 		mGoogleApiClient.connect();
 
@@ -151,8 +158,13 @@ public class ActMain
 		}
 
 		handler.removeCallbacks( proc_status );
-		Page1 page = pager_adapter.getPage( 1 );
+
+		PageLog page = pager_adapter.getPage( page_idx_log );
 		if( page != null ) page.onStop();
+
+		PageRecord pageR = pager_adapter.getPage( page_idx_record );
+		if( pageR != null ) pageR.onStart();
+
 		super.onStop();
 	}
 
@@ -182,11 +194,11 @@ public class ActMain
 							.apply();
 					}catch( Throwable ex ){
 						ex.printStackTrace();
-						showToast(ex,"folder access failed.");
+						showToast( ex, "folder access failed." );
 					}
 				}
 			}
-			Page0 page = pager_adapter.getPage( 0 );
+			PageSetting page = pager_adapter.getPage( page_idx_setting );
 			if( page != null ) page.folder_view_update();
 			return;
 		}else if( requestCode == REQUEST_FOLDER_PICKER ){
@@ -221,18 +233,36 @@ public class ActMain
 						.apply();
 				}catch( Throwable ex ){
 					ex.printStackTrace();
-					showToast(ex, "folder access failed.");
+					showToast( ex, "folder access failed." );
 				}
 			}
-			Page0 page = pager_adapter.getPage( 0 );
+			PageSetting page = pager_adapter.getPage( page_idx_setting );
 			if( page != null ) page.folder_view_update();
+			return;
+		}else if( requestCode == REQUEST_SSID_PICKER ){
+			if( resultCode == Activity.RESULT_OK ){
+				String sv = resultData.getStringExtra( SSIDPicker.EXTRA_SSID );
+				if( ! TextUtils.isEmpty( sv ) ){
+					Pref.pref( this ).edit()
+						.putString( Pref.UI_SSID, sv )
+						.apply();
+				}
+			}
+			PageSetting page = pager_adapter.getPage( page_idx_setting );
+			if( page != null ) page.ssid_view_update();
 			return;
 		}
 
 		super.onActivityResult( requestCode, resultCode, resultData );
+
 	}
 
 	AdView mAdView;
+
+	int page_idx_setting;
+	int page_idx_log;
+	int page_idx_record;
+	int page_idx_other;
 
 	@Override
 	protected void onCreate( Bundle savedInstanceState ){
@@ -263,9 +293,10 @@ public class ActMain
 		pager = (ViewPager) findViewById( R.id.pager );
 
 		pager_adapter = new PagerAdapterBase( this );
-		pager_adapter.addPage( getString( R.string.setting ), R.layout.page0, Page0.class );
-		pager_adapter.addPage( getString( R.string.log ), R.layout.page1, Page1.class );
-		pager_adapter.addPage( getString( R.string.other ), R.layout.page2, Page2.class );
+		page_idx_setting = pager_adapter.addPage( getString( R.string.setting ), R.layout.page_setting, PageSetting.class );
+		page_idx_log = pager_adapter.addPage( getString( R.string.log ), R.layout.page_log, PageLog.class );
+		page_idx_record = pager_adapter.addPage( getString( R.string.download_record ), R.layout.page_record, PageRecord.class );
+		page_idx_other = pager_adapter.addPage( getString( R.string.other ), R.layout.page_other, PageOther.class );
 		pager.setAdapter( pager_adapter );
 
 		mGoogleApiClient = new GoogleApiClient.Builder( this )
@@ -290,16 +321,16 @@ public class ActMain
 
 	/////////////////////////////////////////////////////////////////////////
 
-	void showToast(boolean bLong,String s){
+	void showToast( boolean bLong, String s ){
 		Toast.makeText( this
 			, s
-			, bLong ?Toast.LENGTH_LONG:Toast.LENGTH_SHORT
+			, bLong ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT
 		).show();
 	}
 
-	void showToast(Throwable ex,String s){
+	void showToast( Throwable ex, String s ){
 		Toast.makeText( this
-			, s+String.format(":%s %s",ex.getClass().getSimpleName(),ex.getMessage())
+			, s + String.format( ":%s %s", ex.getClass().getSimpleName(), ex.getMessage() )
 			, Toast.LENGTH_LONG
 		).show();
 	}
@@ -376,7 +407,7 @@ public class ActMain
 	void download_start_button( boolean repeat ){
 
 		// UIフォームの値を設定に保存
-		Page0 page = pager_adapter.getPage( 0 );
+		PageSetting page = pager_adapter.getPage( page_idx_setting );
 		if( page != null ){
 			page.ui_value_save();
 		}
@@ -390,7 +421,7 @@ public class ActMain
 		}else if( mGoogleApiClient.isConnected() ){
 			startLocationSettingCheck();
 		}else{
-			showToast( false, getString( R.string.geo_tagging_not_enabled ));
+			showToast( false, getString( R.string.geo_tagging_not_enabled ) );
 		}
 	}
 
@@ -457,7 +488,7 @@ public class ActMain
 		// 設定から値を読んでバリデーション
 		String flashair_url = pref.getString( Pref.UI_FLASHAIR_URL, "" ).trim();
 		if( TextUtils.isEmpty( flashair_url ) ){
-			showToast( true, getString( R.string.url_not_ok ));
+			showToast( true, getString( R.string.url_not_ok ) );
 			return;
 		}
 
@@ -476,7 +507,7 @@ public class ActMain
 			}
 		}
 		if( TextUtils.isEmpty( folder_uri ) ){
-			showToast( true, getString( R.string.folder_not_ok ));
+			showToast( true, getString( R.string.folder_not_ok ) );
 			return;
 		}
 
@@ -487,20 +518,20 @@ public class ActMain
 			interval = - 1;
 		}
 		if( repeat && interval < 1 ){
-			showToast( true, getString( R.string.interval_not_ok ));
+			showToast( true, getString( R.string.interval_not_ok ) );
 			return;
 		}
 
 		sv = pref.getString( Pref.UI_FILE_TYPE, "" );
 		String file_type = sv.trim();
 		if( TextUtils.isEmpty( file_type ) ){
-			showToast( true, getString( R.string.file_type_empty ));
+			showToast( true, getString( R.string.file_type_empty ) );
 			return;
 		}
 
 		int location_mode = pref.getInt( Pref.UI_LOCATION_MODE, - 1 );
 		if( location_mode < 0 || location_mode > LocationTracker.LOCATION_HIGH_ACCURACY ){
-			showToast( true, getString( R.string.location_mode_invalid ));
+			showToast( true, getString( R.string.location_mode_invalid ) );
 			return;
 		}
 
@@ -515,7 +546,7 @@ public class ActMain
 				location_update_interval_desired = - 1L;
 			}
 			if( repeat && location_update_interval_desired < 1000L ){
-				showToast( true, getString( R.string.location_update_interval_not_ok ));
+				showToast( true, getString( R.string.location_update_interval_not_ok ) );
 				return;
 			}
 
@@ -526,7 +557,7 @@ public class ActMain
 				location_update_interval_min = - 1L;
 			}
 			if( repeat && location_update_interval_min < 1000L ){
-				showToast( true, getString( R.string.location_update_interval_not_ok ));
+				showToast( true, getString( R.string.location_update_interval_not_ok ) );
 				return;
 			}
 		}
@@ -540,7 +571,7 @@ public class ActMain
 			sv = pref.getString( Pref.UI_SSID, "" );
 			ssid = sv.trim();
 			if( TextUtils.isEmpty( ssid ) ){
-				showToast( true, getString( R.string.ssid_empty ));
+				showToast( true, getString( R.string.ssid_empty ) );
 				return;
 			}
 		}
@@ -616,12 +647,12 @@ public class ActMain
 	final GoogleApiClient.OnConnectionFailedListener connection_fail_callback = new GoogleApiClient.OnConnectionFailedListener(){
 		@Override public void onConnectionFailed( @NonNull ConnectionResult connectionResult ){
 			int code = connectionResult.getErrorCode();
-			if( code == ConnectionResult.SERVICE_INVALID){
+			if( code == ConnectionResult.SERVICE_INVALID ){
 				// Kindle端末で発生
 				return;
 			}
 
-			String msg = Utils.getConnectionResultErrorMessage(connectionResult);
+			String msg = Utils.getConnectionResultErrorMessage( connectionResult );
 			msg = getString( R.string.play_service_connection_failed, code, msg );
 			Toast.makeText( ActMain.this, msg, Toast.LENGTH_SHORT ).show();
 
@@ -645,16 +676,14 @@ public class ActMain
 
 		// Playサービスとの接続が失われた
 		@Override public void onConnectionSuspended( int i ){
-			String msg = Utils.getConnectionSuspendedMessage(i);
+			String msg = Utils.getConnectionSuspendedMessage( i );
 			Toast.makeText( ActMain.this
 				, getString( R.string.play_service_connection_suspended
-				, i ,msg)
+					, i, msg )
 				, Toast.LENGTH_SHORT ).show();
 			// 再接続は自動で行われるらしい
 		}
 	};
-
-
 
 	@SuppressWarnings( "SpellCheckingInspection" )
 	static final String APP_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkTbDT+kbberoRK6QHAKNzuKsFh0zSVJk97trga30ZHHyQHPsHtIJCvIibgHmm5QL6xr9TualN5iYMfNKA4bZM3x25kNiJ0NVuP86sravHdTyVuZyIu2WUI1CNdGRun5GYSGtxXNOuZujRkPtIMGjl750Z18CirrXYkl85KHDLgiOAu+d7HjssQ215+Qfo7iJIl30CYgcBl+szfH42MQK2Jd03LeTMf+5MA/ve/6iL2I1nyZrtWrC6Sw1uqOqjB9jx8cJALOrX+CmDa+si9krAI7gcOV/E8CJvVyC7cPxxooB425S8xHTr/MPjkEmwnu7ppMk5MyO+G1XP927fVg0ywIDAQAB";
@@ -695,8 +724,8 @@ public class ActMain
 						mIabHelper.queryInventoryAsync( mGotInventoryListener );
 					}
 				} );
-			}catch(Throwable ex){
-				ex.printStackTrace(  );
+			}catch( Throwable ex ){
+				ex.printStackTrace();
 				// 多分Google Playのない端末
 			}
 		}
@@ -725,8 +754,8 @@ public class ActMain
 	// 購入開始
 	public void startRemoveAdPurchase(){
 		try{
-			if(mIabHelper == null){
-				showToast(false,getString(R.string.play_store_missing));
+			if( mIabHelper == null ){
+				showToast( false, getString( R.string.play_store_missing ) );
 			}
 
 			mIabHelper.launchPurchaseFlow(
@@ -771,7 +800,7 @@ public class ActMain
 			}
 		}
 
-		Page2 page = pager_adapter.getPage( 2 );
+		PageOther page = pager_adapter.getPage( page_idx_other );
 		if( page != null ) page.updatePurchaseButton();
 	}
 }
