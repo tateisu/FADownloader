@@ -34,5 +34,4 @@ public class PageRecord extends PagerAdapterBase.PageViewHolder{
 	void onStop(){
 		viewer.onStop();
 	}
-
 }

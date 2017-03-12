@@ -1,13 +1,9 @@
 package jp.juggler.fadownloader;
 
-import android.content.ContentResolver;
 import android.content.Context;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.support.v4.provider.DocumentFile;
-import android.text.TextUtils;
-import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;

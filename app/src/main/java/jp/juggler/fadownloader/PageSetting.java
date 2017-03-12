@@ -28,6 +28,8 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 	EditText etLocationIntervalMin;
 	Switch swForceWifi;
 	EditText etSSID;
+	Switch swThumbnailAutoRotate;
+	Switch swCopyBeforeViewSend;
 
 	public PageSetting( Activity activity, View ignored ){
 		super( activity, ignored );
@@ -44,6 +46,8 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		etLocationIntervalMin = (EditText) root.findViewById( R.id.etLocationIntervalMin );
 		swForceWifi = (Switch) root.findViewById( R.id.swForceWifi );
 		etSSID = (EditText) root.findViewById( R.id.etSSID );
+		swThumbnailAutoRotate = (Switch) root.findViewById( R.id.swThumbnailAutoRotate );
+		swCopyBeforeViewSend = (Switch) root.findViewById( R.id.swCopyBeforeViewSend );
 
 		root.findViewById( R.id.btnFolderPicker ).setOnClickListener( this );
 		root.findViewById( R.id.btnFolderPickerHelp ).setOnClickListener( this );
@@ -56,6 +60,8 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		root.findViewById( R.id.btnForceWifiHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnSSIDHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnSSIDPicker ).setOnClickListener( this );
+		root.findViewById( R.id.btnThumbnailAutoRotateHelp ).setOnClickListener( this );
+		root.findViewById( R.id.btnCopyBeforeViewSendHelp ).setOnClickListener( this );
 
 		ArrayAdapter<CharSequence> location_mode_adapter = new ArrayAdapter<>(
 			activity
@@ -85,7 +91,19 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 				updateFormEnabled();
 			}
 		} );
-
+		swThumbnailAutoRotate.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener(){
+			@Override public void onCheckedChanged( CompoundButton buttonView, boolean isChecked ){
+				Pref.pref(activity).edit().putBoolean (Pref.UI_THUMBNAIL_AUTO_ROTATE,isChecked).apply();
+				((ActMain)activity).reloadDownloadRecord();
+				updateFormEnabled();
+			}
+		} );
+		swCopyBeforeViewSend.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener(){
+			@Override public void onCheckedChanged( CompoundButton buttonView, boolean isChecked ){
+				Pref.pref(activity).edit().putBoolean (Pref.UI_COPY_BEFORE_VIEW_SEND,isChecked).apply();
+				updateFormEnabled();
+			}
+		} );
 		ui_value_load();
 		folder_view_update();
 	}
@@ -136,6 +154,12 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		case R.id.btnSSIDHelp:
 			( (ActMain) activity ).openHelp( activity.getString( R.string.help_ssid ) );
 			break;
+		case R.id.btnThumbnailAutoRotateHelp:
+			( (ActMain) activity ).openHelp( activity.getString( R.string.help_thumbnail_auto_rotate ) );
+			break;
+		case R.id.btnCopyBeforeViewSendHelp:
+			( (ActMain) activity ).openHelp( activity.getString( R.string.help_copy_before_view_send ) );
+			break;
 		}
 	}
 
@@ -167,6 +191,10 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		swForceWifi.setChecked( bv );
 		//
 		etSSID.setText( pref.getString( Pref.UI_SSID, "" ) );
+		//
+		swThumbnailAutoRotate.setChecked( pref.getBoolean( Pref.UI_THUMBNAIL_AUTO_ROTATE,  Pref.DEFAULT_THUMBNAIL_AUTO_ROTATE ) );
+		//
+		swCopyBeforeViewSend.setChecked( pref.getBoolean( Pref.UI_COPY_BEFORE_VIEW_SEND, false ) );
 
 		updateFormEnabled();
 	}

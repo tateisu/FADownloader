@@ -45,7 +45,6 @@
     <string name="service_not_running">service not running. press REPEAT or ONCE to start.</string>
     <string name="service_running_status">service running. WakeLock=%1$s, WiFiLock=%2$s</string>
     <string name="thread_not_running_status">thread not running. maybe start when Wi-Fi state changed, or alarm resumed.</string>
-    <string name="thread_running_status">thread running\n\n</string>
     <string name="thread_ctor_params">thread created with parameter.</string>
     <string name="thread_ctor_restart">thread restart. event=%1$s</string>
     <string name="file_type_parse_error">file type parse error. %1$s %2$s %3$s</string>
@@ -54,7 +53,6 @@
     <string name="folder_create_failed">folder create failed.</string>
     <string name="file_create_failed">file create failed.</string>
     <string name="thread_start">thread start</string>
-    <string name="initializing">initializing</string>
     <string name="wait_short">wait short time. remain=%1$s</string>
     <string name="wait_alarm">wait for alarm. remain=%1$s</string>
     <string name="wifi_check">Wi-Fi check</string>
@@ -68,11 +66,9 @@
     <string name="repeat_off">not repeat</string>
     <string name="progress_folder">FOLDER %1$s</string>
     <string name="folder_list_failed">file listing failed. %1$s %2$s %3$s</string>
-    <string name="progress_file">FILE %1$s</string>
     <string name="download_file">DOWNLOADING: %1$s</string>
     <string name="thread_end">thread stopped</string>
     <string name="flashair_update_status_error">FlashAir update status data error</string>
-    <string name="exif_update">EXIF update: %1$s</string>
     <string name="geo_tagging_not_enabled">GeoTagging not enabled because this device can not use Location API of Google Play service</string>
     <string name="resolution_request_failed">resolution request failed.</string>
     <string name="location_setting_change_unavailable">location setting change unavailable</string>
@@ -136,7 +132,6 @@
     <string name="help_local_folder_kitkat">Local Folder にはスマホ上の、画像をダウンロードして保存するフォルダを指定します\n\nAndroid 4.4.x の場合、このアプリからSDカードに書き込むことはできません。「Pictures」の下あたりにFADownloader用のフォルダを作成してください。\n</string>
     <string name="download_record">download record</string>
     <string name="download_record_clear">clear download record</string>
-    <string name="non_primary_storage_viewer">if you can not show image on non-primary storage, please try pre-installed image viewer.</string>
     <string name="reload">reload</string>
     <string name="ssid_picker">SSID picker</string>
     <string name="view">view</string>
@@ -146,5 +141,10 @@
     <string name="queued">queued</string>
     <string name="remain">remain</string>
     <string name="progress">progress</string>
+    <string name="thumbnail">thumbnail</string>
+    <string name="thumbnail_auto_rotate">auto rotate thumbnails</string>
+    <string name="copy_before_view_send">copy before view/send</string>
+    <string name="help_thumbnail_auto_rotate">ダウンロード履歴に表示されるサムネイルを、Exifの回転情報を使って自動回転します。デフォルトはONです。</string>
+    <string name="help_copy_before_view_send">ダウンロード履歴から「見る/送る」で外部アプリを起動する際、Android OS バージョンによっては SDカードなどの non-primari storage へのアクセスが制限されるため、外部アプリがそのファイルを扱えないことがあります。\nこの設定をONにすると、外部アプリを開く際に、ファイルを端末のダウンロードフォルダにコピーして、コピー後のファイルURIを外部アプリに渡すようにします。\nデフォルトはOFFです。</string>
 
 </resources>

@@ -12,13 +12,16 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,6 +40,8 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.LinkedList;
+import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import it.sephiroth.android.library.exif2.ExifInterface;
@@ -92,12 +97,21 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 		}
 	}
 
+	public void reload(){
+		if( listview == null ) return;
+		RecordAdapter adapter = (RecordAdapter) listview.getAdapter();
+		if( adapter != null ){
+			adapter.reload();
+		}
+	}
+
 	class RecordAdapter extends CursorAdapter{
 
 		final DownloadRecord.ColIdx colIdx = new DownloadRecord.ColIdx();
 		final DownloadRecord data = new DownloadRecord();
 		final LayoutInflater inflater = activity.getLayoutInflater();
 		final int thumbnail_size;
+		boolean bThumbnailAutoRotate;
 
 		DownloadRecord loadAt( int position ){
 			Cursor cursor = getCursor();
@@ -113,6 +127,12 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 			super( context, c, false );
 
 			this.thumbnail_size = (int) ( 0.5f + 64f * context.getResources().getDisplayMetrics().density );
+			this.bThumbnailAutoRotate = Pref.pref( activity ).getBoolean( Pref.UI_THUMBNAIL_AUTO_ROTATE, Pref.DEFAULT_THUMBNAIL_AUTO_ROTATE );
+		}
+
+		public void reload(){
+			this.bThumbnailAutoRotate = Pref.pref( activity ).getBoolean( Pref.UI_THUMBNAIL_AUTO_ROTATE, Pref.DEFAULT_THUMBNAIL_AUTO_ROTATE );
+			notifyDataSetChanged();
 		}
 
 		@Override public View newView( Context context, Cursor cursor, ViewGroup viewGroup ){
@@ -126,12 +146,13 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 
 			ViewHolder holder = (ViewHolder) view.getTag();
 
-			holder.bind( activity, view, data, thumbnail_size );
+			holder.bind( activity, data, thumbnail_size, bThumbnailAutoRotate );
 
 		}
+
 	}
 
-	static final SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm" );
+	static final SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm", Locale.getDefault() );
 	static final Drawable default_thumbnail = new ColorDrawable( 0xff808080 );
 	static final Pattern reJPEG = Pattern.compile( "\\.jp(g|eg?)\\z", Pattern.CASE_INSENSITIVE );
 
@@ -145,8 +166,9 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 		AsyncTask<Void, Void, Bitmap> last_task;
 		Bitmap last_bitmap;
 		final Matrix matrix = new Matrix();
-		String timestr;
+		String time_str;
 		String exif_info;
+		boolean bThumbnailAutoRotate;
 
 		ViewHolder( View root ){
 
@@ -156,15 +178,20 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 			ivThumbnail = (ImageView) root.findViewById( R.id.ivThumbnail );
 		}
 
-		public void bind( final Activity activity, View root, DownloadRecord data, final int thumbnail_size ){
-			this.timestr = date_fmt.format( data.time );
+		public void bind(
+			final Activity activity
+			, DownloadRecord data
+			, final int thumbnail_size
+			, final boolean bThumbnailAutoRotate
+		){
+			this.time_str = date_fmt.format( data.time );
 			tvName.setText( new File( data.air_path ).getName() );
 			tvStateCode.setText( DownloadRecord.formatStateText( activity, data.state_code, data.state_message ) );
 			tvStateCode.setTextColor( DownloadRecord.getStateCodeColor( data.state_code ) );
 
-			if( this.last_task == null
-				&& this.last_bitmap != null
-				&& this.last_image_uri.equals( data.local_file )
+			if( last_image_uri !=null
+				&& last_image_uri.equals( data.local_file )
+				&& this.bThumbnailAutoRotate == bThumbnailAutoRotate
 				){
 				// 画像を再ロードする必要がない
 				showTimeAndExif();
@@ -183,6 +210,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 					last_bitmap = null;
 				}
 
+				this.bThumbnailAutoRotate = bThumbnailAutoRotate;
 				this.last_image_uri = data.local_file;
 
 				if( ! TextUtils.isEmpty( last_image_uri )
@@ -209,7 +237,10 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 										if( isCancelled() ) return null;
 										ExifInterface exif = new ExifInterface();
 										exif.readExif( is, ExifInterface.Options.OPTION_ALL );
-										orientation = exif.getTagIntValue( ExifInterface.TAG_ORIENTATION );
+
+										if( bThumbnailAutoRotate ){
+											orientation = exif.getTagIntValue( ExifInterface.TAG_ORIENTATION );
+										}
 
 										rv = exif.getTagRationalValue( ExifInterface.TAG_FOCAL_LENGTH );
 										if( rv != null ){
@@ -397,9 +428,9 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 
 		void showTimeAndExif(){
 			if( TextUtils.isEmpty( exif_info ) ){
-				tvTime.setText( timestr );
+				tvTime.setText( time_str );
 			}else{
-				tvTime.setText( timestr + "\n" + exif_info );
+				tvTime.setText( time_str + "\n" + exif_info );
 			}
 		}
 
@@ -463,28 +494,31 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 
 	private Utils.FileInfo copyToLocal( DownloadRecord data ){
 		try{
-			String name = new File( data.air_path ).getName();
 
 			if( data.local_file == null ){
 				( (ActMain) activity ).showToast( false, "missing local file uri." );
 				return null;
 			}
-			Utils.FileInfo tmp_info = new Utils.FileInfo( activity.getContentResolver(), data.local_file );
+			Utils.FileInfo tmp_info = new Utils.FileInfo( data.local_file );
 
-			// 適当なフォルダにコピーする
+			// 端末のダウンロードフォルダ
 			File tmp_dir = Environment.getExternalStoragePublicDirectory( Environment.DIRECTORY_DOWNLOADS );
 			if( tmp_dir == null ){
 				( (ActMain) activity ).showToast( false, "can not find temporary directory." );
 				return null;
 			}
+
+			// フォルダがなければ作成する
 			if( ! tmp_dir.exists() ){
 				if( ! tmp_dir.mkdir() ){
 					( (ActMain) activity ).showToast( false, "temporary directory not exist." );
 					return null;
 				}
 			}
-			File tmp_file = new File( tmp_dir, name );
 
+			// ファイルをコピー
+			String name = new File( data.air_path ).getName();
+			File tmp_file = new File( tmp_dir, name );
 			FileOutputStream os = new FileOutputStream( tmp_file );
 			try{
 				InputStream is;
@@ -509,6 +543,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 				}catch( Throwable ignored ){
 				}
 			}
+			// 正常終了
 			tmp_info.uri = Uri.fromFile( tmp_file );
 			return tmp_info;
 		}catch( Throwable ex ){
@@ -519,11 +554,92 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 
 	}
 
+	public static boolean isExternalStorageDocument( Uri uri ){
+		return "com.android.externalstorage.documents".equals( uri.getAuthority() );
+	}
+
+	private Utils.FileInfo fixFileURL( DownloadRecord data ){
+		try{
+			if( data.local_file == null ){
+				( (ActMain) activity ).showToast( false, "missing local file uri." );
+				return null;
+			}
+
+			Utils.FileInfo tmp_info = new Utils.FileInfo( data.local_file );
+
+			if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
+
+				if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ){
+					if( DocumentsContract.isDocumentUri( activity, tmp_info.uri ) ){
+						if( isExternalStorageDocument( tmp_info.uri ) ){
+							final String docId = DocumentsContract.getDocumentId( tmp_info.uri );
+							final String[] split = docId.split( ":" );
+							if( split.length >= 2 ){
+								final String uuid = split[ 0 ];
+								if( "primary".equalsIgnoreCase( uuid ) ){
+									tmp_info.uri = Uri.fromFile( new File( Environment.getExternalStorageDirectory() + "/" + split[ 1 ] ) );
+									return tmp_info;
+								}else{
+									Map<String, String> volume_map = Utils.getSecondaryStorageVolumesMap( activity );
+									if( volume_map != null ){
+										String volume_path = volume_map.get( uuid );
+										if( volume_path != null ){
+											tmp_info.uri = Uri.fromFile( new File( volume_path + "/" + split[ 1 ] ) );
+											return tmp_info;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				Cursor cursor = activity.getContentResolver().query( tmp_info.uri, null, null, null, null );
+				if( cursor != null ){
+					try{
+						if( cursor.moveToFirst() ){
+							int col_count = cursor.getColumnCount();
+							for( int i = 0 ; i < col_count ; ++ i ){
+								int type = cursor.getType( i );
+								if( type != Cursor.FIELD_TYPE_STRING ) continue;
+								String name = cursor.getColumnName( i );
+								String value = cursor.isNull( i ) ? null : cursor.getString( i );
+								Log.d( "DownloadRecordViewer", String.format( "%s %s", name, value ) );
+								if( ! TextUtils.isEmpty( value ) ){
+									if( "filePath".equals( name ) ){
+										tmp_info.uri = Uri.fromFile( new File( value ) );
+									}
+								}
+							}
+						}
+					}catch( Throwable ex ){
+						ex.printStackTrace();
+					}finally{
+						cursor.close();
+					}
+				}
+			}
+
+			return tmp_info;
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+			( (ActMain) activity ).showToast( false, LogWriter.formatError( ex, "failed to fix file URI." ) );
+			return null;
+		}
+
+	}
+
 	void action_view( DownloadRecord data ){
-		Utils.FileInfo tmp_info = copyToLocal( data );
-		if( tmp_info == null ) return;
 
 		try{
+			Utils.FileInfo tmp_info;
+			if( Pref.pref( activity ).getBoolean( Pref.UI_COPY_BEFORE_VIEW_SEND, false ) ){
+				tmp_info = copyToLocal( data );
+			}else{
+				tmp_info = fixFileURL( data );
+			}
+			if( tmp_info == null ) return;
+
 			Intent intent = new Intent( Intent.ACTION_VIEW );
 			if( tmp_info.mime_type != null ){
 				intent.setDataAndType( tmp_info.uri, tmp_info.mime_type );
@@ -539,7 +655,12 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 
 	void action_send( DownloadRecord data ){
 		try{
-			Utils.FileInfo tmp_info = copyToLocal( data );
+			Utils.FileInfo tmp_info;
+			if( Pref.pref( activity ).getBoolean( Pref.UI_COPY_BEFORE_VIEW_SEND,false) ){
+				tmp_info = copyToLocal( data );
+			}else{
+				tmp_info = fixFileURL( data );
+			}
 			if( tmp_info == null ) return;
 
 			Intent intent = new Intent( Intent.ACTION_SEND );

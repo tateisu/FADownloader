@@ -9,6 +9,8 @@ import android.content.Intent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -16,6 +18,7 @@ import java.util.Locale;
 
 import android.net.wifi.SupplicantState;
 import android.os.Bundle;
+import android.os.storage.StorageManager;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.SparseBooleanArray;
@@ -24,21 +27,14 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 import android.content.ContentResolver;
-import android.content.ContentUris;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Environment;
-import android.provider.DocumentsContract;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
-import java.io.FileFilter;
 import java.text.DecimalFormat;
-import java.util.Comparator;
+import java.util.Map;
 
 public class Utils{
 
@@ -72,12 +68,13 @@ public class Utils{
 	}
 
 	static DecimalFormat bytes_format = new DecimalFormat( "#,###" );
+
 	public static String formatBytes( long t ){
 		return bytes_format.format( t );
 
 //		StringBuilder sb = new StringBuilder();
 //		long n;
-//		// Giga
+//		// giga
 //		n = t / 1000000000L;
 //		if( n > 0 ){
 //			sb.append( String.format( Locale.JAPAN, "%dg", n ) );
@@ -92,7 +89,7 @@ public class Utils{
 //			sb.append( String.format( Locale.JAPAN, "%dm", n ) );
 //			t -= n * 1000000L;
 //		}
-//		// Kiro
+//		// kilo
 //		n = t / 1000L;
 //		if( sb.length() > 0 ){
 //			sb.append( String.format( Locale.JAPAN, "%03dk", n ) );
@@ -474,52 +471,48 @@ public class Utils{
 		Uri uri;
 		String mime_type;
 
-		FileInfo( ContentResolver cr, String any_uri ){
+		FileInfo( String any_uri ){
 			if( any_uri == null ) return;
 
 			if( any_uri.startsWith( "/" ) ){
 				uri = Uri.fromFile( new File( any_uri ) );
 			}else{
 				uri = Uri.parse( any_uri );
-				if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
-					{
-						Cursor cursor = cr.query( uri, null, null, null, null );
-						if( cursor != null ){
-							try{
-								if( cursor.moveToFirst() ){
-									int col_count = cursor.getColumnCount();
-									for( int i = 0 ; i < col_count ; ++ i ){
-										int type = cursor.getType( i );
-										if( type != Cursor.FIELD_TYPE_STRING ) continue;
-										String name = cursor.getColumnName( i );
-										String value = cursor.isNull( i ) ? null : cursor.getString( i );
-										Log.d( "DownloadRecordViewer", String.format( "%s %s", name, value ) );
-										if( ! TextUtils.isEmpty( value ) ){
-											if( "filePath".equals( name ) ){
-												uri = Uri.fromFile( new File( value ) );
-											}else if( "drmMimeType".equals( name ) ){
-												mime_type = value;
-											}
-										}
-									}
-								}
-							}catch( Throwable ex ){
-								ex.printStackTrace();
-							}finally{
-								cursor.close();
-							}
-						}
-					}
-				}
 			}
 
-			if( mime_type == null ){
-				String ext = MimeTypeMap.getFileExtensionFromUrl( any_uri );
-				if( ext != null ){
-					mime_type =  MimeTypeMap.getSingleton().getMimeTypeFromExtension( ext.toLowerCase(  ) );
-				}
+			String ext = MimeTypeMap.getFileExtensionFromUrl( any_uri );
+			if( ext != null ){
+				mime_type = MimeTypeMap.getSingleton().getMimeTypeFromExtension( ext.toLowerCase() );
 			}
 		}
 	}
 
+	static Map<String,String> getSecondaryStorageVolumesMap( Context context){
+		try{
+			StorageManager sm = (StorageManager) context.getApplicationContext().getSystemService( Context.STORAGE_SERVICE );
+			Method getVolumeList = sm.getClass().getMethod( "getVolumeList" );
+			Object[] volumes = (Object[]) getVolumeList.invoke( sm );
+		//
+			Map<String, String> result = new HashMap<>();
+			for( Object volume : volumes ){
+				Class<?> volume_clazz = volume.getClass();
+
+				String path = (String) volume_clazz.getMethod( "getPath" ).invoke( volume );
+				String state = (String) volume_clazz.getMethod( "getState" ).invoke( volume );
+				if( ! TextUtils.isEmpty( path ) && "mounted".equals( state ) ){
+					//
+					boolean isPrimary = (Boolean) volume_clazz.getMethod( "isPrimary" ).invoke( volume );
+					if( isPrimary ) result.put( "primary", path );
+					//
+					String uuid = (String) volume_clazz.getMethod( "getUuid" ).invoke( volume );
+					if( ! TextUtils.isEmpty( uuid ) ) result.put( uuid, path );
+				}
+			}
+			return result;
+		}catch(Throwable ex){
+			ex.printStackTrace(  );
+			return null;
+		}
+	}
 }
+

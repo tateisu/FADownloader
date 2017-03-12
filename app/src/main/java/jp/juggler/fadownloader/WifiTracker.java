@@ -117,7 +117,7 @@ public class WifiTracker{
 				}
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				error_status = log.formatError( ex, "setWifiEnabled() failed." );
+				error_status = LogWriter.formatError( ex, "setWifiEnabled() failed." );
 				return false;
 			}
 
@@ -134,7 +134,7 @@ public class WifiTracker{
 				}
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				error_status = log.formatError( ex, "getConnectionInfo() failed." );
+				error_status = LogWriter.formatError( ex, "getConnectionInfo() failed." );
 				return false;
 			}
 
@@ -183,7 +183,7 @@ public class WifiTracker{
 
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				error_status = log.formatError( ex, "getConfiguredNetworks() failed." );
+				error_status = LogWriter.formatError( ex, "getConfiguredNetworks() failed." );
 				return false;
 			}
 
@@ -205,7 +205,7 @@ public class WifiTracker{
 				}
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				error_status = log.formatError( ex, "updateNetwork() or saveConfiguration() failed." );
+				error_status = LogWriter.formatError( ex, "updateNetwork() or saveConfiguration() failed." );
 			}
 
 			// 目的のAPが選択されていた場合
@@ -235,7 +235,7 @@ public class WifiTracker{
 				}
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				error_status = log.formatError( ex, "getScanResults() failed." );
+				error_status = LogWriter.formatError( ex, "getScanResults() failed." );
 				return false;
 			}
 
@@ -253,7 +253,7 @@ public class WifiTracker{
 					}
 				}catch( Throwable ex ){
 					ex.printStackTrace();
-					error_status = log.formatError( ex, "startScan() failed." );
+					error_status = LogWriter.formatError( ex, "startScan() failed." );
 				}
 
 				return false;
@@ -286,7 +286,7 @@ public class WifiTracker{
 
 				}catch( Throwable ex ){
 					ex.printStackTrace();
-					error_status = log.formatError( ex, "disableNetwork() or enableNetwork() failed." );
+					error_status = LogWriter.formatError( ex, "disableNetwork() or enableNetwork() failed." );
 				}
 			}
 

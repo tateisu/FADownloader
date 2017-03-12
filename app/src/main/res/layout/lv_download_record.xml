@@ -16,6 +16,7 @@
         android:layout_marginRight="12dp"
         android:layout_marginEnd="12dp"
         android:scaleType="fitCenter"
+        android:contentDescription="@string/thumbnail"
         />
 
     <LinearLayout

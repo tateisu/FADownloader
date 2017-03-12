@@ -23,6 +23,10 @@ public class Pref{
 	public static final String UI_LOCATION_INTERVAL_MIN = "ui_location_interval_min";
 	public static final String UI_FORCE_WIFI = "ui_force_wifi";
 	public static final String UI_SSID = "ui_ssid";
+	public static final String UI_THUMBNAIL_AUTO_ROTATE = "ui_thumbnail_auto_rotate";
+	public static final String UI_COPY_BEFORE_VIEW_SEND = "ui_copy_before_view_send";
+
+	public static final boolean DEFAULT_THUMBNAIL_AUTO_ROTATE = true;
 
 	public static void initialize( Context context ){
 		SharedPreferences pref = pref( context );

@@ -811,4 +811,9 @@ public class ActMain
 		PageOther page = pager_adapter.getPage( page_idx_other );
 		if( page != null ) page.updatePurchaseButton();
 	}
+
+	public void reloadDownloadRecord(){
+		PageRecord page = pager_adapter.getPage( page_idx_record );
+		if( page != null ) page.viewer.reload();
+	}
 }
