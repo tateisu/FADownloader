@@ -12,29 +12,23 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.support.v4.provider.DocumentFile;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
-import android.webkit.MimeTypeMap;
 import android.widget.AdapterView;
 import android.widget.CursorAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import org.apache.commons.io.CopyUtils;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
@@ -46,7 +40,6 @@ import java.util.LinkedList;
 import java.util.regex.Pattern;
 
 import it.sephiroth.android.library.exif2.ExifInterface;
-import it.sephiroth.android.library.exif2.ExifTag;
 import it.sephiroth.android.library.exif2.Rational;
 
 public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Cursor>, AdapterView.OnItemClickListener{
@@ -138,7 +131,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 		}
 	}
 
-	static final SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm");
+	static final SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm" );
 	static final Drawable default_thumbnail = new ColorDrawable( 0xff808080 );
 	static final Pattern reJPEG = Pattern.compile( "\\.jp(g|eg?)\\z", Pattern.CASE_INSENSITIVE );
 
@@ -164,9 +157,9 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 		}
 
 		public void bind( final Activity activity, View root, DownloadRecord data, final int thumbnail_size ){
-			this.timestr = date_fmt.format( data.time ) +" ("+ Utils.formatTimeDuration( data.lap_time )+")";
+			this.timestr = date_fmt.format( data.time );
 			tvName.setText( new File( data.air_path ).getName() );
-			tvStateCode.setText( DownloadRecord.formatStateText(activity,data.state_code,data.state_message) );
+			tvStateCode.setText( DownloadRecord.formatStateText( activity, data.state_code, data.state_message ) );
 			tvStateCode.setTextColor( DownloadRecord.getStateCodeColor( data.state_code ) );
 
 			if( this.last_task == null
@@ -198,7 +191,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 					last_task = new AsyncTask<Void, Void, Bitmap>(){
 						final String image_uri = last_image_uri;
 						Integer orientation;
-						LinkedList<String> exif_list = new LinkedList<>(  );
+						LinkedList<String> exif_list = new LinkedList<>();
 
 						@Override protected Bitmap doInBackground( Void... params ){
 							// たくさんキューイングされるので、開始した時点で既にキャンセルされていることがありえる
@@ -218,56 +211,56 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 										exif.readExif( is, ExifInterface.Options.OPTION_ALL );
 										orientation = exif.getTagIntValue( ExifInterface.TAG_ORIENTATION );
 
-										rv = exif.getTagRationalValue(ExifInterface.TAG_FOCAL_LENGTH);
+										rv = exif.getTagRationalValue( ExifInterface.TAG_FOCAL_LENGTH );
 										if( rv != null ){
-											exif_list.add(String.format("%.1fmm",rv.toDouble() ));
+											exif_list.add( String.format( "%.1fmm", rv.toDouble() ) );
 										}
 
-										rv  = exif.getTagRationalValue(ExifInterface.TAG_F_NUMBER  );
-										if( rv != null){
-											exif_list.add(String.format("F%.1f",rv.toDouble() ));
+										rv = exif.getTagRationalValue( ExifInterface.TAG_F_NUMBER );
+										if( rv != null ){
+											exif_list.add( String.format( "F%.1f", rv.toDouble() ) );
 										}
 
-										rv  = exif.getTagRationalValue(ExifInterface.TAG_EXPOSURE_TIME  );
-										if( rv != null){
+										rv = exif.getTagRationalValue( ExifInterface.TAG_EXPOSURE_TIME );
+										if( rv != null ){
 											if( rv.getNumerator() == 1L ){
-												exif_list.add(String.format("1/%ds",rv.getDenominator()));
+												exif_list.add( String.format( "1/%ds", rv.getDenominator() ) );
 											}else{
-												exif_list.add(String.format("%.1fs",rv.toDouble() ));
+												exif_list.add( String.format( "%.1fs", rv.toDouble() ) );
 											}
 										}
 
 										boolean iso_done = false;
-										Integer iv = exif.getTagIntValue(ExifInterface.TAG_SENSITIVITY_TYPE );
+										Integer iv = exif.getTagIntValue( ExifInterface.TAG_SENSITIVITY_TYPE );
 										if( iv != null && iv == ExifInterface.SensitivityType.SOS ){
 											Long lv = exif.getTagLongValue( ExifInterface.TAG_STANDARD_OUTPUT_SENSITIVITY );
 											if( lv != null ){
-												exif_list.add( "ISO"+lv);
+												exif_list.add( "ISO" + lv );
 												iso_done = true;
 											}
 										}
-										if(!iso_done){
-											iv = exif.getTagIntValue(ExifInterface.TAG_ISO_SPEED_RATINGS /*旧形式*/ );
-											if( iv != null){
-												exif_list.add( "ISO"+iv);
+										if( ! iso_done ){
+											iv = exif.getTagIntValue( ExifInterface.TAG_ISO_SPEED_RATINGS /*旧形式*/ );
+											if( iv != null ){
+												exif_list.add( "ISO" + iv );
 											}
 										}
 
-										rv  = exif.getTagRationalValue(ExifInterface.TAG_EXPOSURE_BIAS_VALUE  );
-										if( rv != null){
+										rv = exif.getTagRationalValue( ExifInterface.TAG_EXPOSURE_BIAS_VALUE );
+										if( rv != null ){
 											double d = rv.toDouble();
-											if( d == 0f){
-												exif_list.add(String.format("\u00b1%.1f",d));
-											}else if( d > 0f){
-												exif_list.add(String.format("+%.1f",d));
+											if( d == 0f ){
+												exif_list.add( String.format( "\u00b1%.1f", d ) );
+											}else if( d > 0f ){
+												exif_list.add( String.format( "+%.1f", d ) );
 											}else{
-												exif_list.add(String.format("%f",d));
+												exif_list.add( String.format( "%.1f", d ) );
 											}
 										}
 
-										String sv = exif.getTagStringValue(ExifInterface.TAG_MODEL  );
-										if(!TextUtils.isEmpty( sv ) ){
-											exif_list.add( trimModelName(sv));
+										String sv = exif.getTagStringValue( ExifInterface.TAG_MODEL );
+										if( ! TextUtils.isEmpty( sv ) ){
+											exif_list.add( trimModelName( sv ) );
 										}
 
 										if( isCancelled() ) return null;
@@ -300,8 +293,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 							}
 							last_task = null;
 
-
-							exif_info = joinList(" ",exif_list);
+							exif_info = joinList( " ", exif_list );
 							showTimeAndExif();
 
 							last_bitmap = bitmap;
@@ -393,21 +385,21 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 		}
 
 		private String joinList( String delimiter, LinkedList<String> exif_list ){
-			if(exif_list==null || exif_list.isEmpty()) return null;
-			StringBuilder sb = new StringBuilder(  );
-			for( String s:exif_list ){
-				if(TextUtils.isEmpty( s )) continue;
-				if( sb.length() > 0 ) sb.append(delimiter);
-				sb.append(s);
+			if( exif_list == null || exif_list.isEmpty() ) return null;
+			StringBuilder sb = new StringBuilder();
+			for( String s : exif_list ){
+				if( TextUtils.isEmpty( s ) ) continue;
+				if( sb.length() > 0 ) sb.append( delimiter );
+				sb.append( s );
 			}
 			return sb.toString();
 		}
 
-		void showTimeAndExif( ){
-			if( TextUtils.isEmpty( exif_info) ){
+		void showTimeAndExif(){
+			if( TextUtils.isEmpty( exif_info ) ){
 				tvTime.setText( timestr );
 			}else{
-				tvTime.setText( timestr 	+"\n"+exif_info );
+				tvTime.setText( timestr + "\n" + exif_info );
 			}
 		}
 
@@ -433,12 +425,16 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 		View v = activity.getLayoutInflater().inflate( R.layout.download_record_detail_dialog, null, false );
 
 		TextView tvStateCode = ( (TextView) v.findViewById( R.id.tvStateCode ) );
-		tvStateCode.setText(  DownloadRecord.formatStateText(activity,data.state_code,data.state_message));
+		tvStateCode.setText( DownloadRecord.formatStateText( activity, data.state_code, data.state_message ) );
 		tvStateCode.setTextColor( DownloadRecord.getStateCodeColor( data.state_code ) );
 
 		( (TextView) v.findViewById( R.id.tvName ) ).setText( name );
-		( (TextView) v.findViewById( R.id.tvTime ) ).setText( date_fmt.format( data.time )
-			+" ("+ Utils.formatTimeDuration( data.lap_time )+")" );
+		( (TextView) v.findViewById( R.id.tvTime ) ).setText(
+			"update: " + date_fmt.format( data.time )
+				+ "\nsize: " + Utils.formatBytes( data.size ) + "bytes"
+				+ "\ndownload time: " + Utils.formatTimeDuration( data.lap_time )
+				+ "\ndownload speed: " + Utils.formatBytes( (long) ( data.size * 1000L / (float) data.lap_time ) ) + "bytes/seconds"
+		);
 		( (TextView) v.findViewById( R.id.tvAirPath ) ).setText( "air_path: " + data.air_path );
 		( (TextView) v.findViewById( R.id.tvLocalFile ) ).setText( "local_file: " + data.local_file );
 
@@ -523,8 +519,6 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 
 	}
 
-
-
 	void action_view( DownloadRecord data ){
 		Utils.FileInfo tmp_info = copyToLocal( data );
 		if( tmp_info == null ) return;
@@ -539,7 +533,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 			activity.startActivity( intent );
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			((ActMain)activity).showToast(true,LogWriter.formatError( ex,"view failed." ));
+			( (ActMain) activity ).showToast( true, LogWriter.formatError( ex, "view failed." ) );
 		}
 	}
 
@@ -556,7 +550,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 			activity.startActivity( Intent.createChooser( intent, activity.getString( R.string.send ) ) );
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			((ActMain)activity).showToast(true,LogWriter.formatError( ex,"send failed." ));
+			( (ActMain) activity ).showToast( true, LogWriter.formatError( ex, "send failed." ) );
 		}
 	}
 }

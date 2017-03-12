@@ -71,41 +71,44 @@ public class Utils{
 		return sb.toString();
 	}
 
-	public static String getGigaMegaKiro( long t ){
-		StringBuilder sb = new StringBuilder();
-		long n;
-		// Giga
-		n = t / 1000000000L;
-		if( n > 0 ){
-			sb.append( String.format( Locale.JAPAN, "%dg", n ) );
-			t -= n * 1000000000L;
-		}
-		// Mega
-		n = t / 1000000L;
-		if( sb.length() > 0 ){
-			sb.append( String.format( Locale.JAPAN, "%03dm", n ) );
-			t -= n * 1000000L;
-		}else if( n > 0 ){
-			sb.append( String.format( Locale.JAPAN, "%dm", n ) );
-			t -= n * 1000000L;
-		}
-		// Kiro
-		n = t / 1000L;
-		if( sb.length() > 0 ){
-			sb.append( String.format( Locale.JAPAN, "%03dk", n ) );
-			t -= n * 1000L;
-		}else if( n > 0 ){
-			sb.append( String.format( Locale.JAPAN, "%dk", n ) );
-			t -= n * 1000L;
-		}
-		// remain
-		if( sb.length() > 0 ){
-			sb.append( String.format( Locale.JAPAN, "%03d", t ) );
-		}else if( n > 0 ){
-			sb.append( String.format( Locale.JAPAN, "%d", t ) );
-		}
+	static DecimalFormat bytes_format = new DecimalFormat( "#,###" );
+	public static String formatBytes( long t ){
+		return bytes_format.format( t );
 
-		return sb.toString();
+//		StringBuilder sb = new StringBuilder();
+//		long n;
+//		// Giga
+//		n = t / 1000000000L;
+//		if( n > 0 ){
+//			sb.append( String.format( Locale.JAPAN, "%dg", n ) );
+//			t -= n * 1000000000L;
+//		}
+//		// Mega
+//		n = t / 1000000L;
+//		if( sb.length() > 0 ){
+//			sb.append( String.format( Locale.JAPAN, "%03dm", n ) );
+//			t -= n * 1000000L;
+//		}else if( n > 0 ){
+//			sb.append( String.format( Locale.JAPAN, "%dm", n ) );
+//			t -= n * 1000000L;
+//		}
+//		// Kiro
+//		n = t / 1000L;
+//		if( sb.length() > 0 ){
+//			sb.append( String.format( Locale.JAPAN, "%03dk", n ) );
+//			t -= n * 1000L;
+//		}else if( n > 0 ){
+//			sb.append( String.format( Locale.JAPAN, "%dk", n ) );
+//			t -= n * 1000L;
+//		}
+//		// remain
+//		if( sb.length() > 0 ){
+//			sb.append( String.format( Locale.JAPAN, "%03d", t ) );
+//		}else if( n > 0 ){
+//			sb.append( String.format( Locale.JAPAN, "%d", t ) );
+//		}
+//
+//		return sb.toString();
 	}
 
 	public static PendingIntent createAlarmPendingIntent( Context context ){

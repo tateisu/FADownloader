@@ -640,7 +640,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				, bcm <= 0 ? 0 : 100L * ( bcm - bc ) / bcm
 				, service.getString( R.string.remain )
 				, fc
-				, Utils.getGigaMegaKiro( bc )
+				, Utils.formatBytes( bc )
 			);
 		}else{
 			return s;
