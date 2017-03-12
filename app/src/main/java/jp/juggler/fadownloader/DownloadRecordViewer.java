@@ -42,10 +42,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
-import java.util.Locale;
+import java.util.LinkedList;
 import java.util.regex.Pattern;
 
 import it.sephiroth.android.library.exif2.ExifInterface;
+import it.sephiroth.android.library.exif2.ExifTag;
+import it.sephiroth.android.library.exif2.Rational;
 
 public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Cursor>, AdapterView.OnItemClickListener{
 
@@ -136,7 +138,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 		}
 	}
 
-	static final SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss.SSS z", Locale.getDefault() );
+	static final SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm");
 	static final Drawable default_thumbnail = new ColorDrawable( 0xff808080 );
 	static final Pattern reJPEG = Pattern.compile( "\\.jp(g|eg?)\\z", Pattern.CASE_INSENSITIVE );
 
@@ -150,6 +152,8 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 		AsyncTask<Void, Void, Bitmap> last_task;
 		Bitmap last_bitmap;
 		final Matrix matrix = new Matrix();
+		String timestr;
+		String exif_info;
 
 		ViewHolder( View root ){
 
@@ -160,8 +164,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 		}
 
 		public void bind( final Activity activity, View root, DownloadRecord data, final int thumbnail_size ){
-
-			tvTime.setText( date_fmt.format( data.time )+" ("+ Utils.formatTimeDuration( data.lap_time )+")");
+			this.timestr = date_fmt.format( data.time ) +" ("+ Utils.formatTimeDuration( data.lap_time )+")";
 			tvName.setText( new File( data.air_path ).getName() );
 			tvStateCode.setText( DownloadRecord.formatStateText(activity,data.state_code,data.state_message) );
 			tvStateCode.setTextColor( DownloadRecord.getStateCodeColor( data.state_code ) );
@@ -171,8 +174,11 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 				&& this.last_image_uri.equals( data.local_file )
 				){
 				// 画像を再ロードする必要がない
+				showTimeAndExif();
 			}else{
 				ivThumbnail.setImageDrawable( default_thumbnail );
+				exif_info = null;
+				showTimeAndExif();
 
 				if( last_task != null ){
 					last_task.cancel( true );
@@ -192,6 +198,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 					last_task = new AsyncTask<Void, Void, Bitmap>(){
 						final String image_uri = last_image_uri;
 						Integer orientation;
+						LinkedList<String> exif_list = new LinkedList<>(  );
 
 						@Override protected Bitmap doInBackground( Void... params ){
 							// たくさんキューイングされるので、開始した時点で既にキャンセルされていることがありえる
@@ -204,11 +211,65 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 									is = activity.getContentResolver().openInputStream( Uri.parse( image_uri ) );
 								}
 								if( is != null ){
+									Rational rv;
 									try{
 										if( isCancelled() ) return null;
 										ExifInterface exif = new ExifInterface();
 										exif.readExif( is, ExifInterface.Options.OPTION_ALL );
 										orientation = exif.getTagIntValue( ExifInterface.TAG_ORIENTATION );
+
+										rv = exif.getTagRationalValue(ExifInterface.TAG_FOCAL_LENGTH);
+										if( rv != null ){
+											exif_list.add(String.format("%.1fmm",rv.toDouble() ));
+										}
+
+										rv  = exif.getTagRationalValue(ExifInterface.TAG_F_NUMBER  );
+										if( rv != null){
+											exif_list.add(String.format("F%.1f",rv.toDouble() ));
+										}
+
+										rv  = exif.getTagRationalValue(ExifInterface.TAG_EXPOSURE_TIME  );
+										if( rv != null){
+											if( rv.getNumerator() == 1L ){
+												exif_list.add(String.format("1/%ds",rv.getDenominator()));
+											}else{
+												exif_list.add(String.format("%.1fs",rv.toDouble() ));
+											}
+										}
+
+										boolean iso_done = false;
+										Integer iv = exif.getTagIntValue(ExifInterface.TAG_SENSITIVITY_TYPE );
+										if( iv != null && iv == ExifInterface.SensitivityType.SOS ){
+											Long lv = exif.getTagLongValue( ExifInterface.TAG_STANDARD_OUTPUT_SENSITIVITY );
+											if( lv != null ){
+												exif_list.add( "ISO"+lv);
+												iso_done = true;
+											}
+										}
+										if(!iso_done){
+											iv = exif.getTagIntValue(ExifInterface.TAG_ISO_SPEED_RATINGS /*旧形式*/ );
+											if( iv != null){
+												exif_list.add( "ISO"+iv);
+											}
+										}
+
+										rv  = exif.getTagRationalValue(ExifInterface.TAG_EXPOSURE_BIAS_VALUE  );
+										if( rv != null){
+											double d = rv.toDouble();
+											if( d == 0f){
+												exif_list.add(String.format("\u00b1%.1f",d));
+											}else if( d > 0f){
+												exif_list.add(String.format("+%.1f",d));
+											}else{
+												exif_list.add(String.format("%f",d));
+											}
+										}
+
+										String sv = exif.getTagStringValue(ExifInterface.TAG_MODEL  );
+										if(!TextUtils.isEmpty( sv ) ){
+											exif_list.add( trimModelName(sv));
+										}
+
 										if( isCancelled() ) return null;
 										return exif.getThumbnailBitmap();
 									}finally{
@@ -238,6 +299,11 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 								return;
 							}
 							last_task = null;
+
+
+							exif_info = joinList(" ",exif_list);
+							showTimeAndExif();
+
 							last_bitmap = bitmap;
 							ivThumbnail.setImageDrawable( new BitmapDrawable( activity.getResources(), bitmap ) );
 
@@ -312,6 +378,39 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 //			holder.tvTime.setTextColor( fg );
 //			holder.tvMessage.setTextColor( fg );
 		}
+
+		private String trimModelName( String sv ){
+			// 制御文字は空白に置き換える
+			StringBuilder sb = new StringBuilder( sv );
+			for( int i = sb.length() - 1 ; i >= 0 ; -- i ){
+				char c = sb.charAt( i );
+				if( c < 0x20 || c == 0x7f ){
+					sb.setCharAt( i, ' ' );
+				}
+			}
+			// 連続する空白を１文字にする。始端と終端の空白を除去する。
+			return sb.toString().replace( "\\s+", " " ).trim();
+		}
+
+		private String joinList( String delimiter, LinkedList<String> exif_list ){
+			if(exif_list==null || exif_list.isEmpty()) return null;
+			StringBuilder sb = new StringBuilder(  );
+			for( String s:exif_list ){
+				if(TextUtils.isEmpty( s )) continue;
+				if( sb.length() > 0 ) sb.append(delimiter);
+				sb.append(s);
+			}
+			return sb.toString();
+		}
+
+		void showTimeAndExif( ){
+			if( TextUtils.isEmpty( exif_info) ){
+				tvTime.setText( timestr );
+			}else{
+				tvTime.setText( timestr 	+"\n"+exif_info );
+			}
+		}
+
 	}
 
 	@Override public void onItemClick( AdapterView<?> parent, View view, int position, long id ){
@@ -338,7 +437,8 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 		tvStateCode.setTextColor( DownloadRecord.getStateCodeColor( data.state_code ) );
 
 		( (TextView) v.findViewById( R.id.tvName ) ).setText( name );
-		( (TextView) v.findViewById( R.id.tvTime ) ).setText( date_fmt.format( data.time )+" ("+ Utils.formatTimeDuration( data.lap_time )+")" );
+		( (TextView) v.findViewById( R.id.tvTime ) ).setText( date_fmt.format( data.time )
+			+" ("+ Utils.formatTimeDuration( data.lap_time )+")" );
 		( (TextView) v.findViewById( R.id.tvAirPath ) ).setText( "air_path: " + data.air_path );
 		( (TextView) v.findViewById( R.id.tvLocalFile ) ).setText( "local_file: " + data.local_file );
 

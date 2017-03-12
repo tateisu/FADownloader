@@ -666,6 +666,8 @@ public class ExifInterface {
 	 */
 	public static final int TAG_SENSITIVITY_TYPE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x8830 );
 
+	public static final int TAG_STANDARD_OUTPUT_SENSITIVITY = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x8831 );
+
 
 	// IFD GPS tags
 	public static final int TAG_GPS_VERSION_ID = defineTag( IfdId.TYPE_IFD_GPS, (short) 0 );
@@ -1360,6 +1362,7 @@ public class ExifInterface {
 		mTagInfo.put( ExifInterface.TAG_LENS_MAKE, exifFlags | ExifTag.TYPE_ASCII << 16 );
 		mTagInfo.put( ExifInterface.TAG_LENS_MODEL, exifFlags | ExifTag.TYPE_ASCII << 16 );
 		mTagInfo.put( ExifInterface.TAG_SENSITIVITY_TYPE, exifFlags | ExifTag.TYPE_UNSIGNED_SHORT << 16 | 1 );
+		mTagInfo.put( ExifInterface.TAG_STANDARD_OUTPUT_SENSITIVITY, exifFlags | ExifTag.TYPE_UNSIGNED_LONG << 16 | 1 );
 		mTagInfo.put( ExifInterface.TAG_EXPOSURE_TIME, exifFlags | ExifTag.TYPE_UNSIGNED_RATIONAL << 16 | 1 );
 		mTagInfo.put( ExifInterface.TAG_F_NUMBER, exifFlags | ExifTag.TYPE_UNSIGNED_RATIONAL << 16 | 1 );
 		mTagInfo.put( ExifInterface.TAG_EXPOSURE_PROGRAM, exifFlags | ExifTag.TYPE_UNSIGNED_SHORT << 16 | 1 );
