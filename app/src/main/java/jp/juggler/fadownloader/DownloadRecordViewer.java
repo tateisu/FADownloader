@@ -233,6 +233,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 								}
 								if( is != null ){
 									Rational rv;
+									String sv;
 									try{
 										if( isCancelled() ) return null;
 										ExifInterface exif = new ExifInterface();
@@ -244,20 +245,25 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 
 										rv = exif.getTagRationalValue( ExifInterface.TAG_FOCAL_LENGTH );
 										if( rv != null ){
-											exif_list.add( String.format( "%.1fmm", rv.toDouble() ) );
+											sv =  String.format( "%.1f", rv.toDouble() ).replaceAll("\\.0*$","");
+											exif_list.add(sv+"mm" );
 										}
 
 										rv = exif.getTagRationalValue( ExifInterface.TAG_F_NUMBER );
 										if( rv != null ){
-											exif_list.add( String.format( "F%.1f", rv.toDouble() ) );
+											sv =  String.format( "%.1f", rv.toDouble() ).replaceAll("\\.0*$","");
+											exif_list.add("F"+sv );
 										}
 
 										rv = exif.getTagRationalValue( ExifInterface.TAG_EXPOSURE_TIME );
 										if( rv != null ){
-											if( rv.getNumerator() == 1L ){
-												exif_list.add( String.format( "1/%ds", rv.getDenominator() ) );
+											double dv = rv.toDouble();
+											if( dv > 0.25d ){
+												sv =  String.format( "%.1f", dv ).replaceAll("\\.0*$","");
+												exif_list.add( sv+"s");
 											}else{
-												exif_list.add( String.format( "%.1fs", rv.toDouble() ) );
+												sv =  String.format( "%.1f", 1/dv ).replaceAll("\\.0*$","");
+												exif_list.add( "1/"+sv+"s");
 											}
 										}
 
@@ -289,7 +295,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 											}
 										}
 
-										String sv = exif.getTagStringValue( ExifInterface.TAG_MODEL );
+										sv = exif.getTagStringValue( ExifInterface.TAG_MODEL );
 										if( ! TextUtils.isEmpty( sv ) ){
 											exif_list.add( trimModelName( sv ) );
 										}
@@ -412,7 +418,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 				}
 			}
 			// 連続する空白を１文字にする。始端と終端の空白を除去する。
-			return sb.toString().replace( "\\s+", " " ).trim();
+			return sb.toString().replaceAll( "\\s+", " " ).trim();
 		}
 
 		private String joinList( String delimiter, LinkedList<String> exif_list ){
@@ -672,4 +678,5 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 			( (ActMain) activity ).showToast( true, LogWriter.formatError( ex, "send failed." ) );
 		}
 	}
+
 }
