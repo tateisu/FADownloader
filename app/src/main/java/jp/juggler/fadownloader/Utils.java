@@ -19,6 +19,8 @@ import java.util.Locale;
 import android.net.wifi.SupplicantState;
 import android.os.Bundle;
 import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.SparseBooleanArray;
@@ -487,13 +489,24 @@ public class Utils{
 		}
 	}
 
-	static Map<String,String> getSecondaryStorageVolumesMap( Context context){
+	static @NonNull Map<String,String> getSecondaryStorageVolumesMap( Context context){
+		Map<String, String> result = new HashMap<>();
 		try{
+
 			StorageManager sm = (StorageManager) context.getApplicationContext().getSystemService( Context.STORAGE_SERVICE );
+
+			// SDカードスロットのある7.0端末が手元にないから検証できない
+//			if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ){
+//				for(StorageVolume volume : sm.getStorageVolumes() ){
+//					// String path = volume.getPath();
+//					String state = volume.getState();
+//
+//				}
+//			}
+
 			Method getVolumeList = sm.getClass().getMethod( "getVolumeList" );
 			Object[] volumes = (Object[]) getVolumeList.invoke( sm );
 		//
-			Map<String, String> result = new HashMap<>();
 			for( Object volume : volumes ){
 				Class<?> volume_clazz = volume.getClass();
 
@@ -508,11 +521,10 @@ public class Utils{
 					if( ! TextUtils.isEmpty( uuid ) ) result.put( uuid, path );
 				}
 			}
-			return result;
 		}catch(Throwable ex){
 			ex.printStackTrace(  );
-			return null;
 		}
+		return result;
 	}
 }
 

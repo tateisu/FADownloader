@@ -189,7 +189,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 			tvStateCode.setText( DownloadRecord.formatStateText( activity, data.state_code, data.state_message ) );
 			tvStateCode.setTextColor( DownloadRecord.getStateCodeColor( data.state_code ) );
 
-			if( last_image_uri !=null
+			if( last_image_uri != null
 				&& last_image_uri.equals( data.local_file )
 				&& this.bThumbnailAutoRotate == bThumbnailAutoRotate
 				){
@@ -581,12 +581,10 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 									return tmp_info;
 								}else{
 									Map<String, String> volume_map = Utils.getSecondaryStorageVolumesMap( activity );
-									if( volume_map != null ){
-										String volume_path = volume_map.get( uuid );
-										if( volume_path != null ){
-											tmp_info.uri = Uri.fromFile( new File( volume_path + "/" + split[ 1 ] ) );
-											return tmp_info;
-										}
+									String volume_path = volume_map.get( uuid );
+									if( volume_path != null ){
+										tmp_info.uri = Uri.fromFile( new File( volume_path + "/" + split[ 1 ] ) );
+										return tmp_info;
 									}
 								}
 							}
@@ -656,7 +654,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 	void action_send( DownloadRecord data ){
 		try{
 			Utils.FileInfo tmp_info;
-			if( Pref.pref( activity ).getBoolean( Pref.UI_COPY_BEFORE_VIEW_SEND,false) ){
+			if( Pref.pref( activity ).getBoolean( Pref.UI_COPY_BEFORE_VIEW_SEND, false ) ){
 				tmp_info = copyToLocal( data );
 			}else{
 				tmp_info = fixFileURL( data );
