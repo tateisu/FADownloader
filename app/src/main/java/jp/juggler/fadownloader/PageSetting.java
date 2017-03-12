@@ -91,7 +91,9 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 	}
 
 	@Override protected void onPageDestroy( int page_idx, View root ) throws Throwable{
-		ui_value_save();
+		SharedPreferences.Editor e= Pref.pref(activity).edit();
+		ui_value_save(e);
+		e.apply();
 	}
 
 	@Override public void onClick( View view ){
@@ -104,7 +106,7 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 			break;
 
 		case R.id.btnFolderPickerHelp:
-			if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION){
+			if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
 				( (ActMain) activity ).openHelp( R.layout.help_local_folder );
 			}else{
 				( (ActMain) activity ).openHelp( activity.getString( R.string.help_local_folder_kitkat ) );
@@ -136,7 +138,6 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 			break;
 		}
 	}
-
 
 	// UIフォームの値を設定から読み出す
 	void ui_value_load(){
@@ -180,8 +181,8 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 	}
 
 	// UIフォームの値を設定ファイルに保存
-	void ui_value_save(){
-		Pref.pref( activity ).edit()
+	void ui_value_save( SharedPreferences.Editor e ){
+		e
 			.putString( Pref.UI_FLASHAIR_URL, etURL.getText().toString() )
 			.putString( Pref.UI_INTERVAL, etInterval.getText().toString() )
 			.putString( Pref.UI_FILE_TYPE, etFileType.getText().toString() )
@@ -190,10 +191,8 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 			.putString( Pref.UI_LOCATION_INTERVAL_MIN, etLocationIntervalMin.getText().toString() )
 			.putBoolean( Pref.UI_FORCE_WIFI, swForceWifi.isChecked() )
 			.putString( Pref.UI_SSID, etSSID.getText().toString() )
-			.apply();
+		;
 	}
-
-
 
 	// 転送先フォルダの選択を開始
 	void folder_pick(){
@@ -232,6 +231,7 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		SSIDPicker.open( activity, ActMain.REQUEST_SSID_PICKER );
 
 	}
+
 	public void ssid_view_update(){
 		SharedPreferences pref = Pref.pref( activity );
 		etSSID.setText( pref.getString( Pref.UI_SSID, "" ) );

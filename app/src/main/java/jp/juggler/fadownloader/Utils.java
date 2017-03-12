@@ -23,7 +23,6 @@ import android.util.SparseBooleanArray;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 
-
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.database.Cursor;
@@ -36,7 +35,6 @@ import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
-
 
 import java.io.FileFilter;
 import java.text.DecimalFormat;
@@ -51,25 +49,61 @@ public class Utils{
 		// day
 		n = t / 86400000L;
 		if( n > 0 ){
-			sb.append( String.format( "%dd", n ) );
+			sb.append( String.format( Locale.JAPAN, "%dd", n ) );
 			t -= n * 86400000L;
 		}
 		// h
 		n = t / 3600000L;
 		if( n > 0 || sb.length() > 0 ){
-			sb.append( String.format( "%dh", n ) );
+			sb.append( String.format( Locale.JAPAN, "%dh", n ) );
 			t -= n * 3600000L;
 		}
 		// m
 		n = t / 60000L;
 		if( n > 0 || sb.length() > 0 ){
-			sb.append( String.format( "%dm", n ) );
+			sb.append( String.format( Locale.JAPAN, "%dm", n ) );
 			t -= n * 60000L;
 		}
 		// s
 		float f = t / 1000f;
-	sb.append( String.format( "%.03fs", f ) );
+		sb.append( String.format( Locale.JAPAN, "%.03fs", f ) );
 
+		return sb.toString();
+	}
+
+	public static String getGigaMegaKiro( long t ){
+		StringBuilder sb = new StringBuilder();
+		long n;
+		// Giga
+		n = t / 1000000000L;
+		if( n > 0 ){
+			sb.append( String.format( Locale.JAPAN, "%dg", n ) );
+			t -= n * 1000000000L;
+		}
+		// Mega
+		n = t / 1000000L;
+		if( sb.length() > 0 ){
+			sb.append( String.format( Locale.JAPAN, "%03dm", n ) );
+			t -= n * 1000000L;
+		}else if( n > 0 ){
+			sb.append( String.format( Locale.JAPAN, "%dm", n ) );
+			t -= n * 1000000L;
+		}
+		// Kiro
+		n = t / 1000L;
+		if( sb.length() > 0 ){
+			sb.append( String.format( Locale.JAPAN, "%03dk", n ) );
+			t -= n * 1000L;
+		}else if( n > 0 ){
+			sb.append( String.format( Locale.JAPAN, "%dk", n ) );
+			t -= n * 1000L;
+		}
+		// remain
+		if( sb.length() > 0 ){
+			sb.append( String.format( Locale.JAPAN, "%03d", t ) );
+		}else if( n > 0 ){
+			sb.append( String.format( Locale.JAPAN, "%d", t ) );
+		}
 
 		return sb.toString();
 	}
@@ -222,7 +256,6 @@ public class Utils{
 		return null;
 	}
 
-
 	/////////////////////////////////////////////
 
 	static HashMap<Character, String> taisaku_map = new HashMap<>();
@@ -291,8 +324,6 @@ public class Utils{
 		return sb.toString();
 	}
 
-
-
 	////////////////////////////
 
 	public static String toLower( String from ){
@@ -348,8 +379,7 @@ public class Utils{
 //		return R.string.Dialog_Cancel;
 //	}
 
-
-	public static String getConnectionResultErrorMessage(ConnectionResult connectionResult ){
+	public static String getConnectionResultErrorMessage( ConnectionResult connectionResult ){
 		int code = connectionResult.getErrorCode();
 		String msg = connectionResult.getErrorMessage();
 		if( TextUtils.isEmpty( msg ) ){
@@ -421,10 +451,13 @@ public class Utils{
 	}
 
 	public static String getConnectionSuspendedMessage( int i ){
-		switch(i){
-		default: return "?";
-		case GoogleApiClient.ConnectionCallbacks.CAUSE_NETWORK_LOST: return "NETWORK_LOST";
-		case GoogleApiClient.ConnectionCallbacks.CAUSE_SERVICE_DISCONNECTED: return "SERVICE_DISCONNECTED";
+		switch( i ){
+		default:
+			return "?";
+		case GoogleApiClient.ConnectionCallbacks.CAUSE_NETWORK_LOST:
+			return "NETWORK_LOST";
+		case GoogleApiClient.ConnectionCallbacks.CAUSE_SERVICE_DISCONNECTED:
+			return "SERVICE_DISCONNECTED";
 		}
 	}
 
@@ -433,5 +466,57 @@ public class Utils{
 		return String.format( "(%d)%s", state.ordinal(), state.toString() );
 	}
 
+	static class FileInfo{
+
+		Uri uri;
+		String mime_type;
+
+		FileInfo( ContentResolver cr, String any_uri ){
+			if( any_uri == null ) return;
+
+			if( any_uri.startsWith( "/" ) ){
+				uri = Uri.fromFile( new File( any_uri ) );
+			}else{
+				uri = Uri.parse( any_uri );
+				if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
+					{
+						Cursor cursor = cr.query( uri, null, null, null, null );
+						if( cursor != null ){
+							try{
+								if( cursor.moveToFirst() ){
+									int col_count = cursor.getColumnCount();
+									for( int i = 0 ; i < col_count ; ++ i ){
+										int type = cursor.getType( i );
+										if( type != Cursor.FIELD_TYPE_STRING ) continue;
+										String name = cursor.getColumnName( i );
+										String value = cursor.isNull( i ) ? null : cursor.getString( i );
+										Log.d( "DownloadRecordViewer", String.format( "%s %s", name, value ) );
+										if( ! TextUtils.isEmpty( value ) ){
+											if( "filePath".equals( name ) ){
+												uri = Uri.fromFile( new File( value ) );
+											}else if( "drmMimeType".equals( name ) ){
+												mime_type = value;
+											}
+										}
+									}
+								}
+							}catch( Throwable ex ){
+								ex.printStackTrace();
+							}finally{
+								cursor.close();
+							}
+						}
+					}
+				}
+			}
+
+			if( mime_type == null ){
+				String ext = MimeTypeMap.getFileExtensionFromUrl( any_uri );
+				if( ext != null ){
+					mime_type =  MimeTypeMap.getSingleton().getMimeTypeFromExtension( ext.toLowerCase(  ) );
+				}
+			}
+		}
+	}
 
 }

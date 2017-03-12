@@ -2,18 +2,14 @@ package jp.juggler.fadownloader;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.BaseColumns;
-import android.text.TextUtils;
-import android.util.Log;
-
-import java.io.File;
 
 public class DownloadRecord{
-
 
 	public static final TableMeta meta = new TableMeta(){
 		@Override public Uri insert( ContentResolver cr, SQLiteDatabase db, MatchResult match, Uri uri, ContentValues values ){
@@ -31,7 +27,7 @@ public class DownloadRecord{
 					+ ",sc integer not null"
 					+ ",sm text not null"
 					+ ",lt integer not null"
-					+ ",mt text"
+					+ ",sz integer not null default 0"
 					+ ")"
 			);
 			db.execSQL(
@@ -49,6 +45,14 @@ public class DownloadRecord{
 			if( v_old < 2 && v_new >= 2 ){
 				onDBCreate( db );
 			}
+			if( v_old < 3 && v_new >= 3){
+				try{
+					db.execSQL( "alter table "+table+" add column sz integer not null default 0" );
+				}catch(Throwable ex){
+					// 既にカラムが存在する場合、ここを通る
+					ex.printStackTrace(  );
+				}
+			}
 		}
 	};
 
@@ -58,7 +62,7 @@ public class DownloadRecord{
 	public int state_code;
 	public String state_message;
 	public long lap_time;
-	public String mime_type;
+	public long size;
 
 	public static final String COL_ID = BaseColumns._ID;
 	public static final String COL_TIME = "t";
@@ -68,18 +72,19 @@ public class DownloadRecord{
 	public static final String COL_STATE_CODE = "sc";
 	public static final String COL_STATE_MESSAGE = "sm";
 	public static final String COL_LAP_TIME = "lt";
-	public static final String COL_MIME_TYPE = "mt";
+	public static final String COL_SIZE = "sz";
+
 
 	public static class ColIdx{
 
-		int idx_time = -1;
+		int idx_time = - 1;
 		int idx_name;
 		int idx_air_path;
 		int idx_local_file;
 		int idx_state_code;
 		int idx_state_message;
 		int idx_lap_time;
-		int idx_mime_type;
+		int idx_size;
 
 		void setup( Cursor c ){
 			idx_time = c.getColumnIndex( DownloadRecord.COL_TIME );
@@ -89,14 +94,13 @@ public class DownloadRecord{
 			idx_state_code = c.getColumnIndex( DownloadRecord.COL_STATE_CODE );
 			idx_state_message = c.getColumnIndex( DownloadRecord.COL_STATE_MESSAGE );
 			idx_lap_time = c.getColumnIndex( DownloadRecord.COL_LAP_TIME );
-			idx_mime_type = c.getColumnIndex( DownloadRecord.COL_MIME_TYPE );
+			idx_size = c.getColumnIndex( DownloadRecord.COL_SIZE );
 		}
 	}
 
-
 	public void loadFrom( Cursor cursor, ColIdx colIdx ){
-		if( colIdx==null) colIdx = new ColIdx();
-		if( colIdx.idx_time ==-1) colIdx.setup(cursor);
+		if( colIdx == null ) colIdx = new ColIdx();
+		if( colIdx.idx_time == - 1 ) colIdx.setup( cursor );
 		//
 		time = cursor.getLong( colIdx.idx_time );
 		air_path = cursor.getString( colIdx.idx_air_path );
@@ -104,7 +108,7 @@ public class DownloadRecord{
 		state_code = cursor.getInt( colIdx.idx_state_code );
 		state_message = cursor.isNull( colIdx.idx_state_message ) ? null : cursor.getString( colIdx.idx_state_message );
 		lap_time = cursor.getLong( colIdx.idx_lap_time );
-		mime_type = cursor.isNull( colIdx.idx_mime_type ) ? null : cursor.getString( colIdx.idx_mime_type );
+		size = cursor.getLong( colIdx.idx_size );
 	}
 
 	public static Uri insert(
@@ -116,19 +120,18 @@ public class DownloadRecord{
 		, int state_code
 		, String state_message
 		, long lap_time
+	    ,long size
 	){
 		try{
-			FileInfo fi = new FileInfo( cr,local_file );
-
 			cv.clear();
 			cv.put( COL_TIME, System.currentTimeMillis() );
 			cv.put( COL_NAME, name );
 			cv.put( COL_AIR_PATH, air_path );
-			cv.put( COL_LOCAL_FILE, fi.uri.toString() );
+			cv.put( COL_LOCAL_FILE, local_file );
 			cv.put( COL_STATE_CODE, state_code );
 			cv.put( COL_STATE_MESSAGE, state_message );
 			cv.put( COL_LAP_TIME, lap_time );
-			cv.put( COL_MIME_TYPE, fi.mime_type );
+			cv.put( COL_SIZE, size );
 
 			return cr.insert( meta.content_uri, cv );
 
@@ -138,76 +141,50 @@ public class DownloadRecord{
 		}
 	}
 
-
-
 	public static final int STATE_COMPLETED = 0;
-	public static final int STATE_FILE_TYPE_NOT_MATCH = 1;
+	public static final int STATE_QUEUED = 1;
 	public static final int STATE_LOCAL_FILE_PREPARE_ERROR = 2;
 	public static final int STATE_DOWNLOAD_ERROR = 3;
 	public static final int STATE_EXIF_MANGLING_ERROR = 4;
 	public static final int STATE_CANCELLED = 5;
 
-	public static String getStateCodeString( int code ){
-		switch( code ){
-		case DownloadRecord.STATE_COMPLETED:
-			return "COMPLETED";
-		case DownloadRecord.STATE_FILE_TYPE_NOT_MATCH:
-			return "FILE_TYPE_NOT_MATCH";
-		case DownloadRecord.STATE_LOCAL_FILE_PREPARE_ERROR:
-			return "LOCAL_FILE_PREPARE_ERROR";
-		case DownloadRecord.STATE_DOWNLOAD_ERROR:
-			return "DOWNLOAD_ERROR";
-		case DownloadRecord.STATE_EXIF_MANGLING_ERROR:
-			return "EXIF_MANGLING_ERROR";
-		case DownloadRecord.STATE_CANCELLED:
-			return "CANCELLED";
+	public static String formatStateText( Context context, int state_code, String state_message ){
+		switch(state_code){
 		default:
-			return "?";
-		}
+			return String.format("(%d)%s",state_code,state_message);
+		case STATE_COMPLETED:
+			return context.getString(R.string.download_completed);
+		case STATE_CANCELLED:
+			return context.getString(R.string.download_cancelled);
+		case STATE_QUEUED:
+			return context.getString(R.string.queued);
 
+		case STATE_LOCAL_FILE_PREPARE_ERROR:
+		case STATE_DOWNLOAD_ERROR:
+		case STATE_EXIF_MANGLING_ERROR:
+			return String.format("error: %s",state_message);
+		}
 	}
 
+	public static int getStateCodeColor( int code ){
+		switch( code ){
+		default:
+		case DownloadRecord.STATE_CANCELLED:
+			return Color.BLACK;
 
-	static class FileInfo{
-		Uri uri;
-		String mime_type;
+		case DownloadRecord.STATE_COMPLETED:
+			return 0xff008000;
 
-		FileInfo( ContentResolver cr, String any_uri){
-			if( any_uri.startsWith( "/" ) ){
-				uri = Uri.fromFile( new File( any_uri ) );
-			}else{
-				uri = Uri.parse( any_uri );
-				if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
-					{
-						Cursor cursor = cr.query( uri, null, null, null, null );
-						if( cursor != null ){
-							try{
-								if( cursor.moveToFirst() ){
-									int col_count = cursor.getColumnCount();
-									for( int i = 0 ; i < col_count ; ++ i ){
-										int type = cursor.getType( i );
-										if( type != Cursor.FIELD_TYPE_STRING ) continue;
-										String name = cursor.getColumnName( i );
-										String value = cursor.isNull( i ) ? null : cursor.getString( i );
-										Log.d( "DownloadRecordViewer", String.format( "%s %s", name, value ) );
-										if( ! TextUtils.isEmpty( value ) ){
-											if( "filePath".equals( name ) ){
-												uri = Uri.fromFile( new File( value ) );
-											}else if( "drmMimeType".equals( name ) ){
-												mime_type = value;
-											}
-										}
-									}
-								}
-							}catch( Throwable ex ){
-								ex.printStackTrace();
-							}finally{
-								cursor.close();
-							}
-						}
-					}
-				}
-			}
+		case STATE_QUEUED:
+			return 0xff8000cc;
+
+		case DownloadRecord.STATE_EXIF_MANGLING_ERROR:
+			return 0xff800080;
+
+		case DownloadRecord.STATE_LOCAL_FILE_PREPARE_ERROR:
+		case DownloadRecord.STATE_DOWNLOAD_ERROR:
+			return 0xffC00000;
+
 		}
 	}
 

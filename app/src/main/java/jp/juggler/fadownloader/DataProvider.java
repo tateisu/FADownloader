@@ -17,7 +17,7 @@ public class DataProvider extends ContentProvider{
 	static final String AUTHORITY = BuildVariant.DATA_PROVIDER_AUTHORITY;
 
 	static final String DB_NAME = "data";
-	static final int DB_SCHEMA_VERSION = 2;
+	static final int DB_SCHEMA_VERSION = 3;
 
 	static class DBHelper1 extends SQLiteOpenHelper{
 

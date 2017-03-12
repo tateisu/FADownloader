@@ -295,7 +295,6 @@ public class DownloadService extends Service{
 		if( service_instance.worker == null || ! service_instance.worker.isAlive() ){
 			sb.append( context.getString( R.string.thread_not_running_status ) );
 		}else{
-			sb.append( context.getString( R.string.thread_running_status ) );
 			sb.append( service_instance.worker.getStatus() );
 		}
 

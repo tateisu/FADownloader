@@ -11,21 +11,29 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
 import it.sephiroth.android.library.exif2.ExifInterface;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DownloadWorker extends Thread implements CancelChecker{
+
+	static final boolean RECORD_QUEUED_STATE = false;
 
 	public interface Callback{
 
@@ -50,6 +58,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 	final String file_type;
 	final LogWriter log;
 	final ArrayList<Pattern> file_type_list;
+	final boolean force_wifi;
+	final String ssid;
 
 	public DownloadWorker( DownloadService service, Intent intent, Callback callback ){
 		this.service = service;
@@ -62,8 +72,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		this.folder_uri = intent.getStringExtra( DownloadService.EXTRA_FOLDER_URI );
 		this.interval = intent.getIntExtra( DownloadService.EXTRA_INTERVAL, 86400 );
 		this.file_type = intent.getStringExtra( DownloadService.EXTRA_FILE_TYPE );
-		boolean force_wifi = intent.getBooleanExtra( DownloadService.EXTRA_FORCE_WIFI, false );
-		String ssid = intent.getStringExtra( DownloadService.EXTRA_SSID );
+		this.force_wifi = intent.getBooleanExtra( DownloadService.EXTRA_FORCE_WIFI, false );
+		this.ssid = intent.getStringExtra( DownloadService.EXTRA_SSID );
 
 		LocationTracker.Setting location_setting = new LocationTracker.Setting();
 		location_setting.interval_desired = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_DESIRED, LocationTracker.DEFAULT_INTERVAL_DESIRED );
@@ -103,8 +113,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		this.interval = pref.getInt( Pref.WORKER_INTERVAL, 86400 );
 		this.file_type = pref.getString( Pref.WORKER_FILE_TYPE, null );
 
-		boolean force_wifi = pref.getBoolean( Pref.WORKER_FORCE_WIFI, false );
-		String ssid = pref.getString( Pref.WORKER_SSID, null );
+		this.force_wifi = pref.getBoolean( Pref.WORKER_FORCE_WIFI, false );
+		this.ssid = pref.getString( Pref.WORKER_SSID, null );
 
 		LocationTracker.Setting location_setting = new LocationTracker.Setting();
 		location_setting.interval_desired = pref.getLong( Pref.WORKER_LOCATION_INTERVAL_DESIRED, LocationTracker.DEFAULT_INTERVAL_DESIRED );
@@ -153,12 +163,6 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		notify();
 	}
 
-	final AtomicReference<String> status = new AtomicReference<>( "?" );
-
-	public String getStatus(){
-		return status.get();
-	}
-
 	static final Pattern reJPEG = Pattern.compile( "\\.jp(g|eg?)\\z", Pattern.CASE_INSENSITIVE );
 	static final Pattern reFileType = Pattern.compile( "(\\S+)" );
 
@@ -176,20 +180,6 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		}
 		return list;
 	}
-
-	static class Item{
-
-		final String air_path;
-		final LocalFile local_file;
-
-		Item( String air_path, LocalFile local_file ){
-			this.air_path = air_path;
-			this.local_file = local_file;
-		}
-	}
-
-	static final Pattern reLine = Pattern.compile( "([^\\x0d\\x0a]+)" );
-	static final Pattern reAttr = Pattern.compile( ",(\\d+),(\\d+),(\\d+),(\\d+)$" );
 
 	// static final long ERROR_BREAK = -1L;
 	static final long ERROR_CONTINUE = - 2L;
@@ -236,7 +226,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		try{
 
 			LocalFile tmp_path = new LocalFile( file.getParent(), "tmp-" + currentThread().getId() + "-" + android.os.Process.myPid() + "-" + file.getName() );
-			if( ! tmp_path.prepareFile( log ) ){
+			if( ! tmp_path.prepareFile( log, true ) ){
 				return new ErrorAndMessage( true, "file creation failed." );
 			}
 
@@ -280,7 +270,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				log.e( ex, "exif mangling failed." );
 
 				// 変更失敗
-				em = new ErrorAndMessage( true, log.formatError( ex, "exif mangling failed." ) );
+				em = new ErrorAndMessage( true, LogWriter.formatError( ex, "exif mangling failed." ) );
 			}
 
 			if( em != null ){
@@ -289,7 +279,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			}
 
 			// 更新後の方がファイルが小さいことがあるのか？
-			if( tmp_path.length() < file.length() ){
+			if( tmp_path.length( log, false ) < file.length( log, false ) ){
 				log.e( "EXIF付与したファイルの方が小さい!付与前後のファイルを残しておく" );
 				// この場合両方のファイルを残しておく
 				return new ErrorAndMessage( true, "EXIF付与したファイルの方が小さい" );
@@ -306,21 +296,34 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		}catch( Throwable ex ){
 			ex.printStackTrace();
 			log.e( ex, "exif mangling failed." );
-			return new ErrorAndMessage( true, log.formatError( ex, "exif mangling failed." ) );
+			return new ErrorAndMessage( true, LogWriter.formatError( ex, "exif mangling failed." ) );
 		}
 	}
 
+	boolean isForcedSSID(){
+		if( ! force_wifi ) return true;
+		WifiManager wm = (WifiManager) service.getApplicationContext().getSystemService( Context.WIFI_SERVICE );
+		WifiInfo wi = wm.getConnectionInfo();
+		String current_ssid = wi.getSSID().replace( "\"", "" );
+		return ! TextUtils.isEmpty( current_ssid ) && current_ssid.equals( this.ssid );
+	}
+
 	@SuppressWarnings( "deprecation" )
-	public static Object getWiFiNetwork( Context context ){
-		ConnectivityManager cm = (ConnectivityManager) context.getSystemService( Context.CONNECTIVITY_SERVICE );
+	private Object getWiFiNetwork(){
+		ConnectivityManager cm = (ConnectivityManager) service.getApplicationContext().getSystemService( Context.CONNECTIVITY_SERVICE );
 		if( Build.VERSION.SDK_INT >= 21 ){
 			for( Network n : cm.getAllNetworks() ){
 				NetworkInfo info = cm.getNetworkInfo( n );
-				if( info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI ) return n;
+				if( info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI ){
+					if( isForcedSSID() ) return n;
+				}
 			}
 		}else{
 			for( NetworkInfo info : cm.getAllNetworkInfo() ){
-				if( info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI ) return info;
+				if( info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI ){
+					if( isForcedSSID() ) return info;
+					return info;
+				}
 			}
 		}
 		return null;
@@ -328,20 +331,330 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 	final ContentValues cv = new ContentValues();
 
+	static class Item{
+
+		final String air_path;
+		final LocalFile local_file;
+		final boolean is_file;
+		final long size;
+
+		Item( String air_path, LocalFile local_file, boolean is_file, long size ){
+			this.air_path = air_path;
+			this.local_file = local_file;
+			this.is_file = is_file;
+			this.size = size;
+		}
+	}
+
+	static final Pattern reLine = Pattern.compile( "([^\\x0d\\x0a]+)" );
+	static final Pattern reAttr = Pattern.compile( ",(\\d+),(\\d+),(\\d+),(\\d+)$" );
+
+	LinkedList<Item> job_queue = null;
+	long flashair_update_status = 0L;
+	boolean file_error = false;
+
+	void loadFolder( Object network, Item item ){
+
+		// フォルダを読む
+		String cgi_url = flashair_url + "command.cgi?op=100&DIR=" + Uri.encode( item.air_path );
+		byte[] data = client.getHTTP( log, network, cgi_url );
+		if( isCancelled() ) return;
+
+		if( data == null ){
+			if( client.last_error.contains( "UnknownHostException" ) ){
+				client.last_error = service.getString( R.string.flashair_host_error );
+				cancel( service.getString( R.string.flashair_host_error_short ) );
+			}else if( client.last_error.contains( "ENETUNREACH" ) ){
+				client.last_error = service.getString( R.string.network_unreachable );
+				cancel( service.getString( R.string.network_unreachable ) );
+			}
+			log.e( R.string.folder_list_failed, item.air_path, cgi_url, client.last_error );
+			file_error = true;
+			return;
+		}
+
+		Matcher mLine;
+		try{
+			//noinspection ConstantConditions
+			mLine = reLine.matcher( Utils.decodeUTF8( data ) );
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+			log.e( ex, "folder list parse error." );
+			return;
+		}
+
+		while( ! isCancelled() && mLine.find() ){
+			String line = mLine.group( 1 );
+			Matcher mAttr = reAttr.matcher( line );
+			if( ! mAttr.find() ) continue;
+
+			try{
+				long size = Long.parseLong( mAttr.group( 1 ), 10 );
+				int attr = Integer.parseInt( mAttr.group( 2 ), 10 );
+//							int date = Integer.parseInt( mAttr.group( 3 ), 10 );
+//							int time = Integer.parseInt( mAttr.group( 4 ), 10 );
+
+				// https://flashair-developers.com/ja/support/forum/#/discussion/3/%E3%82%AB%E3%83%B3%E3%83%9E%E5%8C%BA%E5%88%87%E3%82%8A
+				String dir = ( item.air_path.equals( "/" ) ? "" : item.air_path );
+				String file_name = line.substring( dir.length() + 1, mAttr.start() );
+
+				if( ( attr & 2 ) != 0 ){
+					// skip hidden file
+					continue;
+				}else if( ( attr & 4 ) != 0 ){
+					// skip system file
+					continue;
+				}
+
+				String child_air_path = dir + "/" + file_name;
+				final LocalFile local_child = new LocalFile( item.local_file, file_name );
+
+				if( ( attr & 0x10 ) != 0 ){
+					// フォルダはキューの頭に追加
+					job_queue.addFirst( new Item( child_air_path, local_child, false, 0L ) );
+				}else{
+					for( Pattern re : file_type_list ){
+						if( ! re.matcher( file_name ).find() ) continue;
+						// マッチした
+
+						// ローカルのファイルサイズを調べて既読スキップ
+						if( local_child.length( log, false ) >= size ) continue;
+
+						// ファイルはキューの末尾に追加
+						job_queue.addLast( new Item( child_air_path, local_child, true, size ) );
+
+						if( RECORD_QUEUED_STATE ){
+							// 未取得のデータを履歴に表示する
+							DownloadRecord.insert(
+								service.getContentResolver()
+								, cv
+								, file_name
+								, child_air_path
+								, "" // local file uri
+								, DownloadRecord.STATE_QUEUED
+								, "queued."
+								, 0L
+								, size
+							);
+						}
+						break;
+					}
+				}
+			}catch( Throwable ex ){
+				ex.printStackTrace();
+				log.e( ex, "folder list parse error: %s", line );
+			}
+		}
+	}
+
+	private void loadFile( Object network, Item item ){
+		long time_start = SystemClock.elapsedRealtime();
+		final String child_air_path = item.air_path;
+		final LocalFile local_child = item.local_file;
+		final String file_name = new File( item.air_path ).getName();
+
+		try{
+
+			if( ! local_child.prepareFile( log, true ) ){
+				log.e( "%s//%s :skip. can not prepare local file.", item.air_path, file_name );
+				DownloadRecord.insert(
+					service.getContentResolver()
+					, cv
+					, file_name
+					, child_air_path
+					, "" // local file uri
+					, DownloadRecord.STATE_LOCAL_FILE_PREPARE_ERROR
+					, "can not prepare local file."
+					, SystemClock.elapsedRealtime() - time_start
+					, item.size
+				);
+				return;
+			}
+
+			final String get_url = flashair_url + Uri.encode( child_air_path );
+			byte[] data = client.getHTTP( log, network, get_url, new HTTPClientReceiver(){
+				final byte[] buf = new byte[ 2048 ];
+
+				public byte[] onHTTPClientStream( LogWriter log, CancelChecker cancel_checker, InputStream in, int content_length ){
+					try{
+						OutputStream os = local_child.openOutputStream( service );
+						if( os == null ){
+							log.e( "cannot open local output file." );
+						}else{
+							try{
+								for( ; ; ){
+									if( cancel_checker.isCancelled() ){
+										return null;
+									}
+									int delta = in.read( buf );
+									if( delta <= 0 ) break;
+									os.write( buf, 0, delta );
+								}
+								return buf;
+							}finally{
+								try{
+									os.close();
+								}catch( Throwable ignored ){
+								}
+							}
+						}
+					}catch( Throwable ex ){
+						log.e( "HTTP read error. %s:%s"
+							, ex.getClass().getSimpleName()
+							, ex.getMessage()
+						);
+					}
+					return null;
+				}
+			} );
+
+			if( isCancelled() ){
+				DownloadRecord.insert(
+					service.getContentResolver()
+					, cv
+					, file_name
+					, child_air_path
+					, local_child.getFileUri( log, false )
+					, DownloadRecord.STATE_CANCELLED
+					, "download cancelled."
+					, SystemClock.elapsedRealtime() - time_start
+					, item.size
+				);
+				return;
+			}
+
+			if( data == null ){
+				log.e( "FILE %s :HTTP error %s", file_name, client.last_error );
+
+				if( client.last_error.contains( "UnknownHostException" ) ){
+					client.last_error = service.getString( R.string.flashair_host_error );
+					cancel( service.getString( R.string.flashair_host_error_short ) );
+				}else if( client.last_error.contains( "ENETUNREACH" ) ){
+					client.last_error = service.getString( R.string.network_unreachable );
+					cancel( service.getString( R.string.network_unreachable ) );
+				}
+				DownloadRecord.insert(
+					service.getContentResolver()
+					, cv
+					, file_name
+					, child_air_path
+					, local_child.getFileUri( log, false )
+					, DownloadRecord.STATE_DOWNLOAD_ERROR
+					, client.last_error
+					, SystemClock.elapsedRealtime() - time_start
+					, item.size
+				);
+				file_error = true;
+				return;
+			}
+
+			log.i( "FILE %s :download complete. %dms", file_name, SystemClock.elapsedRealtime() - time_start );
+
+			// 位置情報を取得する時にファイルの日時が使えないかと思ったけど
+			// タイムゾーンがわからん…
+
+			Location location = callback.getLocation();
+			if( location != null && reJPEG.matcher( file_name ).find() ){
+				ErrorAndMessage em = updateFileLocation( location, local_child );
+				DownloadRecord.insert(
+					service.getContentResolver()
+					, cv
+					, file_name
+					, child_air_path
+					, local_child.getFileUri( log, false )
+					, em.bError ? DownloadRecord.STATE_EXIF_MANGLING_ERROR : DownloadRecord.STATE_COMPLETED
+					, "location data: " + em.message
+					, SystemClock.elapsedRealtime() - time_start
+					, item.size
+				);
+			}else{
+				DownloadRecord.insert(
+					service.getContentResolver()
+					, cv
+					, file_name
+					, child_air_path
+					, local_child.getFileUri( log, false )
+					, DownloadRecord.STATE_COMPLETED
+					, "OK"
+					, SystemClock.elapsedRealtime() - time_start
+					, item.size
+				);
+			}
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+			log.e( ex, "error." );
+
+			file_error = true;
+			DownloadRecord.insert(
+				service.getContentResolver()
+				, cv
+				, file_name
+				, child_air_path
+				, local_child.getFileUri( log, false )
+				, DownloadRecord.STATE_DOWNLOAD_ERROR
+				, LogWriter.formatError( ex, "?" )
+				, SystemClock.elapsedRealtime() - time_start
+				, item.size
+			);
+		}
+
+	}
+
+	AtomicLong queued_file_count = new AtomicLong();
+	AtomicLong queued_byte_count = new AtomicLong();
+	AtomicLong queued_byte_count_max = new AtomicLong();
+
+	final AtomicReference<String> _status = new AtomicReference<>( "?" );
+
+	public void setStatus( boolean bShowQueueCount, String s ){
+		if( ! bShowQueueCount ){
+			queued_file_count.set( 0L );
+			queued_byte_count.set( 0L );
+		}else{
+			long fc = 0L;
+			long bc = 0L;
+			if( job_queue != null ){
+				for( Item item : job_queue ){
+					if( item.is_file ){
+						++ fc;
+						bc += item.size;
+					}
+				}
+			}
+			queued_file_count.set( fc );
+			queued_byte_count.set( bc );
+			if( bc > 0 && queued_byte_count_max.get() == Long.MAX_VALUE ){
+				queued_byte_count_max.set( bc );
+			}
+		}
+		_status.set( s );
+	}
+
+	public String getStatus(){
+		long fc = queued_file_count.get();
+		String s = _status.get();
+		if( fc > 0L ){
+			long bc = queued_byte_count.get();
+			long bcm = queued_byte_count_max.get();
+			return s + String.format( "\n%s %d%%, %s %dfile %sbyte"
+				, service.getString( R.string.progress )
+				, bcm <= 0 ? 0 : 100L * ( bcm - bc ) / bcm
+				, service.getString( R.string.remain )
+				, fc
+				, Utils.getGigaMegaKiro( bc )
+			);
+		}else{
+			return s;
+		}
+	}
+
 	@SuppressWarnings( "ConstantConditions" ) @Override public void run(){
 
-		status.set( service.getString( R.string.thread_start ) );
-
+		setStatus( false, service.getString( R.string.thread_start ) );
 		boolean allow_stop_service = false;
-
 		callback.onThreadStart();
 
-		LinkedList<Item> job_queue = null;
-		long flashair_update_status = 0L;
-		boolean file_error = false;
-
 		while( ! isCancelled() ){
-			status.set( service.getString( R.string.initializing ) );
 
 			// 古いアラームがあれば除去
 			try{
@@ -361,7 +674,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 					if( remain <= 0 ) break;
 
 					if( remain < ( 15 * 1000L ) ){
-						status.set( service.getString( R.string.wait_short, Utils.formatTimeDuration( remain ) ) );
+						setStatus( false, service.getString( R.string.wait_short, Utils.formatTimeDuration( remain ) ) );
 						waitEx( remain > 1000L ? 1000L : remain );
 					}else{
 						try{
@@ -396,17 +709,18 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			callback.acquireWakeLock();
 
 			// 通信状態の確認
-			status.set( service.getString( R.string.wifi_check ) );
+			setStatus( false, service.getString( R.string.wifi_check ) );
 			long network_check_start = SystemClock.elapsedRealtime();
 			Object network = null;
 			while( ! isCancelled() ){
-				network = getWiFiNetwork( service );
+				network = getWiFiNetwork();
 				if( network != null ) break;
 
 				// 一定時間待機してもダメならスレッドを停止する
+				// 通信状態変化でまた起こされる
 				long er_now = SystemClock.elapsedRealtime();
 				if( er_now - network_check_start >= 60 * 1000L ){
-					Pref.pref( service ).edit().putLong( Pref.LAST_IDLE_START, System.currentTimeMillis() ).apply();
+					// Pref.pref( service ).edit().putLong( Pref.LAST_IDLE_START, System.currentTimeMillis() ).apply();
 					job_queue = null;
 					cancel( service.getString( R.string.wifi_not_good ) );
 					break;
@@ -422,28 +736,46 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				Pref.pref( service ).edit().putLong( Pref.LAST_IDLE_START, System.currentTimeMillis() ).apply();
 
 				// FlashAir アップデートステータスを確認
-				status.set( service.getString( R.string.flashair_update_status_check ) );
+				setStatus( false, service.getString( R.string.flashair_update_status_check ) );
 				flashair_update_status = getFlashAirUpdateStatus( network );
 				if( flashair_update_status == ERROR_CONTINUE ){
 					continue;
-				}else if( flashair_update_status != - 1L
-					&& flashair_update_status == Pref.pref( service ).getLong( Pref.FLASHAIR_UPDATE_STATUS_OLD, - 1L )
-					){
-					// 前回スキャン開始時と同じ数字なので変更されていない
-					log.d( R.string.flashair_not_updated );
-					continue;
+				}else{
+					long old = Pref.pref( service ).getLong( Pref.FLASHAIR_UPDATE_STATUS_OLD, - 1L );
+					if( flashair_update_status == old && old != - 1L ){
+						// 前回スキャン開始時と同じ数字なので変更されていない
+						log.d( R.string.flashair_not_updated );
+						continue;
+					}else{
+						log.d( "flashair updated %d %d"
+							, old
+							, flashair_update_status
+						);
+					}
+				}
+
+				// 未取得状態のファイルを履歴から消す
+				if( RECORD_QUEUED_STATE ){
+					service.getContentResolver().delete(
+						DownloadRecord.meta.content_uri
+						, DownloadRecord.COL_STATE_CODE + "=?"
+						, new String[]{
+							Integer.toString( DownloadRecord.STATE_QUEUED )
+						}
+					);
 				}
 
 				// フォルダスキャン開始
 				job_queue = new LinkedList<>();
-				job_queue.add( new Item( "/", new LocalFile( service, folder_uri ) ) );
+				job_queue.add( new Item( "/", new LocalFile( service, folder_uri ), false, 0L ) );
 				file_error = false;
+				queued_byte_count_max.set( Long.MAX_VALUE );
 			}
 
 			// ファイルスキャンの終了
 			if( job_queue.isEmpty() ){
 				job_queue = null;
-				status.set( service.getString( R.string.file_scan_completed ) );
+				setStatus( false, service.getString( R.string.file_scan_completed ) );
 				if( ! file_error ){
 					log.i( "ファイルスキャン完了" );
 					Pref.pref( service ).edit()
@@ -459,239 +791,37 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				continue;
 			}
 
-			final Item item = job_queue.removeFirst();
-
-			status.set( service.getString( R.string.progress_folder, item.air_path ) );
-
-			// フォルダを読む
-			String cgi_url = flashair_url + "command.cgi?op=100&DIR=" + Uri.encode( item.air_path );
-			byte[] data = client.getHTTP( log, network, cgi_url );
-			if( isCancelled() ) break;
-
-			if( data == null ){
-				if( client.last_error.contains( "UnknownHostException" ) ){
-					client.last_error = service.getString( R.string.flashair_host_error );
-					cancel( service.getString( R.string.flashair_host_error_short ) );
-				}else if( client.last_error.contains( "ENETUNREACH" ) ){
-					client.last_error = service.getString( R.string.network_unreachable );
-					cancel( service.getString( R.string.network_unreachable ) );
+			try{
+				final Item head = job_queue.getFirst();
+				if( head.is_file ){
+					// キューから除去するまえに残りサイズを計算したい
+					setStatus( true, service.getString( R.string.download_file, head.air_path ) );
+					job_queue.removeFirst();
+					loadFile( network, head );
+				}else{
+					setStatus( false, service.getString( R.string.progress_folder, head.air_path ) );
+					job_queue.removeFirst();
+					loadFolder( network, head );
 				}
-				log.e( R.string.folder_list_failed, item.air_path, cgi_url, client.last_error );
-				file_error = true;
-				continue;
-			}
-
-			String text = Utils.decodeUTF8( data );
-			Matcher mLine = reLine.matcher( text );
-
-			while( ! isCancelled() && mLine.find() ){
-				String line = mLine.group( 1 );
-				Matcher mAttr = reAttr.matcher( line );
-				if( ! mAttr.find() ) continue;
-
-				try{
-					long size = Long.parseLong( mAttr.group( 1 ), 10 );
-					int attr = Integer.parseInt( mAttr.group( 2 ), 10 );
-//							int date = Integer.parseInt( mAttr.group( 3 ), 10 );
-//							int time = Integer.parseInt( mAttr.group( 4 ), 10 );
-
-					// https://flashair-developers.com/ja/support/forum/#/discussion/3/%E3%82%AB%E3%83%B3%E3%83%9E%E5%8C%BA%E5%88%87%E3%82%8A
-					String dir = ( item.air_path.equals( "/" ) ? "" : item.air_path );
-					String file_name = line.substring( dir.length() + 1, mAttr.start() );
-
-					if( ( attr & 2 ) != 0 ){
-						// skip hidden file
-						continue;
-					}else if( ( attr & 4 ) != 0 ){
-						// skip system file
-						continue;
-					}
-
-					String child_air_path = dir + "/" + file_name;
-					final LocalFile local_child = new LocalFile( item.local_file, file_name );
-
-					if( ( attr & 0x10 ) != 0 ){
-						// サブフォルダはキューに追加する
-						job_queue.add( new Item( child_air_path, local_child ) );
-						continue;
-					}
-
-					long time_start = SystemClock.elapsedRealtime();
-
-					try{
-						status.set( service.getString( R.string.progress_file, child_air_path ) );
-
-						// file type matching
-						boolean bMatch = false;
-						for( Pattern re : file_type_list ){
-							if( ! re.matcher( file_name ).find() ) continue;
-							bMatch = true;
-							break;
-						}
-						if( ! bMatch ){
-//							DownloadRecord.insert(
-//								service.getContentResolver()
-//								, cv
-//								, file_name
-//								, child_air_path
-//								, "" // local file uri
-//								, DownloadRecord.STATE_FILE_TYPE_NOT_MATCH
-//								, "file type not match. skipped."
-//								, SystemClock.elapsedRealtime() - time_start
-//							);
-							continue;
-						}
-
-						if( ! local_child.prepareFile( log ) ){
-							log.e( "%s//%s :skip. can not prepare local file.", item.air_path, file_name );
-							DownloadRecord.insert(
-								service.getContentResolver()
-								, cv
-								, file_name
-								, child_air_path
-								, "" // local file uri
-								, DownloadRecord.STATE_LOCAL_FILE_PREPARE_ERROR
-								, "can not prepare local file."
-								, SystemClock.elapsedRealtime() - time_start
-							);
-							continue;
-						}else if( local_child.length() >= size ){
-							// log.f( "%s//%s :skip. same file size.",item.air_path, file_name );
-							continue;
-						}
-
-						status.set( service.getString( R.string.download_file, child_air_path ) );
-						final String get_url = flashair_url + Uri.encode( child_air_path );
-						data = client.getHTTP( log, network, get_url, new HTTPClientReceiver(){
-							final byte[] buf = new byte[ 2048 ];
-
-							public byte[] onHTTPClientStream( LogWriter log, CancelChecker cancel_checker, InputStream in, int content_length ){
-								try{
-									OutputStream os = local_child.openOutputStream( service );
-									if( os == null ){
-										log.e( "cannot open local output file." );
-									}else{
-										try{
-											for( ; ; ){
-												if( cancel_checker.isCancelled() ){
-													return null;
-												}
-												int delta = in.read( buf );
-												if( delta <= 0 ) break;
-												os.write( buf, 0, delta );
-											}
-											return buf;
-										}finally{
-											try{
-												os.close();
-											}catch( Throwable ignored ){
-											}
-										}
-									}
-								}catch( Throwable ex ){
-									log.e( "HTTP read error. %s:%s"
-										, ex.getClass().getSimpleName()
-										, ex.getMessage()
-									);
-								}
-								return null;
-							}
-						} );
-
-						if( isCancelled() ){
-							DownloadRecord.insert(
-								service.getContentResolver()
-								, cv
-								, file_name
-								, child_air_path
-								, local_child.getFileUri( log )
-								, DownloadRecord.STATE_CANCELLED
-								, "download cancelled."
-								, SystemClock.elapsedRealtime() - time_start
-							);
-							break;
-						}
-
-						if( data == null ){
-							log.e( "FILE %s :HTTP error %s", file_name, client.last_error );
-
-							if( client.last_error.contains( "UnknownHostException" ) ){
-								client.last_error = service.getString( R.string.flashair_host_error );
-								cancel( service.getString( R.string.flashair_host_error_short ) );
-							}else if( client.last_error.contains( "ENETUNREACH" ) ){
-								client.last_error = service.getString( R.string.network_unreachable );
-								cancel( service.getString( R.string.network_unreachable ) );
-							}
-							DownloadRecord.insert(
-								service.getContentResolver()
-								, cv
-								, file_name
-								, child_air_path
-								, local_child.getFileUri( log )
-								, DownloadRecord.STATE_DOWNLOAD_ERROR
-								, client.last_error
-								, SystemClock.elapsedRealtime() - time_start
-							);
-							file_error = true;
-						}else{
-							log.i( "FILE %s :download complete. %dms", file_name, SystemClock.elapsedRealtime() - time_start );
-
-							// 位置情報を取得する時にファイルの日時が使えないかと思ったけど
-							// タイムゾーンがわからん…
-
-							Location location = callback.getLocation();
-							if( location != null && reJPEG.matcher( file_name ).find() ){
-								status.set( service.getString( R.string.exif_update, child_air_path ) );
-								ErrorAndMessage em = updateFileLocation( location, local_child );
-								DownloadRecord.insert(
-									service.getContentResolver()
-									, cv
-									, file_name
-									, child_air_path
-									, local_child.getFileUri( log )
-									, em.bError ? DownloadRecord.STATE_EXIF_MANGLING_ERROR : DownloadRecord.STATE_COMPLETED
-									, "location data: " + em.message
-									, SystemClock.elapsedRealtime() - time_start
-								);
-							}else{
-								DownloadRecord.insert(
-									service.getContentResolver()
-									, cv
-									, file_name
-									, child_air_path
-									, local_child.getFileUri( log )
-									, DownloadRecord.STATE_COMPLETED
-									, "OK"
-									, SystemClock.elapsedRealtime() - time_start
-								);
-							}
-						}
-
-					}catch( Throwable ex ){
-						ex.printStackTrace();
-						log.e( ex, "error." );
-
-						file_error = true;
-						DownloadRecord.insert(
-							service.getContentResolver()
-							, cv
-							, file_name
-							, child_air_path
-							, local_child.getFileUri( log )
-							, DownloadRecord.STATE_DOWNLOAD_ERROR
-							, log.formatError( ex, "?" )
-							, SystemClock.elapsedRealtime() - time_start
-						);
-					}
-				}catch( Throwable ex ){
-					ex.printStackTrace();
-					log.e( ex, "parse error: %s", line );
-				}
+			}catch( Throwable ex ){
+				ex.printStackTrace();
+				log.e( ex, "error." );
 			}
 		}
+
+		// 未取得状態のファイルを履歴から消す
+		if( RECORD_QUEUED_STATE ){
+			service.getContentResolver().delete(
+				DownloadRecord.meta.content_uri
+				, DownloadRecord.COL_STATE_CODE + "=?"
+				, new String[]{
+					Integer.toString( DownloadRecord.STATE_QUEUED )
+				}
+			);
+		}
+
+		setStatus( false, service.getString( R.string.thread_end ) );
 		callback.releaseWakeLock();
-		status.set( service.getString( R.string.thread_end ) );
 		callback.onThreadEnd( allow_stop_service );
 	}
-
 }

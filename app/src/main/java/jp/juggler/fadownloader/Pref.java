@@ -13,6 +13,7 @@ public class Pref{
 
 	// UI画面に表示されている情報の永続化
 	public static final String UI_REPEAT = "ui_repeat";
+	public static final String UI_LAST_PAGE = "ui_last_page";
 	public static final String UI_FLASHAIR_URL = "ui_flashair_url";
 	public static final String UI_FOLDER_URI = "ui_folder_uri";
 	public static final String UI_INTERVAL = "ui_interval";

@@ -69,8 +69,8 @@ public class LocalFile{
 	private ArrayList<Object> child_list;
 
 	// エントリを探索
-	private Object findChild( LogWriter log, String target_name ){
-		if( prepareFileList( log ) ){
+	private Object findChild( LogWriter log, boolean bCreate, String target_name ){
+		if( prepareFileList( log, bCreate ) ){
 			int start = 0;
 			int end = child_list.size();
 			while( ( end - start ) > 0 ){
@@ -94,11 +94,11 @@ public class LocalFile{
 		return null;
 	}
 
-	private boolean prepareFileList( LogWriter log ){
+	private boolean prepareFileList( LogWriter log, boolean bCreate ){
 		if( child_list == null ){
 			if( local_file == null && parent != null ){
-				if( parent.prepareDirectory( log ) ){
-					local_file = parent.findChild( log, name );
+				if( parent.prepareDirectory( log, bCreate ) ){
+					local_file = parent.findChild( log, bCreate, name );
 				}
 			}
 			if( local_file != null ){
@@ -129,12 +129,12 @@ public class LocalFile{
 		return child_list != null;
 	}
 
-	private boolean prepareDirectory( LogWriter log ){
+	private boolean prepareDirectory( LogWriter log, boolean bCreate ){
 		try{
 			if( local_file == null && parent != null ){
-				if( parent.prepareDirectory( log ) ){
-					local_file = parent.findChild( log, name );
-					if( local_file == null ){
+				if( parent.prepareDirectory( log, bCreate ) ){
+					local_file = parent.findChild( log, bCreate, name );
+					if( local_file == null && bCreate ){
 						log.i( R.string.folder_create, name );
 						if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
 							local_file = ( (DocumentFile) parent.local_file ).createDirectory( name );
@@ -157,12 +157,12 @@ public class LocalFile{
 	}
 
 	@SuppressWarnings( "BooleanMethodIsAlwaysInverted" )
-	public boolean prepareFile( LogWriter log ){
+	public boolean prepareFile( LogWriter log, boolean bCreate ){
 		try{
 			if( local_file == null && parent != null ){
-				if( parent.prepareDirectory( log ) ){
-					local_file = parent.findChild( log, name );
-					if( local_file == null ){
+				if( parent.prepareDirectory( log, bCreate ) ){
+					local_file = parent.findChild( log, bCreate, name );
+					if( local_file == null && bCreate ){
 						if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
 							local_file = ( (DocumentFile) parent.local_file ).createFile( "application/octet-stream", name );
 						}else{
@@ -181,12 +181,15 @@ public class LocalFile{
 		return local_file != null;
 	}
 
-	public long length(){
-		if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
-			return ( (DocumentFile) local_file ).length();
-		}else{
-			return ( (File) local_file ).length();
+	public long length( LogWriter log, boolean bCreate ){
+		if( prepareFile( log, bCreate ) ){
+			if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
+				return ( (DocumentFile) local_file ).length();
+			}else{
+				return ( (File) local_file ).length();
+			}
 		}
+		return 0L;
 	}
 
 	public OutputStream openOutputStream( Context context ) throws FileNotFoundException{
@@ -225,8 +228,8 @@ public class LocalFile{
 		}
 	}
 
-	public String getFileUri(LogWriter log){
-		if( !prepareFile( log) ) return null;
+	public String getFileUri( LogWriter log ,boolean bCreate){
+		if( ! prepareFile( log ,bCreate) ) return null;
 		if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
 			return ( (DocumentFile) local_file ).getUri().toString();
 		}else{

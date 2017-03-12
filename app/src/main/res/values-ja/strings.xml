@@ -132,4 +132,11 @@
     <string name="non_primary_storage_viewer">non-primary storageのデータを開けない場合、プリインストールされたビューアを試してください\n</string>
     <string name="reload">更新</string>
     <string name="ssid_picker">SSIDの選択</string>
+    <string name="download_cancelled">ダウンロード中断</string>
+    <string name="download_completed">ダウンロード完了</string>
+    <string name="queued">未取得</string>
+    <string name="remain">残り</string>
+    <string name="send">送る</string>
+    <string name="view">見る</string>
+    <string name="progress">進捗</string>
 </resources>

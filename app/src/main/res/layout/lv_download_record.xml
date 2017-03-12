@@ -2,32 +2,48 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:paddingBottom="8dp"
+    android:paddingTop="8dp"
     >
 
-    <TextView
-        android:id="@+id/tvTime"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+    <ImageView
+        android:id="@+id/ivThumbnail"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_marginRight="12dp"
+        android:layout_marginEnd="12dp"
+        android:scaleType="fitCenter"
         />
 
-    <TextView
-        android:id="@+id/tvAirPath"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        />
+        android:layout_weight="1"
+        android:orientation="vertical"
+        >
 
-    <TextView
-        android:id="@+id/tvLocalFile"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        />
+        <TextView
+            android:id="@+id/tvName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            />
 
-    <TextView
-        android:id="@+id/tvStateCode"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        />
+        <TextView
+            android:id="@+id/tvStateCode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            />
+
+        <TextView
+            android:id="@+id/tvTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            />
+   </LinearLayout>
 
 </LinearLayout>

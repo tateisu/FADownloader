@@ -126,8 +126,13 @@ public class ActMain
 			mAdView.pause();
 		}
 
+		SharedPreferences.Editor e = Pref.pref(this).edit();
+		e.putInt(Pref.UI_LAST_PAGE, pager.getCurrentItem() );
+
 		PageSetting page = pager_adapter.getPage( page_idx_setting );
-		if( page != null ) page.ui_value_save();
+		if( page != null ) page.ui_value_save(e);
+
+		e.apply();
 
 		super.onPause();
 	}
@@ -298,6 +303,7 @@ public class ActMain
 		page_idx_record = pager_adapter.addPage( getString( R.string.download_record ), R.layout.page_record, PageRecord.class );
 		page_idx_other = pager_adapter.addPage( getString( R.string.other ), R.layout.page_other, PageOther.class );
 		pager.setAdapter( pager_adapter );
+		pager.setCurrentItem( Pref.pref(this).getInt(Pref.UI_LAST_PAGE,0) );
 
 		mGoogleApiClient = new GoogleApiClient.Builder( this )
 			.addConnectionCallbacks( connection_callback )
@@ -406,14 +412,16 @@ public class ActMain
 	// 転送サービスを開始
 	void download_start_button( boolean repeat ){
 
-		// UIフォームの値を設定に保存
-		PageSetting page = pager_adapter.getPage( page_idx_setting );
-		if( page != null ){
-			page.ui_value_save();
-		}
+		SharedPreferences.Editor e = Pref.pref(this).edit();
 
 		//repeat引数の値は、LocationSettingの確認が終わるまで覚えておく必要がある
-		Pref.pref( this ).edit().putBoolean( Pref.UI_REPEAT, repeat ).apply();
+		e.putBoolean( Pref.UI_REPEAT, repeat );
+
+		// UIフォームの値を設定に保存
+		PageSetting page = pager_adapter.getPage( page_idx_setting );
+		if( page != null ) page.ui_value_save(e);
+
+		e.apply();
 
 		if( Pref.pref( this ).getInt( Pref.UI_LOCATION_MODE, - 1 ) == LocationTracker.NO_LOCATION_UPDATE ){
 			// 位置情報を使わないオプションの時はLocationSettingをチェックしない

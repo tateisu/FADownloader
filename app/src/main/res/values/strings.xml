@@ -139,5 +139,12 @@
     <string name="non_primary_storage_viewer">if you can not show image on non-primary storage, please try pre-installed image viewer.</string>
     <string name="reload">reload</string>
     <string name="ssid_picker">SSID picker</string>
+    <string name="view">view</string>
+    <string name="send">send</string>
+    <string name="download_completed">download completed</string>
+    <string name="download_cancelled">download cancelled</string>
+    <string name="queued">queued</string>
+    <string name="remain">remain</string>
+    <string name="progress">progress</string>
 
 </resources>
