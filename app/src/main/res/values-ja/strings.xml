@@ -16,7 +16,7 @@
     <string name="url_not_ok">FlashAir URLを指定してください</string>
     <string name="interval_not_ok">Repeat Intervalを1以上で指定してください</string>
     <string name="file_type_empty">ファイル拡張子を1つ以上指定してください</string>
-    <string name="log_clear">ログ消去</string>
+    <string name="log_clear">ログを消去</string>
     <string name="question">\?</string>
     <string name="close">閉じる</string>
     <string name="help_repeat_interval_text">Repeat IntervalにはREPEAT時の巡回間隔を秒数で指定します。\nデフォルトは30です。\nFlashAirは無線LANにアクセスがない場合に自動的に電源を切るタイムアウト(デフォルト300秒)が存在するため、それより少ない数字を指定することをオススメします。\n</string>
