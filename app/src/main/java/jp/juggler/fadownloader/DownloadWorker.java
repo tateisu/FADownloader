@@ -18,13 +18,27 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
+import com.neovisionaries.ws.client.OpeningHandshakeException;
+import com.neovisionaries.ws.client.WebSocket;
+import com.neovisionaries.ws.client.WebSocketAdapter;
+import com.neovisionaries.ws.client.WebSocketException;
+import com.neovisionaries.ws.client.WebSocketFactory;
+import com.neovisionaries.ws.client.WebSocketFrame;
+import com.neovisionaries.ws.client.WebSocketState;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import it.sephiroth.android.library.exif2.ExifInterface;
 
-import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -180,34 +194,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		return list;
 	}
 
-	// static final long ERROR_BREAK = -1L;
-	static final long ERROR_CONTINUE = - 2L;
-
-	long getFlashAirUpdateStatus( Object network ){
-		String cgi_url = flashair_url + "command.cgi?op=121";
-		byte[] data = client.getHTTP( log, network, cgi_url );
-		if( isCancelled() ) return ERROR_CONTINUE;
-
-		if( data == null ){
-			if( client.last_error.contains( "UnknownHostException" ) ){
-				client.last_error = service.getString( R.string.flashair_host_error );
-				cancel( service.getString( R.string.flashair_host_error_short ) );
-			}else if( client.last_error.contains( "ENETUNREACH" ) ){
-				client.last_error = service.getString( R.string.network_unreachable );
-				cancel( service.getString( R.string.network_unreachable ) );
-			}
-			log.e( R.string.flashair_update_check_failed, cgi_url, client.last_error );
-			return ERROR_CONTINUE;
-		}
-		try{
-			//noinspection ConstantConditions
-			return Long.parseLong( Utils.decodeUTF8( data ).trim() );
-		}catch( Throwable ex ){
-			log.e( R.string.flashair_update_status_error );
-			cancel( service.getString( R.string.flashair_update_status_error ) );
-			return ERROR_CONTINUE;
-		}
-	}
+	/////////////////////////////////////////
 
 	static class ErrorAndMessage{
 
@@ -345,122 +332,112 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		}
 	}
 
-	static final Pattern reLine = Pattern.compile( "([^\\x0d\\x0a]+)" );
-	static final Pattern reAttr = Pattern.compile( ",(\\d+),(\\d+),(\\d+),(\\d+)$" );
-
 	LinkedList<Item> job_queue = null;
-	long flashair_update_status = 0L;
 	boolean file_error = false;
 
-	void loadFolder( Object network, Item item ){
-
-		// フォルダを読む
-		String cgi_url = flashair_url + "command.cgi?op=100&DIR=" + Uri.encode( item.air_path );
+	boolean loadFolder( Object network ){
+		String cgi_url = flashair_url + "v1/photos";
 		byte[] data = client.getHTTP( log, network, cgi_url );
-		if( isCancelled() ) return;
-
+		if( isCancelled() ) return false;
 		if( data == null ){
 			if( client.last_error.contains( "UnknownHostException" ) ){
 				client.last_error = service.getString( R.string.flashair_host_error );
-				cancel( service.getString( R.string.flashair_host_error_short ) );
 			}else if( client.last_error.contains( "ENETUNREACH" ) ){
 				client.last_error = service.getString( R.string.network_unreachable );
-				cancel( service.getString( R.string.network_unreachable ) );
 			}
-			log.e( R.string.folder_list_failed, item.air_path, cgi_url, client.last_error );
-			file_error = true;
-			return;
+			log.e( R.string.folder_list_failed, "/", cgi_url, client.last_error );
+			return false;
 		}
+		// job_queue.add( new Item( "/", new LocalFile( service, folder_uri ), false, 0L ) );
 
-		Matcher mLine;
 		try{
-			//noinspection ConstantConditions
-			mLine = reLine.matcher( Utils.decodeUTF8( data ) );
-		}catch( Throwable ex ){
-			ex.printStackTrace();
-			log.e( ex, "folder list parse error." );
-			return;
-		}
+			JSONObject info = new JSONObject( Utils.decodeUTF8( data ) );
+			if( info.optInt( "errCode", 0 ) != 200 ){
+				throw new RuntimeException( "server's errMsg:" + info.optString( "errMsg" ) );
+			}
+			JSONArray root_dir = info.optJSONArray( "dirs" );
+			if( root_dir == null ){
+				log.e( "missing root folder." );
+				return false;
+			}
+			LocalFile local_root = new LocalFile( service, folder_uri );
+			job_queue = new LinkedList<>();
+			for( int i = 0, ie = root_dir.length() ; i < ie ; ++ i ){
 
-		while( ! isCancelled() && mLine.find() ){
-			String line = mLine.group( 1 );
-			Matcher mAttr = reAttr.matcher( line );
-			if( ! mAttr.find() ) continue;
+				Object o = root_dir.opt( i );
+				if( ! ( o instanceof JSONObject ) ) continue;
+				JSONObject subdir = (JSONObject) o;
 
-			try{
-				long size = Long.parseLong( mAttr.group( 1 ), 10 );
-				int attr = Integer.parseInt( mAttr.group( 2 ), 10 );
-//							int date = Integer.parseInt( mAttr.group( 3 ), 10 );
-//							int time = Integer.parseInt( mAttr.group( 4 ), 10 );
+				String sub_dir_name = subdir.optString( "name", null );
+				if( TextUtils.isEmpty( sub_dir_name ) ) continue;
 
-				// https://flashair-developers.com/ja/support/forum/#/discussion/3/%E3%82%AB%E3%83%B3%E3%83%9E%E5%8C%BA%E5%88%87%E3%82%8A
-				String dir = ( item.air_path.equals( "/" ) ? "" : item.air_path );
-				String file_name = line.substring( dir.length() + 1, mAttr.start() );
+				LocalFile sub_dir_local = new LocalFile( local_root, sub_dir_name );
+				JSONArray files = subdir.optJSONArray( "files" );
+				if( files == null ) continue;
 
-				if( ( attr & 2 ) != 0 ){
-					// skip hidden file
-					continue;
-				}else if( ( attr & 4 ) != 0 ){
-					// skip system file
-					continue;
-				}
-
-				String child_air_path = dir + "/" + file_name;
-				final LocalFile local_child = new LocalFile( item.local_file, file_name );
-
-				if( ( attr & 0x10 ) != 0 ){
-					// フォルダはキューの頭に追加
-					job_queue.addFirst( new Item( child_air_path, local_child, false, 0L ) );
-				}else{
+				for( int j = 0, je = files.length() ; j < je ; ++ j ){
+					String fname = files.optString( j );
+					if( TextUtils.isEmpty( fname ) ) continue;
+					// file type matching
 					for( Pattern re : file_type_list ){
-						if( ! re.matcher( file_name ).find() ) continue;
+						if( ! re.matcher( fname ).find() ) continue;
 						// マッチした
 
-						// ローカルのファイルサイズを調べて既読スキップ
-						if( local_child.length( log, false ) >= size ) continue;
+						String child_air_path = "/" + sub_dir_name + "/" + fname;
+						LocalFile local_file = new LocalFile( sub_dir_local, fname );
+						long size = 1L; // PentaxのAPIだとこの時点ではサイズ不明
 
-						// ファイルはキューの末尾に追加
-						job_queue.addLast( new Item( child_air_path, local_child, true, size ) );
+						// ローカルにあるファイルのサイズが1以上ならスキップする
+						final long local_size = local_file.length( log, false );
+						if( local_size < size ){
 
-						if( RECORD_QUEUED_STATE ){
-							// 未取得のデータを履歴に表示する
-							DownloadRecord.insert(
-								service.getContentResolver()
-								, cv
-								, file_name
-								, child_air_path
-								, "" // local file uri
-								, DownloadRecord.STATE_QUEUED
-								, "queued."
-								, 0L
-								, size
-							);
+							// ファイルはキューの末尾に追加
+							job_queue.addLast( new Item( child_air_path, local_file, true, size ) );
+
+							if( RECORD_QUEUED_STATE ){
+								// 未取得のデータを履歴に表示する
+								DownloadRecord.insert(
+									service.getContentResolver()
+									, cv
+									, fname
+									, child_air_path
+									, "" // local file uri
+									, DownloadRecord.STATE_QUEUED
+									, "queued."
+									, 0L
+									, size
+								);
+							}
 						}
+
 						break;
 					}
 				}
-			}catch( Throwable ex ){
-				ex.printStackTrace();
-				log.e( ex, "folder list parse error: %s", line );
 			}
+			log.i( "%s files queued.", job_queue.size() );
+			return true;
+		}catch( Throwable ex ){
+			log.e( ex, R.string.camera_file_list_parse_error );
 		}
+		job_queue = null;
+		return false;
 	}
 
-	private void loadFile( Object network, Item item ){
+	void loadFile( Object network, Item item ){
 		long time_start = SystemClock.elapsedRealtime();
-		final String child_air_path = item.air_path;
-		final LocalFile local_child = item.local_file;
-		final String file_name = new File( item.air_path ).getName();
+		final String remote_path = item.air_path;
+		final LocalFile local_file = item.local_file;
+		final String file_name = local_file.getName();
 
 		try{
 
-			if( ! local_child.prepareFile( log, true ) ){
+			if( ! local_file.prepareFile( log, true ) ){
 				log.e( "%s//%s :skip. can not prepare local file.", item.air_path, file_name );
 				DownloadRecord.insert(
 					service.getContentResolver()
 					, cv
 					, file_name
-					, child_air_path
+					, remote_path
 					, "" // local file uri
 					, DownloadRecord.STATE_LOCAL_FILE_PREPARE_ERROR
 					, "can not prepare local file."
@@ -470,13 +447,15 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				return;
 			}
 
-			final String get_url = flashair_url + Uri.encode( child_air_path );
+			final String get_url = flashair_url + "v1/photos" + Uri.encode( remote_path, "/_" ) + "?size=full";
 			byte[] data = client.getHTTP( log, network, get_url, new HTTPClientReceiver(){
+
 				final byte[] buf = new byte[ 2048 ];
 
 				public byte[] onHTTPClientStream( LogWriter log, CancelChecker cancel_checker, InputStream in, int content_length ){
 					try{
-						OutputStream os = local_child.openOutputStream( service );
+
+						OutputStream os = local_file.openOutputStream( service );
 						if( os == null ){
 							log.e( "cannot open local output file." );
 						}else{
@@ -512,8 +491,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 					service.getContentResolver()
 					, cv
 					, file_name
-					, child_air_path
-					, local_child.getFileUri( log, false )
+					, remote_path
+					, local_file.getFileUri( log, false )
 					, DownloadRecord.STATE_CANCELLED
 					, "download cancelled."
 					, SystemClock.elapsedRealtime() - time_start
@@ -523,6 +502,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			}
 
 			if( data == null ){
+				local_file.delete();
 				log.e( "FILE %s :HTTP error %s", file_name, client.last_error );
 
 				if( client.last_error.contains( "UnknownHostException" ) ){
@@ -536,8 +516,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 					service.getContentResolver()
 					, cv
 					, file_name
-					, child_air_path
-					, local_child.getFileUri( log, false )
+					, remote_path
+					, local_file.getFileUri( log, false )
 					, DownloadRecord.STATE_DOWNLOAD_ERROR
 					, client.last_error
 					, SystemClock.elapsedRealtime() - time_start
@@ -554,13 +534,13 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 			Location location = callback.getLocation();
 			if( location != null && reJPEG.matcher( file_name ).find() ){
-				ErrorAndMessage em = updateFileLocation( location, local_child );
+				ErrorAndMessage em = updateFileLocation( location, local_file );
 				DownloadRecord.insert(
 					service.getContentResolver()
 					, cv
 					, file_name
-					, child_air_path
-					, local_child.getFileUri( log, false )
+					, remote_path
+					, local_file.getFileUri( log, false )
 					, em.bError ? DownloadRecord.STATE_EXIF_MANGLING_ERROR : DownloadRecord.STATE_COMPLETED
 					, "location data: " + em.message
 					, SystemClock.elapsedRealtime() - time_start
@@ -571,8 +551,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 					service.getContentResolver()
 					, cv
 					, file_name
-					, child_air_path
-					, local_child.getFileUri( log, false )
+					, remote_path
+					, local_file.getFileUri( log, false )
 					, DownloadRecord.STATE_COMPLETED
 					, "OK"
 					, SystemClock.elapsedRealtime() - time_start
@@ -588,8 +568,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				service.getContentResolver()
 				, cv
 				, file_name
-				, child_air_path
-				, local_child.getFileUri( log, false )
+				, remote_path
+				, local_file.getFileUri( log, false )
 				, DownloadRecord.STATE_DOWNLOAD_ERROR
 				, LogWriter.formatError( ex, "?" )
 				, SystemClock.elapsedRealtime() - time_start
@@ -655,56 +635,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 		while( ! isCancelled() ){
 
-			// 古いアラームがあれば除去
-			try{
-				PendingIntent pi = Utils.createAlarmPendingIntent( service );
-				AlarmManager am = (AlarmManager) service.getSystemService( Context.ALARM_SERVICE );
-				am.cancel( pi );
-			}catch( Throwable ex ){
-				ex.printStackTrace();
-			}
-
-			if( job_queue == null ){
-				// 指定時刻まで待機する
-				while( ! isCancelled() ){
-					long now = System.currentTimeMillis();
-					long last_file_listing = Pref.pref( service ).getLong( Pref.LAST_IDLE_START, 0L );
-					long remain = last_file_listing + interval * 1000L - now;
-					if( remain <= 0 ) break;
-
-					if( remain < ( 15 * 1000L ) ){
-						setStatus( false, service.getString( R.string.wait_short, Utils.formatTimeDuration( remain ) ) );
-						waitEx( remain > 1000L ? 1000L : remain );
-					}else{
-						try{
-							PendingIntent pi = Utils.createAlarmPendingIntent( service );
-
-							AlarmManager am = (AlarmManager) service.getSystemService( Context.ALARM_SERVICE ); // AlarmManager取得
-							/*
-							if( Build.VERSION.SDK_INT >= 23 ){
-								am.setExactAndAllowWhileIdle( AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime(), pi );
-								// レシーバーは受け取れるが端末のIDLE状態は解除されない。アプリが動けるのは10秒。IDLEからの復帰は15分に1度だけ許される
-							}else
-							*/
-							if( Build.VERSION.SDK_INT >= 21 ){
-								am.setAlarmClock( new AlarmManager.AlarmClockInfo( now + remain, pi ), pi );
-							}else if( Build.VERSION.SDK_INT >= 19 ){
-								am.setExact( AlarmManager.RTC_WAKEUP, now + remain, pi );
-							}else{
-								am.set( AlarmManager.RTC_WAKEUP, now + remain, pi );
-							}
-						}catch( Throwable ex ){
-							ex.printStackTrace();
-							log.e( "待機の設定に失敗 %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
-						}
-						cancel( service.getString( R.string.wait_alarm, Utils.formatTimeDuration( remain ) ) );
-						break;
-					}
-				}
-				if( isCancelled() ) break;
-				// 待機が終わった
-			}
-
+			// WakeLockやWiFiLockを確保
 			callback.acquireWakeLock();
 
 			// 通信状態の確認
@@ -730,28 +661,74 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			}
 			if( isCancelled() ) break;
 
+			// WebSocketが閉じられていたら後処理をする
+			if( ws_client != null && ws_client.getState() == WebSocketState.CLOSED ){
+				setStatus( false, "WebSocket closing" );
+				ws_client.removeListener( ws_listener );
+				ws_client.disconnect();
+				ws_client = null;
+			}
+			if( isCancelled() ) break;
+
+			// WebSocketがなければ開く
+			if( ws_client == null ){
+				setStatus( false, "WebSocket creating" );
+				try{
+					WebSocketFactory factory = new WebSocketFactory();
+					ws_client = factory.createSocket( flashair_url + "v1/changes", 5000 );
+					ws_client.addListener( ws_listener );
+					ws_client.connect();
+					waitEx( 2000L );
+				}catch( OpeningHandshakeException ex ){
+					ex.printStackTrace();
+					log.e( ex, "WebSocket connection failed(1)." );
+					waitEx( 5000L );
+					continue;
+				}catch( WebSocketException ex ){
+					ex.printStackTrace();
+					log.e( ex, "WebSocket connection failed(2)." );
+					waitEx( 5000L );
+					continue;
+				}catch( IOException ex ){
+					ex.printStackTrace();
+					log.e( ex, "WebSocket connection failed(3)." );
+					waitEx( 5000L );
+					continue;
+				}
+			}
+			if( isCancelled() ) break;
+
+			long now = System.currentTimeMillis();
+			long remain;
+			if( mIsCameraBusy.get() ){
+				// ビジー状態なら待機を続ける
+				setStatus( false, "camera is busy." );
+				remain = 2000L;
+			}else if( now - mLastBusyTime.get() < 2000L ){
+				// ビジーが終わっても数秒は待機を続ける
+				setStatus( false, "camera was busy." );
+				remain = mLastBusyTime.get() + 2000L - now;
+			}else if( now - mCameraUpdateTime.get() < 2000L ){
+				// カメラが更新された後数秒は待機する
+				setStatus( false, "waiting camera storage." );
+				remain = mCameraUpdateTime.get() + 2000L - now;
+			}else if( job_queue != null ){
+				// キューにある項目を処理する
+				remain = 0L;
+			}else{
+				// キューがカラなら、最後にファイル一覧を取得した時刻から一定は待つ
+				remain = mLastFileListed.get() + interval * 1000L - now;
+				setStatus( false, service.getString( R.string.wait_short, Utils.formatTimeDuration( remain ) ) );
+			}
+			if( remain > 0 ){
+				waitEx( remain < 1000L ? remain : 1000L );
+				if( isCancelled() ) break;
+				continue;
+			}
+
 			// ファイルスキャンの開始
 			if( job_queue == null ){
 				Pref.pref( service ).edit().putLong( Pref.LAST_IDLE_START, System.currentTimeMillis() ).apply();
-
-				// FlashAir アップデートステータスを確認
-				setStatus( false, service.getString( R.string.flashair_update_status_check ) );
-				flashair_update_status = getFlashAirUpdateStatus( network );
-				if( flashair_update_status == ERROR_CONTINUE ){
-					continue;
-				}else{
-					long old = Pref.pref( service ).getLong( Pref.FLASHAIR_UPDATE_STATUS_OLD, - 1L );
-					if( flashair_update_status == old && old != - 1L ){
-						// 前回スキャン開始時と同じ数字なので変更されていない
-						log.d( R.string.flashair_not_updated );
-						continue;
-					}else{
-						log.d( "flashair updated %d %d"
-							, old
-							, flashair_update_status
-						);
-					}
-				}
 
 				// 未取得状態のファイルを履歴から消す
 				if( RECORD_QUEUED_STATE ){
@@ -765,8 +742,13 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				}
 
 				// フォルダスキャン開始
+				setStatus( false, service.getString( R.string.camera_file_listing ) );
 				job_queue = new LinkedList<>();
-				job_queue.add( new Item( "/", new LocalFile( service, folder_uri ), false, 0L ) );
+				if( ! loadFolder( network ) ){
+					job_queue = null;
+					continue;
+				}
+				mLastFileListed.set( System.currentTimeMillis() );
 				file_error = false;
 				queued_byte_count_max.set( Long.MAX_VALUE );
 			}
@@ -777,10 +759,6 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				setStatus( false, service.getString( R.string.file_scan_completed ) );
 				if( ! file_error ){
 					log.i( "ファイルスキャン完了" );
-					Pref.pref( service ).edit()
-						.putLong( Pref.FLASHAIR_UPDATE_STATUS_OLD, flashair_update_status )
-						.apply();
-
 					if( ! repeat ){
 						Pref.pref( service ).edit().putInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP ).apply();
 						cancel( service.getString( R.string.repeat_off ) );
@@ -800,12 +778,19 @@ public class DownloadWorker extends Thread implements CancelChecker{
 				}else{
 					setStatus( false, service.getString( R.string.progress_folder, head.air_path ) );
 					job_queue.removeFirst();
-					loadFolder( network, head );
+
 				}
 			}catch( Throwable ex ){
 				ex.printStackTrace();
 				log.e( ex, "error." );
 			}
+		}
+
+		// WebSocketの解除
+		if( ws_client != null ){
+			ws_client.removeListener( ws_listener );
+			ws_client.disconnect();
+			ws_client = null;
 		}
 
 		// 未取得状態のファイルを履歴から消す
@@ -823,4 +808,80 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		callback.releaseWakeLock();
 		callback.onThreadEnd( allow_stop_service );
 	}
+
+	AtomicLong mCameraUpdateTime = new AtomicLong( 0L );
+	AtomicLong mLastBusyTime = new AtomicLong( 0L );
+	AtomicBoolean mIsCameraBusy = new AtomicBoolean( false );
+	AtomicLong mLastFileListed = new AtomicLong( 0L );
+
+	WebSocket ws_client;
+	final WebSocketAdapter ws_listener = new WebSocketAdapter(){
+
+		@Override public void onUnexpectedError( WebSocket websocket, WebSocketException ex ) throws Exception{
+			super.onUnexpectedError( websocket, ex );
+			log.e( ex, "WebSocket onUnexpectedError" );
+		}
+
+		@Override public void onError( WebSocket websocket, WebSocketException ex ) throws Exception{
+			super.onError( websocket, ex );
+			log.e( ex, "WebSocket onError" );
+		}
+
+		@Override public void onConnectError( WebSocket websocket, WebSocketException ex ) throws Exception{
+			super.onConnectError( websocket, ex );
+			log.e( ex, "WebSocket onConnectError();" );
+		}
+
+		@Override public void onTextMessageError( WebSocket websocket, WebSocketException ex, byte[] data ) throws Exception{
+			super.onTextMessageError( websocket, ex, data );
+			log.e( ex, "WebSocket onTextMessageError" );
+		}
+
+		@Override public void onDisconnected( WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer ) throws Exception{
+			super.onDisconnected( websocket, serverCloseFrame, clientCloseFrame, closedByServer );
+			log.d( "WebSocket onDisconnects" );
+		}
+
+		@Override public void onConnected( WebSocket websocket, Map<String, List<String>> headers ) throws Exception{
+			super.onConnected( websocket, headers );
+			log.d( "WebSocket onConnect();" );
+		}
+
+		boolean bBusy = false;
+
+		@SuppressWarnings( "StatementWithEmptyBody" )
+		@Override public void onTextMessage( WebSocket websocket, String text ) throws Exception{
+			super.onTextMessage( websocket, text );
+			try{
+				JSONObject info = new JSONObject( text );
+				if( 200 == info.optInt( "errCode", 0 ) ){
+					String changed = info.optString( "changed" );
+					if( "camera".equals( changed ) ){
+						// 何もしていない状態でも定期的に発生する
+					}else if( "cameraDirect".equals( changed ) ){
+						bBusy = info.optBoolean( "capturing", false )
+							|| ! "idle".equals( info.optString( "stateStill" ) )
+							|| ! "idle".equals( info.optString( "stateMovie" ) )
+						;
+						if( bBusy && mIsCameraBusy.compareAndSet( false, true ) ){
+							// busy になった
+							mLastBusyTime.set( System.currentTimeMillis() );
+						}else if( ! bBusy && mIsCameraBusy.compareAndSet( true, false ) ){
+							// busyではなくなった
+							mLastBusyTime.set( System.currentTimeMillis() );
+						}
+					}else if( "storage".equals( changed ) ){
+						mLastFileListed.set( 0L );
+						mCameraUpdateTime.set( System.currentTimeMillis() );
+						notifyEx();
+					}else{
+						log.d( "WebSocket onTextMessage %s", text );
+					}
+				}
+			}catch( Throwable ex ){
+				ex.printStackTrace();
+				log.e( ex, "WebSocket message handling error." );
+			}
+		}
+	};
 }

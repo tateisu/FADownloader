@@ -40,7 +40,7 @@ public class Pref{
 		sv = pref.getString( Pref.UI_FLASHAIR_URL, null );
 		if( TextUtils.isEmpty( sv ) ){
 			bChanged = true;
-			e.putString( Pref.UI_FLASHAIR_URL, "http://flashair/" );
+			e.putString( Pref.UI_FLASHAIR_URL, "http://192.168.0.1/" );
 		}
 		//
 		sv = pref.getString( Pref.UI_INTERVAL, null );
@@ -84,7 +84,6 @@ public class Pref{
 	public static final int LAST_MODE_STOP = 0;
 	public static final int LAST_MODE_ONCE = 1;
 	public static final int LAST_MODE_REPEAT = 2;
-
 
 	// 最後にWorkerを手動開始した時の設定
 	public static final String WORKER_REPEAT = "worker_repeat";

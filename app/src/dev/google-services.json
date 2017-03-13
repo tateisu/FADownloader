@@ -67,6 +67,68 @@
           "status": 2
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694255757125:android:1ac161ce6666e76b",
+        "android_client_info": {
+          "package_name": "jp.juggler.kpdownloader"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "694255757125-emlsgvh237g3sr13ia92r70m08qkc16i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQYPC9qts5KMMc8_-9d79M9VwJsn1jkjE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694255757125:android:9fffc2ff8131ea88",
+        "android_client_info": {
+          "package_name": "jp.juggler.kpdownloader.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "694255757125-emlsgvh237g3sr13ia92r70m08qkc16i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQYPC9qts5KMMc8_-9d79M9VwJsn1jkjE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
     }
   ],
   "configuration_version": "1"

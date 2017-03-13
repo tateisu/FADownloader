@@ -7,7 +7,7 @@
         >
         <provider
             android:name="jp.juggler.fadownloader.DataProvider"
-            android:authorities="jp.juggler.fadownloader.data"
+            android:authorities="jp.juggler.kpdownloader.data"
             android:exported="false"
             />
     </application>
