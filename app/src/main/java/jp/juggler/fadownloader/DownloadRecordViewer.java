@@ -2,6 +2,8 @@ package jp.juggler.fadownloader;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -15,7 +17,9 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.BaseColumns;
 import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -245,25 +249,25 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 
 										rv = exif.getTagRationalValue( ExifInterface.TAG_FOCAL_LENGTH );
 										if( rv != null ){
-											sv =  String.format( "%.1f", rv.toDouble() ).replaceAll("\\.0*$","");
-											exif_list.add(sv+"mm" );
+											sv = String.format( "%.1f", rv.toDouble() ).replaceAll( "\\.0*$", "" );
+											exif_list.add( sv + "mm" );
 										}
 
 										rv = exif.getTagRationalValue( ExifInterface.TAG_F_NUMBER );
 										if( rv != null ){
-											sv =  String.format( "%.1f", rv.toDouble() ).replaceAll("\\.0*$","");
-											exif_list.add("F"+sv );
+											sv = String.format( "%.1f", rv.toDouble() ).replaceAll( "\\.0*$", "" );
+											exif_list.add( "F" + sv );
 										}
 
 										rv = exif.getTagRationalValue( ExifInterface.TAG_EXPOSURE_TIME );
 										if( rv != null ){
 											double dv = rv.toDouble();
 											if( dv > 0.25d ){
-												sv =  String.format( "%.1f", dv ).replaceAll("\\.0*$","");
-												exif_list.add( sv+"s");
+												sv = String.format( "%.1f", dv ).replaceAll( "\\.0*$", "" );
+												exif_list.add( sv + "s" );
 											}else{
-												sv =  String.format( "%.1f", 1/dv ).replaceAll("\\.0*$","");
-												exif_list.add( "1/"+sv+"s");
+												sv = String.format( "%.1f", 1 / dv ).replaceAll( "\\.0*$", "" );
+												exif_list.add( "1/" + sv + "s" );
 											}
 										}
 
@@ -643,6 +647,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 				tmp_info = fixFileURL( data );
 			}
 			if( tmp_info == null ) return;
+			registMediaURI( tmp_info );
 
 			Intent intent = new Intent( Intent.ACTION_VIEW );
 			if( tmp_info.mime_type != null ){
@@ -666,6 +671,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 				tmp_info = fixFileURL( data );
 			}
 			if( tmp_info == null ) return;
+			registMediaURI( tmp_info );
 
 			Intent intent = new Intent( Intent.ACTION_SEND );
 			if( tmp_info.mime_type != null ){
@@ -676,6 +682,42 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 		}catch( Throwable ex ){
 			ex.printStackTrace();
 			( (ActMain) activity ).showToast( true, LogWriter.formatError( ex, "send failed." ) );
+		}
+	}
+
+	private void registMediaURI( Utils.FileInfo tmp_info ){
+		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ){
+			if( ! "file".equals( tmp_info.uri.getScheme() ) ) return;
+			String path = tmp_info.uri.getPath();
+			Uri files_uri = MediaStore.Files.getContentUri( "external" );
+			ContentResolver cr = activity.getContentResolver();
+			Cursor cursor = cr.query(
+				files_uri
+				, null
+				, MediaStore.Files.FileColumns.DATA + "=?"
+				, new String[]{ path }
+				, null
+			);
+			if( cursor != null ){
+				try{
+					if( cursor.moveToFirst() ){
+						int colidx_id = cursor.getColumnIndex( BaseColumns._ID );
+						long id = cursor.getLong( colidx_id );
+						tmp_info.uri = Uri.parse( files_uri.toString() + "/" + id );
+						return;
+					}
+				}finally{
+					cursor.close();
+				}
+			}
+			ContentValues cv = new ContentValues(  );
+			String name = new File(path).getName();
+			cv.put(MediaStore.Files.FileColumns.DATA,path);
+			cv.put(MediaStore.Files.FileColumns.DISPLAY_NAME,name);
+			cv.put(MediaStore.Files.FileColumns.TITLE,name);
+			cv.put(MediaStore.Files.FileColumns.MIME_TYPE,tmp_info.mime_type);
+			Uri new_uri = cr.insert(files_uri,cv);
+			if(new_uri !=null ) tmp_info.uri = new_uri;
 		}
 	}
 
