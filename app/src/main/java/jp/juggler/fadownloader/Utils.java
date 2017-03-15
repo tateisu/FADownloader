@@ -489,7 +489,7 @@ public class Utils{
 		}
 	}
 
-	static @NonNull Map<String,String> getSecondaryStorageVolumesMap( Context context){
+	static @NonNull Map<String, String> getSecondaryStorageVolumesMap( Context context ){
 		Map<String, String> result = new HashMap<>();
 		try{
 
@@ -506,7 +506,7 @@ public class Utils{
 
 			Method getVolumeList = sm.getClass().getMethod( "getVolumeList" );
 			Object[] volumes = (Object[]) getVolumeList.invoke( sm );
-		//
+			//
 			for( Object volume : volumes ){
 				Class<?> volume_clazz = volume.getClass();
 
@@ -521,10 +521,21 @@ public class Utils{
 					if( ! TextUtils.isEmpty( uuid ) ) result.put( uuid, path );
 				}
 			}
-		}catch(Throwable ex){
-			ex.printStackTrace(  );
+		}catch( Throwable ex ){
+			ex.printStackTrace();
 		}
 		return result;
 	}
+
+	public static String toCamelCase( String src ){
+		StringBuilder sb = new StringBuilder();
+		for( String s : src.split( "_" ) ){
+			if( TextUtils.isEmpty( s ) ) continue;
+			sb.append( Character.toUpperCase( s.charAt( 0 ) ) );
+			sb.append( s.substring( 1, s.length() ).toLowerCase() );
+		}
+		return sb.toString();
+	}
+
 }
 

@@ -1,5 +1,6 @@
 package jp.juggler.fadownloader;
 
+import android.content.Context;
 import android.location.Location;
 import android.support.annotation.NonNull;
 
@@ -60,10 +61,12 @@ public class LocationTracker implements LocationListener{
 		}
 	}
 
-	interface Callback {
-		void onLocationChanged(Location location);
+	interface Callback{
+
+		void onLocationChanged( Location location );
 	}
 
+	final Context context;
 	final Callback callback;
 	final LogWriter log;
 	final GoogleApiClient mGoogleApiClient;
@@ -71,7 +74,8 @@ public class LocationTracker implements LocationListener{
 	Setting location_setting;
 	boolean is_disposed = false;
 
-	public LocationTracker( LogWriter log, GoogleApiClient client ,Callback callback){
+	public LocationTracker( Context context, LogWriter log, GoogleApiClient client, Callback callback ){
+		this.context = context;
 		this.log = log;
 		this.mGoogleApiClient = client;
 		this.callback = callback;
@@ -100,6 +104,25 @@ public class LocationTracker implements LocationListener{
 
 	private boolean isTracked = false;
 
+	public String getStatus(){
+		if( ! isTracked ) return "OFF";
+		switch( location_setting.mode ){
+		default:
+			return "?";
+		case NO_LOCATION_UPDATE:
+			return context.getString( R.string.location_mode_0 );
+		case LOCATION_NO_POWER:
+			return context.getString( R.string.location_mode_1 );
+		case LOCATION_LOW_POWER:
+			return context.getString( R.string.location_mode_2 );
+		case LOCATION_BALANCED:
+			return context.getString( R.string.location_mode_3 );
+		case LOCATION_HIGH_ACCURACY:
+			return context.getString( R.string.location_mode_4 );
+
+		}
+	}
+
 	private void tracking_end(){
 		if( ! isTracked ) return;
 
@@ -123,7 +146,7 @@ public class LocationTracker implements LocationListener{
 			}
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			log.e( ex, "removeLocationUpdates() failed.");
+			log.e( ex, "removeLocationUpdates() failed." );
 		}finally{
 			isTracked = false;
 		}
@@ -131,7 +154,7 @@ public class LocationTracker implements LocationListener{
 
 	private void tracking_start(){
 
-		if( location_setting ==null || !location_setting.isUpdateRequired()){
+		if( location_setting == null || ! location_setting.isUpdateRequired() ){
 			return;
 		}
 
@@ -139,7 +162,7 @@ public class LocationTracker implements LocationListener{
 			log.d( "tracking_start: tracker is already disposed." );
 			return;
 		}
-		
+
 		if( ! mGoogleApiClient.isConnected() ){
 			log.d( "tracking_start: api not connected." );
 			return;
@@ -180,10 +203,10 @@ public class LocationTracker implements LocationListener{
 					}
 				} );
 			}catch( SecurityException ex ){
-				log.e( ex,"requestLocationUpdates() failed." );
+				log.e( ex, "requestLocationUpdates() failed." );
 			}catch( Throwable ex ){
 				ex.printStackTrace();
-				log.e( ex,"requestLocationUpdates() failed." );
+				log.e( ex, "requestLocationUpdates() failed." );
 			}
 		}
 	}

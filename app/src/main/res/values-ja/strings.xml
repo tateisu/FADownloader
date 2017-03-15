@@ -40,7 +40,7 @@
     <string name="unsupported_intent_received">未対応のインテント受信. action=%1$s</string>
     <string name="thread_running">スレッド実行中</string>
     <string name="service_not_running">サービス停止中。REPEATまたはONCEボタンを押すと開始します</string>
-    <string name="service_running_status">サービス起動中。WakeLock=%1$s, WiFiLock=%2$s\n</string>
+    <string name="service_running">サービス起動中。</string>
     <string name="thread_not_running_status">スレッド停止中。WiFi通信状態の変化や時間経過で開始するかも</string>
     <string name="thread_ctor_params">スレッド作成：パラメータ指定あり</string>
     <string name="thread_ctor_restart">スレッド再作成. event=%1$s</string>
@@ -53,7 +53,7 @@
     <string name="wait_short">短い待機 あと%1$s</string>
     <string name="wait_alarm">アラーム待機 あと%1$s</string>
     <string name="wifi_check">Wi-Fi確認中</string>
-    <string name="wifi_no_ap_associated">Wi-Fi APが選択されていません</string>
+    <string name="no_ap_associated">AP未選択</string>
     <string name="flashair_update_status_check">FlashAir更新チェック</string>
     <string name="flashair_host_error">接続先ホスト名を解決できません。もしかして：端末のWi-FiからFlashAirのAPに接続していない</string>
     <string name="flashair_host_error_short">FlashAirホストが見つからない</string>
@@ -100,7 +100,7 @@
     <string name="ssid_empty">SSIDを指定してください</string>
     <string name="wifi_ap_ssid">Wi-Fi APのSSID</string>
     <string name="wifi_current_connection">WI-Fi AP:SSID=%1$s,id=%2$s,priority=%3$s,state=%4$s</string>
-    <string name="wifi_not_enabled">現在 Wi-Fiが有効ではありません</string>
+    <string name="not_enabled">現在 Wi-Fiが有効ではありません</string>
     <string name="wifi_scan_start">Wi-Fiスキャンを開始しました</string>
     <string name="wifi_status_unknown">Wi-Fiの状態が不明です</string>
     <string name="wifi_target_ssid_not_found">Wi-Fi AP %1$s への接続設定がありません</string>
@@ -139,4 +139,5 @@
     <string name="help_thumbnail_auto_rotate">ダウンロード履歴に表示されるサムネイルを、Exifの回転情報を使って自動回転します。デフォルトはONです。</string>
     <string name="thumbnail">サムネイル</string>
     <string name="thumbnail_auto_rotate">サムネイルの自動回転</string>
+    <string name="network_status">通信状態: %1$s</string>
 </resources>

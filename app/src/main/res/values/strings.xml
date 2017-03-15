@@ -43,7 +43,7 @@
     <string name="unsupported_intent_received">unsupported intent received. action=%1$s</string>
     <string name="thread_running">thread running</string>
     <string name="service_not_running">service not running. press REPEAT or ONCE to start.</string>
-    <string name="service_running_status">service running. WakeLock=%1$s, WiFiLock=%2$s</string>
+    <string name="service_running">service running.</string>
     <string name="thread_not_running_status">thread not running. maybe start when Wi-Fi state changed, or alarm resumed.</string>
     <string name="thread_ctor_params">thread created with parameter.</string>
     <string name="thread_ctor_restart">thread restart. event=%1$s</string>
@@ -56,7 +56,7 @@
     <string name="wait_short">wait short time. remain=%1$s</string>
     <string name="wait_alarm">wait for alarm. remain=%1$s</string>
     <string name="wifi_check">Wi-Fi check</string>
-    <string name="wifi_no_ap_associated">Wi-Fi AP not associated.</string>
+    <string name="no_ap_associated">AP not associated.</string>
     <string name="flashair_update_status_check">FlashAir update check</string>
     <string name="flashair_host_error">could not resolve remote host. perhaps:device\'s Wi-Fi is not connected to FlashAir AP</string>
     <string name="flashair_host_error_short">missing FlashAir host.</string>
@@ -106,7 +106,7 @@
     <string name="help_force_wifi">Wi-Fi強制機能をONにしてFlashAir APのSSIDを入力すると、Wi-Fi接続がより安定します。\n・Wi-FiがOFFになっていたらONにします\n・指定したSSIDの優先度を上げます\n・指定したSSIDと現在の接続先が異なる場合、Wi-Fi APのスキャンを定期的に行います\n・指定したSSIDがスキャン結果に含まれる場合、そのWi-Fi AP に接続先を切り替えます\n</string>
     <string name="help_ssid">SSIDにはFlashAir Wi-Fi APのSSIDを指定してください\n</string>
     <string name="ssid_empty">SSID is empty.</string>
-    <string name="wifi_not_enabled">現在 Wi-Fiが有効ではありません</string>
+    <string name="not_enabled">無効</string>
     <string name="wifi_status_unknown">wifi status unknown</string>
     <string name="wifi_current_connection">WI-Fi AP:SSID=%1$s,id=%2$s,priority=%3$s,state=%4$s</string>
     <string name="wifi_target_ssid_not_found">Wi-Fi AP %1$s is not configured.</string>
@@ -146,5 +146,6 @@
     <string name="copy_before_view_send">copy before view/send</string>
     <string name="help_thumbnail_auto_rotate">ダウンロード履歴に表示されるサムネイルを、Exifの回転情報を使って自動回転します。デフォルトはONです。</string>
     <string name="help_copy_before_view_send">ダウンロード履歴から「見る/送る」で外部アプリを起動する際、Android OS バージョンによっては SDカードなどの non-primari storage へのアクセスが制限されるため、外部アプリがそのファイルを扱えないことがあります。\nこの設定をONにすると、外部アプリを開く際に、ファイルを端末のダウンロードフォルダにコピーして、コピー後のファイルURIを外部アプリに渡すようにします。\nデフォルトはOFFです。</string>
+    <string name="network_status">network status: %1$s</string>
 
 </resources>

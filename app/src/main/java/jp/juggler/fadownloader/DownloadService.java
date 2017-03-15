@@ -81,7 +81,7 @@ public class DownloadService extends Service{
 			.build();
 		mGoogleApiClient.connect();
 
-		location_tracker = new LocationTracker( log, mGoogleApiClient, new LocationTracker.Callback(){
+		location_tracker = new LocationTracker( this,log, mGoogleApiClient, new LocationTracker.Callback(){
 			@Override public void onLocationChanged( Location location ){
 				DownloadService.location = location;
 			}
@@ -286,11 +286,19 @@ public class DownloadService extends Service{
 		}
 
 		StringBuilder sb = new StringBuilder();
-		sb.append( context.getString( R.string.service_running_status
-			, service_instance.wake_lock.isHeld() ? "ON" : "OFF"
-			, service_instance.wifi_lock.isHeld() ? "ON" : "OFF"
-
-		) );
+		sb.append( context.getString( R.string.service_running ));
+		sb.append( "WakeLock=" )
+			.append( service_instance.wake_lock.isHeld() ? "ON" : "OFF" )
+			.append( ", " )
+		.append( "WiFiLock=" )
+			.append( service_instance.wifi_lock.isHeld() ? "ON" : "OFF" )
+			.append( ", " )
+		.append( "Location=" )
+			.append( service_instance.location_tracker.getStatus() )
+			.append( ", " )
+		.append( "Network=" );
+		service_instance.wifi_tracker.getStatus(sb);
+		sb.append('\n');
 
 		if( service_instance.worker == null || ! service_instance.worker.isAlive() ){
 			sb.append( context.getString( R.string.thread_not_running_status ) );
