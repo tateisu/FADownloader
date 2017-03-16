@@ -30,9 +30,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DownloadWorker extends Thread implements CancelChecker{
+public class DownloadWorker extends WorkerBase {
 
 	static final boolean RECORD_QUEUED_STATE = false;
+
+
+	public static final int TARGET_TYPE_FLASHAIR_AP = 0;
+	public static final int TARGET_TYPE_FLASHAIR_STA = 1;
 
 	public interface Callback{
 
@@ -51,7 +55,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 	final Callback callback;
 
 	final boolean repeat;
-	final String flashair_url;
+	String flashair_url;
 	final String folder_uri;
 	final int interval;
 	final String file_type;
@@ -59,6 +63,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 	final ArrayList<Pattern> file_type_list;
 	final boolean force_wifi;
 	final String ssid;
+	final int target_type;
 
 	public DownloadWorker( DownloadService service, Intent intent, Callback callback ){
 		this.service = service;
@@ -73,6 +78,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 		this.file_type = intent.getStringExtra( DownloadService.EXTRA_FILE_TYPE );
 		this.force_wifi = intent.getBooleanExtra( DownloadService.EXTRA_FORCE_WIFI, false );
 		this.ssid = intent.getStringExtra( DownloadService.EXTRA_SSID );
+		this.target_type =intent.getIntExtra( DownloadService.EXTRA_TARGET_TYPE, 0 );
 
 		LocationTracker.Setting location_setting = new LocationTracker.Setting();
 		location_setting.interval_desired = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_DESIRED, LocationTracker.DEFAULT_INTERVAL_DESIRED );
@@ -81,6 +87,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 		Pref.pref( service ).edit()
 			.putBoolean( Pref.WORKER_REPEAT, repeat )
+			.putInt( Pref.WORKER_TARGET_TYPE, target_type )
 			.putString( Pref.WORKER_FLASHAIR_URL, flashair_url )
 			.putString( Pref.WORKER_FOLDER_URI, folder_uri )
 			.putInt( Pref.WORKER_INTERVAL, interval )
@@ -94,7 +101,7 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 		file_type_list = file_type_parse();
 
-		service.wifi_tracker.updateSetting( force_wifi, ssid );
+		service.wifi_tracker.updateSetting( force_wifi, ssid ,target_type,flashair_url);
 
 		service.location_tracker.updateSetting( location_setting );
 	}
@@ -114,6 +121,8 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 		this.force_wifi = pref.getBoolean( Pref.WORKER_FORCE_WIFI, false );
 		this.ssid = pref.getString( Pref.WORKER_SSID, null );
+		this.target_type = pref.getInt( Pref.WORKER_TARGET_TYPE, 0);
+
 
 		LocationTracker.Setting location_setting = new LocationTracker.Setting();
 		location_setting.interval_desired = pref.getLong( Pref.WORKER_LOCATION_INTERVAL_DESIRED, LocationTracker.DEFAULT_INTERVAL_DESIRED );
@@ -122,44 +131,22 @@ public class DownloadWorker extends Thread implements CancelChecker{
 
 		file_type_list = file_type_parse();
 
-		service.wifi_tracker.updateSetting( force_wifi, ssid );
+		service.wifi_tracker.updateSetting( force_wifi, ssid  ,target_type ,flashair_url);
 
 		service.location_tracker.updateSetting( location_setting );
 	}
 
 	final HTTPClient client = new HTTPClient( 30000, 4, "HTTP Client", this );
-	final AtomicReference<String> cancel_reason = new AtomicReference<>( null );
 
-	@Override public boolean isCancelled(){
-		return cancel_reason.get() != null;
-	}
-
-	public void cancel( String reason ){
+	public boolean cancel( String reason ){
+		boolean rv = super.cancel( reason );
+		if( rv ) log.i( R.string.thread_cancelled, reason );
 		try{
-			if( cancel_reason.compareAndSet( null, reason ) ){
-				log.i( R.string.thread_cancelled, reason );
-			}
-			synchronized( this ){
-				notify();
-			}
 			client.cancel( log );
 		}catch( Throwable ex ){
 			ex.printStackTrace();
 		}
-	}
-
-	void waitEx( long ms ){
-		try{
-			synchronized( this ){
-				wait( ms );
-			}
-		}catch( Throwable ex ){
-			ex.printStackTrace();
-		}
-	}
-
-	public synchronized void notifyEx(){
-		notify();
+		return rv;
 	}
 
 	static final Pattern reJPEG = Pattern.compile( "\\.jp(g|eg?)\\z", Pattern.CASE_INSENSITIVE );
@@ -706,29 +693,58 @@ public class DownloadWorker extends Thread implements CancelChecker{
 			}
 
 			callback.acquireWakeLock();
+			Object network = null;
 
 			// 通信状態の確認
-			setStatus( false, service.getString( R.string.wifi_check ) );
+			setStatus( false, service.getString( R.string.network_check ) );
 			long network_check_start = SystemClock.elapsedRealtime();
-			Object network = null;
-			while( ! isCancelled() ){
-				network = getWiFiNetwork();
-				if( network != null ) break;
 
-				// 一定時間待機してもダメならスレッドを停止する
-				// 通信状態変化でまた起こされる
-				long er_now = SystemClock.elapsedRealtime();
-				if( er_now - network_check_start >= 60 * 1000L ){
-					// Pref.pref( service ).edit().putLong( Pref.LAST_IDLE_START, System.currentTimeMillis() ).apply();
-					job_queue = null;
-					cancel( service.getString( R.string.wifi_not_good ) );
-					break;
+			if( target_type == TARGET_TYPE_FLASHAIR_STA ){
+				while( ! isCancelled() ){
+					boolean tracker_last_result = service.wifi_tracker.last_result.get();
+					String air_url = service.wifi_tracker.last_flash_air_url.get();
+					if( tracker_last_result && air_url != null ){
+						this.flashair_url = air_url;
+						break;
+					}
+
+					// 一定時間待機してもダメならスレッドを停止する
+					// 通信状態変化でまた起こされる
+					long er_now = SystemClock.elapsedRealtime();
+					if( er_now - network_check_start >= 60 * 1000L ){
+						// Pref.pref( service ).edit().putLong( Pref.LAST_IDLE_START, System.currentTimeMillis() ).apply();
+						job_queue = null;
+						cancel( service.getString( R.string.network_not_good ) );
+						break;
+					}
+
+					// 少し待って再確認
+					waitEx( 10000L );
 				}
+			}else{
 
-				// 少し待って再確認
-				waitEx( 10000L );
+				while( ! isCancelled() ){
+					network = getWiFiNetwork();
+					if( network != null ) break;
+
+					// 一定時間待機してもダメならスレッドを停止する
+					// 通信状態変化でまた起こされる
+					long er_now = SystemClock.elapsedRealtime();
+					if( er_now - network_check_start >= 60 * 1000L ){
+						// Pref.pref( service ).edit().putLong( Pref.LAST_IDLE_START, System.currentTimeMillis() ).apply();
+						job_queue = null;
+						cancel( service.getString( R.string.network_not_good ) );
+						break;
+					}
+
+					// 少し待って再確認
+					waitEx( 10000L );
+				}
 			}
 			if( isCancelled() ) break;
+
+
+
 
 			// ファイルスキャンの開始
 			if( job_queue == null ){

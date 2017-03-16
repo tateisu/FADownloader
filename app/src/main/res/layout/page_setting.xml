@@ -23,6 +23,27 @@
         android:orientation="vertical"
         >
 
+        <View style="@style/setting_divider"/>
+
+        <TextView
+            style="@style/setting_row_label"
+            android:text="@string/target_type"
+            />
+
+        <LinearLayout style="@style/setting_row_form">
+
+            <Spinner
+                android:id="@+id/spTargetType"
+                style="@style/setting_horizontal_stretch"
+                />
+
+            <Button
+                android:id="@+id/btnTargetTypeHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
+
+        <View style="@style/setting_divider"/>
         <TextView
             style="@style/setting_row_label"
             android:labelFor="@+id/etURL"

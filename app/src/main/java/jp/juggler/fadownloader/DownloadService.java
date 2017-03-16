@@ -37,6 +37,7 @@ public class DownloadService extends Service{
 	static final String EXTRA_LOCATION_MODE = "location_mode";
 	static final String EXTRA_FORCE_WIFI = "force_wifi";
 	static final String EXTRA_SSID = "ssid";
+	static final String EXTRA_TARGET_TYPE = "target_type" ;
 
 	static final int NOTIFICATION_ID_SERVICE = 1;
 
@@ -369,4 +370,6 @@ public class DownloadService extends Service{
 	public static Location getLocation(){
 		return location;
 	}
+
+
 }

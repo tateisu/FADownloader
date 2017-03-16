@@ -494,6 +494,14 @@ public class ActMain
 		boolean repeat = pref.getBoolean( Pref.UI_REPEAT, false );
 
 		// 設定から値を読んでバリデーション
+
+
+		int target_type = pref.getInt( Pref.UI_TARGET_TYPE, - 1 );
+		if( target_type < 0 || target_type > LocationTracker.LOCATION_HIGH_ACCURACY ){
+			showToast( true, getString( R.string.target_type_invalid ) );
+			return;
+		}
+
 		String flashair_url = pref.getString( Pref.UI_FLASHAIR_URL, "" ).trim();
 		if( TextUtils.isEmpty( flashair_url ) ){
 			showToast( true, getString( R.string.url_not_ok ) );
@@ -593,6 +601,8 @@ public class ActMain
 		// 転送サービスを開始
 		Intent intent = new Intent( this, DownloadService.class );
 		intent.setAction( DownloadService.ACTION_START );
+
+		intent.putExtra( DownloadService.EXTRA_TARGET_TYPE, target_type );
 		intent.putExtra( DownloadService.EXTRA_REPEAT, repeat );
 		intent.putExtra( DownloadService.EXTRA_URI, flashair_url );
 		intent.putExtra( DownloadService.EXTRA_FOLDER_URI, folder_uri );

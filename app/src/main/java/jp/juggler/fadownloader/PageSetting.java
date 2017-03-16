@@ -30,6 +30,8 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 	EditText etSSID;
 	Switch swThumbnailAutoRotate;
 	Switch swCopyBeforeViewSend;
+	Spinner spTargetType;
+View btnSSIDPicker;
 
 	public PageSetting( Activity activity, View ignored ){
 		super( activity, ignored );
@@ -37,6 +39,7 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 
 	@Override protected void onPageCreate( int page_idx, View root ) throws Throwable{
 
+		spTargetType =(Spinner) root.findViewById( R.id.spTargetType );
 		etURL = (EditText) root.findViewById( R.id.etURL );
 		tvFolder = (TextView) root.findViewById( R.id.tvFolder );
 		etInterval = (EditText) root.findViewById( R.id.etInterval );
@@ -48,6 +51,7 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		etSSID = (EditText) root.findViewById( R.id.etSSID );
 		swThumbnailAutoRotate = (Switch) root.findViewById( R.id.swThumbnailAutoRotate );
 		swCopyBeforeViewSend = (Switch) root.findViewById( R.id.swCopyBeforeViewSend );
+		btnSSIDPicker = root.findViewById( R.id.btnSSIDPicker );
 
 		root.findViewById( R.id.btnFolderPicker ).setOnClickListener( this );
 		root.findViewById( R.id.btnFolderPickerHelp ).setOnClickListener( this );
@@ -62,6 +66,7 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		root.findViewById( R.id.btnSSIDPicker ).setOnClickListener( this );
 		root.findViewById( R.id.btnThumbnailAutoRotateHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnCopyBeforeViewSendHelp ).setOnClickListener( this );
+		root.findViewById( R.id.btnTargetTypeHelp ).setOnClickListener( this );
 
 		ArrayAdapter<CharSequence> location_mode_adapter = new ArrayAdapter<>(
 			activity
@@ -86,6 +91,29 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 				updateFormEnabled();
 			}
 		} );
+
+
+		ArrayAdapter<CharSequence> target_type_adapter = new ArrayAdapter<>(
+			activity
+			, android.R.layout.simple_spinner_item
+		);
+		target_type_adapter.setDropDownViewResource( R.layout.spinner_dropdown );
+
+		target_type_adapter.addAll(
+			activity.getString( R.string.target_type_0 ),
+			activity.getString( R.string.target_type_1 )
+		);
+		spTargetType.setAdapter( target_type_adapter );
+		spTargetType.setOnItemSelectedListener( new AdapterView.OnItemSelectedListener(){
+			@Override public void onItemSelected( AdapterView<?> parent, View view, int position, long id ){
+				updateFormEnabled();
+			}
+
+			@Override public void onNothingSelected( AdapterView<?> parent ){
+				updateFormEnabled();
+			}
+		} );
+
 		swForceWifi.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener(){
 			@Override public void onCheckedChanged( CompoundButton buttonView, boolean isChecked ){
 				updateFormEnabled();
@@ -160,6 +188,11 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		case R.id.btnCopyBeforeViewSendHelp:
 			( (ActMain) activity ).openHelp( activity.getString( R.string.help_copy_before_view_send ) );
 			break;
+		case R.id.btnTargetTypeHelp:
+			( (ActMain) activity ).openHelp( activity.getString( R.string.help_target_type ) );
+			break;
+
+
 		}
 	}
 
@@ -168,6 +201,9 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		SharedPreferences pref = Pref.pref( activity );
 		String sv;
 		int iv;
+		//
+		iv = pref.getInt( Pref.UI_TARGET_TYPE, - 1 );
+		if( iv >= 0 && iv < spTargetType.getCount() ) spTargetType.setSelection( iv );
 		//
 		sv = pref.getString( Pref.UI_FLASHAIR_URL, null );
 		if( sv != null ) etURL.setText( sv );
@@ -204,13 +240,18 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		etLocationIntervalDesired.setEnabled( location_enabled );
 		etLocationIntervalMin.setEnabled( location_enabled );
 
-		boolean force_wifi_enabled = swForceWifi.isChecked();
-		etSSID.setEnabled( force_wifi_enabled );
+		boolean force_wifi_enabled = spTargetType.getSelectedItemPosition() == 0;
+		swForceWifi.setEnabled( force_wifi_enabled );
+
+		boolean ssid_enabled = force_wifi_enabled && swForceWifi.isChecked();
+		etSSID.setEnabled( ssid_enabled );
+		btnSSIDPicker.setEnabled( ssid_enabled );
 	}
 
 	// UIフォームの値を設定ファイルに保存
 	void ui_value_save( SharedPreferences.Editor e ){
 		e
+			.putInt( Pref.UI_TARGET_TYPE, spTargetType.getSelectedItemPosition() )
 			.putString( Pref.UI_FLASHAIR_URL, etURL.getText().toString() )
 			.putString( Pref.UI_INTERVAL, etInterval.getText().toString() )
 			.putString( Pref.UI_FILE_TYPE, etFileType.getText().toString() )
