@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class WifiTracker{
+public class NetworkTracker{
 
 	interface Callback{
 
@@ -64,7 +64,7 @@ public class WifiTracker{
 
 	Worker worker;
 
-	public WifiTracker( Context context, LogWriter log, Callback callback ){
+	public NetworkTracker( Context context, LogWriter log, Callback callback ){
 		this.log = log;
 		this.context = context;
 		this.callback = callback;
@@ -628,9 +628,7 @@ public class WifiTracker{
 			while( ! isCancelled() ){
 				boolean result;
 				try{
-					log.h( "WifiTracker check start." );
 					result = keep_ap();
-					log.h( "WifiTracker check end." );
 					if( isCancelled() ) break;
 				}catch( Throwable ex ){
 					log.e( ex, "network check failed." );

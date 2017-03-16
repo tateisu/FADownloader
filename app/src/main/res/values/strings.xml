@@ -147,8 +147,15 @@
     <string name="help_thumbnail_auto_rotate">ダウンロード履歴に表示されるサムネイルを、Exifの回転情報を使って自動回転します。デフォルトはONです。</string>
     <string name="help_copy_before_view_send">ダウンロード履歴から「見る/送る」で外部アプリを起動する際、Android OS バージョンによっては SDカードなどの non-primari storage へのアクセスが制限されるため、外部アプリがそのファイルを扱えないことがあります。\nこの設定をONにすると、外部アプリを開く際に、ファイルを端末のダウンロードフォルダにコピーして、コピー後のファイルURIを外部アプリに渡すようにします。\nデフォルトはOFFです。</string>
     <string name="network_status">network status: %1$s</string>
-    <string name="target_type">target type</string>
-    <string name="help_target_type">target type にはダウンロードしたいデータのある対象の種別を指定してください</string>
+    <string name="target_type">Target Type</string>
+    <string name="help_target_type">Target Type には機器の種別を指定してください\n
+\n
+FlashAir APモードはFlashAirのAPにスマホを接続する場合に使います\n
+このモードではWi-Fi AP半強制機能を利用可能です\n
+\n
+FlashAir STAモードはスマホのテザリング機能を有効にして、FlashAirを子機として接続する場合に使います。\n
+(スマホとFlashAir カードの無線LAN設定は別途行ってください)\n
+FADownloaderはテザリング内部のLANにUDPパケットをばらまいた後にARPテーブルを参照することで、FlashAirカードのIPアドレスを自動的に検出します。</string>
     <string name="target_type_0">FlashAir APモード</string>
     <string name="target_type_1">FlashAir STAモード</string>
     <string name="target_type_invalid">target type invalid.</string>

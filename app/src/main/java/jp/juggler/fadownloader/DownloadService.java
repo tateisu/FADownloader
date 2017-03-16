@@ -51,7 +51,7 @@ public class DownloadService extends Service{
 	Handler handler;
 
 	LocationTracker location_tracker;
-	WifiTracker wifi_tracker;
+	NetworkTracker wifi_tracker;
 
 	@Override public void onCreate(){
 		super.onCreate();
@@ -88,7 +88,7 @@ public class DownloadService extends Service{
 			}
 		} );
 
-		wifi_tracker = new WifiTracker( this, log, new WifiTracker.Callback(){
+		wifi_tracker = new NetworkTracker( this, log, new NetworkTracker.Callback(){
 			@Override public void onConnectionEvent( boolean is_connected ,String cause){
 				if( is_connected ){
 					int last_mode = Pref.pref( DownloadService.this ).getInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP );

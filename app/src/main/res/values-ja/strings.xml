@@ -140,4 +140,16 @@
     <string name="thumbnail">サムネイル</string>
     <string name="thumbnail_auto_rotate">サムネイルの自動回転</string>
     <string name="network_status">通信状態: %1$s</string>
+    <string name="target_type">Target Type</string>
+<string name="help_target_type">Target Type には機器の種別を指定してください\n
+\n
+FlashAir APモードはFlashAirのAPにスマホを接続する場合に使います\n
+このモードではWi-Fi AP半強制機能を利用可能です\n
+\n
+FlashAir STAモードはスマホのテザリング機能を有効にして、FlashAirを子機として接続する場合に使います。\n
+(スマホとFlashAir カードの無線LAN設定は別途行ってください)\n
+FADownloaderはテザリング内部のLANにUDPパケットをばらまいた後にARPテーブルを参照することで、FlashAirカードのIPアドレスを自動的に検出します。</string>
+    <string name="target_type_0">FlashAir APモード</string>
+    <string name="target_type_1">FlashAir STAモード</string>
+    <string name="target_type_invalid">Target Typeを指定してください</string>
 </resources>
