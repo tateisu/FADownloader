@@ -23,19 +23,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.NetworkInterface;
-import java.net.Socket;
 import java.net.SocketException;
 import java.net.URL;
-import java.net.UnknownHostException;
-import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -217,8 +212,17 @@ public class NetworkTracker{
 			return rv;
 		}
 
-		String getWiFiAPAddress(){
+		boolean isWifiAPEnabled(){
+			try{
+				Boolean b = (Boolean)wifiManager.getClass().getMethod( "isWifiApEnabled" ).invoke( wifiManager );
+				if(b!=null) return b;
+			}catch(Throwable ex){
+				ex.printStackTrace(  );
+			}
+			return false;
+		}
 
+		String getWiFiAPAddress(){
 			try{
 				Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
 				while( en.hasMoreElements() ){
@@ -246,9 +250,9 @@ public class NetworkTracker{
 			return null;
 		}
 
-		void spray( String nw_ip ){
+		void sprayUDPPacket( String nw_addr, String ip_base ){
 			long start = SystemClock.elapsedRealtime();
-			String ip_base = nw_ip.replaceAll( "\\d+$", "" );
+
 
 			try{
 				byte[] data = new byte[ 1 ];
@@ -256,7 +260,7 @@ public class NetworkTracker{
 				DatagramSocket socket = new DatagramSocket();
 				for( int n = 2 ; n <= 254 ; ++ n ){
 					String try_ip = ip_base + n;
-					if( try_ip.equals( nw_ip ) ) continue;
+					if( try_ip.equals( nw_addr ) ) continue;
 					try{
 
 						DatagramPacket packet = new DatagramPacket(
@@ -344,26 +348,47 @@ public class NetworkTracker{
 				}
 			}
 
-			// ARPテーブルにあるアドレスを試す
+			if(! isWifiAPEnabled()){
+				log.d( "Wi-Fi Tethering is not enabled." );
+				return false;
+			}
+
+			final String tethering_address = getWiFiAPAddress();
+			if( tethering_address == null ){
+				log.w( "missing Wi-Fi Tethering IP address." );
+				return false;
+			}
+			final String ip_base = tethering_address.replaceAll( "\\d+$", "" );
+
+			// ARPテーブルの読み出し
 			String strArp = readStringFile( "/proc/net/arp" );
-			if( strArp != null ){
-				Matcher m = reArp.matcher( strArp );
-				int nCount = 0;
-				while( m.find() ){
-					if( m.group( 4 ).equals( "00:00:00:00:00:00" ) ) continue;
-					++ nCount;
-					final String url = "http://" + m.group( 1 ) + "/";
-					if( checkFlashAirUrl( url ) ){
-						return true;
-					}
-				}
-				final String ap_addr = getWiFiAPAddress();
-				if( ap_addr == null ){
-					log.w( "missing Wi-Fi Tethering IP address." );
-				}else{
-					spray( ap_addr );
+			if( strArp == null ){
+				log.e( "can not read ARP table." );
+				return false;
+			}
+			// ARPテーブル中のIPアドレスを確認
+			Matcher m = reArp.matcher( strArp );
+			while( m.find() ){
+				String item_ip =  m.group( 1 );
+				String item_mac = m.group( 4 );
+
+				// MACアドレスが不明なエントリや
+				// テザリング範囲と無関係なエントリは無視する
+				if( item_mac.equals( "00:00:00:00:00:00" )
+					|| ! item_ip.startsWith( ip_base )
+					) continue;
+
+				if( checkFlashAirUrl( "http://" +item_ip + "/" ) ){
+					return true;
 				}
 			}
+
+			// カードが見つからない場合
+			// 直接ARPリクエストを投げるのは難しい？ので
+			// UDPパケットをばらまく
+			// 次回以降の確認で効果があるといいな
+			sprayUDPPacket( tethering_address, ip_base );
+
 			return false;
 		}
 
@@ -414,6 +439,7 @@ public class NetworkTracker{
 				}
 				ns_list.afterAllNetwork();
 
+				// FlashAir STAモードの時の処理
 				if( target_type == DownloadWorker.TARGET_TYPE_FLASHAIR_STA ){
 					return checkStaModeFlashAir();
 				}
