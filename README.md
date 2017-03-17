@@ -9,15 +9,6 @@ https://play.google.com/store/apps/details?id=jp.juggler.fadownloader
 + BuildVariant ウィンドウで rc/dev のproductFlavor を選択してください
 + Generate signed SDK でも rc/dev のproductFlavor を選択してください
 
-## 特徴
-+ WakeLockやWifiLockを取得したり通信状態を確認したりHTTP通信もしつこくリトライしたりします。
-+ DOZEモードでも動くsetAlarmClockを贅沢に使ったりしてるので、バッテリーにはあまり優しくありません。
-+ v1.1 位置情報埋め込み機能を追加しました
-+ v1.2 アプリ内購入で広告非表示が可能です
-+ v1.3 Wi-Fi AP強制機能を追加しました
-+ v1.4 動作環境をAndroid5以降からAndroid4以降に変更しました。
-+ v1.5 ダウンロード履歴から他アプリにシェアできます
-
 ## 動作環境
 + Android 4.0 以降
 + FlashAir ファームウェア v2.00.02 以降
