@@ -1,6 +1,6 @@
 <resources  xmlns:tools="http://schemas.android.com/tools">
 
-    <string name="flashair_url">FlashAir URL</string>
+    <string name="target_url">Target URL</string>
 
     <string name="local_folder">Local Folder</string>
     <string name="repeat_interval">Repeat Interval</string>
@@ -58,8 +58,8 @@
     <string name="network_check">network check</string>
     <string name="no_ap_associated">AP not associated.</string>
     <string name="flashair_update_status_check">FlashAir update check</string>
-    <string name="flashair_host_error">could not resolve remote host. perhaps:device\'s Wi-Fi is not connected to FlashAir AP</string>
-    <string name="flashair_host_error_short">missing FlashAir host.</string>
+    <string name="target_host_error">could not resolve target host. perhaps:device\'s Wi-Fi is not connected to target\'s Wi-Fi AP</string>
+    <string name="target_host_error_short">missing target host.</string>
     <string name="flashair_update_check_failed">FlashAir update check failed. %1$s %2$s</string>
     <string name="flashair_not_updated">FlashAir is not updated.</string>
     <string name="file_scan_completed">file scan completed.</string>
@@ -127,7 +127,7 @@
     <string name="folder_name_empty">folder name empty</string>
     <string name="folder_already_exist">folder already exist.</string>
     <string name="folder_creation_failed">folder creation failed.</string>
-    <string name="network_unreachable">unreachable to FlashAir.</string>
+    <string name="target_unreachable">unreachable to Target URL.</string>
     <string name="network_not_good">network not good.</string>
     <string name="help_local_folder_kitkat">Local Folder にはスマホ上の、画像をダウンロードして保存するフォルダを指定します\n\nAndroid 4.4.x の場合、このアプリからSDカードに書き込むことはできません。「Pictures」の下あたりにFADownloader用のフォルダを作成してください。\n</string>
     <string name="download_record">download record</string>
@@ -159,5 +159,8 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="target_type_0">FlashAir APモード</string>
     <string name="target_type_1">FlashAir STAモード</string>
     <string name="target_type_invalid">target type invalid.</string>
+    <string name="target_file_list_parse_error">target file list parse error</string>
+    <string name="target_file_listing">target file listing</string>
+    <string name="target_type_2">Pentax KP等</string>
 
 </resources>

@@ -40,9 +40,9 @@ View btnSSIDPicker;
 	@Override protected void onPageCreate( int page_idx, View root ) throws Throwable{
 
 		spTargetType =(Spinner) root.findViewById( R.id.spTargetType );
-		etURL = (EditText) root.findViewById( R.id.etURL );
+		etURL = (EditText) root.findViewById( R.id.etTargetUrl );
 		tvFolder = (TextView) root.findViewById( R.id.tvFolder );
-		etInterval = (EditText) root.findViewById( R.id.etInterval );
+		etInterval = (EditText) root.findViewById( R.id.etRepeatInterval );
 		etFileType = (EditText) root.findViewById( R.id.etFileType );
 		spLocationMode = (Spinner) root.findViewById( R.id.spLocationMode );
 		etLocationIntervalDesired = (EditText) root.findViewById( R.id.etLocationIntervalDesired );
@@ -54,8 +54,8 @@ View btnSSIDPicker;
 		btnSSIDPicker = root.findViewById( R.id.btnSSIDPicker );
 
 		root.findViewById( R.id.btnFolderPicker ).setOnClickListener( this );
-		root.findViewById( R.id.btnFolderPickerHelp ).setOnClickListener( this );
-		root.findViewById( R.id.btnFlashAirURLHelp ).setOnClickListener( this );
+		root.findViewById( R.id.btnHelpFolderPicker ).setOnClickListener( this );
+		root.findViewById( R.id.btnHelpTargetUrl ).setOnClickListener( this );
 		root.findViewById( R.id.btnIntervalHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnFileTypeHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnLocationModeHelp ).setOnClickListener( this );
@@ -101,7 +101,8 @@ View btnSSIDPicker;
 
 		target_type_adapter.addAll(
 			activity.getString( R.string.target_type_0 ),
-			activity.getString( R.string.target_type_1 )
+			activity.getString( R.string.target_type_1 ),
+			activity.getString( R.string.target_type_2 )
 		);
 		spTargetType.setAdapter( target_type_adapter );
 		spTargetType.setOnItemSelectedListener( new AdapterView.OnItemSelectedListener(){
@@ -151,14 +152,14 @@ View btnSSIDPicker;
 			ssid_pick();
 			break;
 
-		case R.id.btnFolderPickerHelp:
+		case R.id.btnHelpFolderPicker:
 			if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
 				( (ActMain) activity ).openHelp( R.layout.help_local_folder );
 			}else{
 				( (ActMain) activity ).openHelp( activity.getString( R.string.help_local_folder_kitkat ) );
 			}
 			break;
-		case R.id.btnFlashAirURLHelp:
+		case R.id.btnHelpTargetUrl:
 			( (ActMain) activity ).openHelp( activity.getString( R.string.help_flashair_url_text ) );
 			break;
 		case R.id.btnIntervalHelp:

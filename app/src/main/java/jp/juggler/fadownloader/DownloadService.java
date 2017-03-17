@@ -41,7 +41,7 @@ public class DownloadService extends Service{
 
 	static final int NOTIFICATION_ID_SERVICE = 1;
 
-	LogWriter log;
+	public LogWriter log;
 
 	boolean is_alive;
 	boolean allow_cancel_alarm;
@@ -51,7 +51,7 @@ public class DownloadService extends Service{
 	Handler handler;
 
 	LocationTracker location_tracker;
-	NetworkTracker wifi_tracker;
+	public NetworkTracker wifi_tracker;
 
 	@Override public void onCreate(){
 		super.onCreate();

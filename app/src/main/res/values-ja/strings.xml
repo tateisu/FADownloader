@@ -1,5 +1,5 @@
 <resources>
-    <string name="flashair_url">FlashAir URL</string>
+    <string name="target_url">Target URL</string>
     <string name="local_folder">Local Folder</string>
     <string name="repeat_interval">Repeat Interval</string>
     <string name="repeat">Repeat</string>
@@ -55,8 +55,8 @@
     <string name="network_check">通信状態の確認中</string>
     <string name="no_ap_associated">AP未選択</string>
     <string name="flashair_update_status_check">FlashAir更新チェック</string>
-    <string name="flashair_host_error">接続先ホスト名を解決できません。もしかして：端末のWi-FiからFlashAirのAPに接続していない</string>
-    <string name="flashair_host_error_short">FlashAirホストが見つからない</string>
+    <string name="target_host_error">接続先ホスト名を解決できません。もしかして：端末のWi-Fiから接続先のWi-Fi APに接続していない</string>
+    <string name="target_host_error_short">FlashAirホストが見つからない</string>
     <string name="flashair_update_check_failed">更新チェック失敗 %1$s %2$s</string>
     <string name="flashair_not_updated">FlashAirは更新されてません</string>
     <string name="file_scan_completed">ファイルスキャン完了</string>
@@ -120,7 +120,7 @@
     <string name="folder_creation_failed">フォルダ作成に失敗しました.</string>
     <string name="folder_name">フォルダの名前</string>
     <string name="folder_name_empty">フォルダの名前を指定してください</string>
-    <string name="network_unreachable">FlashAirに到達できません</string>
+    <string name="target_unreachable">Target URLに到達できません</string>
     <string name="network_not_good">通信状態が悪いようです</string>
     <string name="help_local_folder_kitkat">Local Folder にはスマホ上の、画像をダウンロードして保存するフォルダを指定します\n\nAndroid 4.4.x の場合、このアプリからSDカードに書き込むことはできません。「Pictures」の下あたりにFADownloader用のフォルダを作成してください。\n</string>
     <string name="download_record">ダウンロード履歴</string>

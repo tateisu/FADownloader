@@ -193,8 +193,8 @@ public class NetworkTracker{
 
 	////////////////////////////////////////////////////////////////////////
 
-	final AtomicBoolean last_result = new AtomicBoolean();
-	final AtomicReference<String> last_flash_air_url = new AtomicReference<>();
+	public final AtomicBoolean last_result = new AtomicBoolean();
+	public final AtomicReference<String> last_flash_air_url = new AtomicReference<>();
 	final AtomicReference<String> last_current_status = new AtomicReference<>();
 
 	public void getStatus( StringBuilder sb ){

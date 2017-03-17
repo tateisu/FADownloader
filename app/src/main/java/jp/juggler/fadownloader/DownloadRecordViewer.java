@@ -476,7 +476,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 				+ "\ndownload time: " + Utils.formatTimeDuration( data.lap_time )
 				+ "\ndownload speed: " + Utils.formatBytes( (long) ( data.size * 1000L / (float) data.lap_time ) ) + "bytes/seconds"
 		);
-		( (TextView) v.findViewById( R.id.tvAirPath ) ).setText( "air_path: " + data.air_path );
+		( (TextView) v.findViewById( R.id.tvAirPath ) ).setText( "remote_path: " + data.air_path );
 		( (TextView) v.findViewById( R.id.tvLocalFile ) ).setText( "local_file: " + data.local_file );
 
 		final Dialog d = new Dialog( activity );

@@ -497,7 +497,7 @@ public class ActMain
 
 
 		int target_type = pref.getInt( Pref.UI_TARGET_TYPE, - 1 );
-		if( target_type < 0 || target_type > LocationTracker.LOCATION_HIGH_ACCURACY ){
+		if( target_type < 0 ){
 			showToast( true, getString( R.string.target_type_invalid ) );
 			return;
 		}

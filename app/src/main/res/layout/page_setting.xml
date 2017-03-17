@@ -44,22 +44,23 @@
         </LinearLayout>
 
         <View style="@style/setting_divider"/>
+
         <TextView
             style="@style/setting_row_label"
-            android:labelFor="@+id/etURL"
-            android:text="@string/flashair_url"
+            android:labelFor="@+id/etTargetUrl"
+            android:text="@string/target_url"
             />
 
         <LinearLayout style="@style/setting_row_form">
 
             <EditText
-                android:id="@+id/etURL"
+                android:id="@+id/etTargetUrl"
                 style="@style/setting_edit_text"
                 android:inputType="textUri"
                 />
 
             <Button
-                android:id="@+id/btnFlashAirURLHelp"
+                android:id="@+id/btnHelpTargetUrl"
                 style="@style/setting_row_help"
                 />
         </LinearLayout>
@@ -88,7 +89,7 @@
                 />
 
             <Button
-                android:id="@+id/btnFolderPickerHelp"
+                android:id="@+id/btnHelpFolderPicker"
                 style="@style/setting_row_help"
                 />
         </LinearLayout>
@@ -119,14 +120,14 @@
 
         <TextView
             style="@style/setting_row_label"
-            android:labelFor="@+id/etInterval"
+            android:labelFor="@+id/etRepeatInterval"
             android:text="@string/repeat_interval"
             />
 
         <LinearLayout style="@style/setting_row_form">
 
             <EditText
-                android:id="@+id/etInterval"
+                android:id="@+id/etRepeatInterval"
                 style="@style/setting_edit_text"
                 android:inputType="number"
                 />
@@ -245,6 +246,7 @@
                 android:minWidth="32dp"
                 android:text="@string/dot_dot"
                 />
+
             <Button
                 android:id="@+id/btnSSIDHelp"
                 style="@style/setting_row_help"
