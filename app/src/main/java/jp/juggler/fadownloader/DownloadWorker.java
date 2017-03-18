@@ -31,9 +31,6 @@ public class DownloadWorker extends WorkerBase{
 
 	public static final boolean RECORD_QUEUED_STATE = false;
 
-	public static final int TARGET_TYPE_FLASHAIR_AP = 0;
-	public static final int TARGET_TYPE_FLASHAIR_STA = 1;
-	public static final int TARGET_TYPE_PENTAX_KP = 2;
 
 	public interface Callback{
 
@@ -69,8 +66,8 @@ public class DownloadWorker extends WorkerBase{
 
 		log.i( R.string.thread_ctor_params );
 		this.repeat = intent.getBooleanExtra( DownloadService.EXTRA_REPEAT, false );
-		this.flashair_url = intent.getStringExtra( DownloadService.EXTRA_URI );
-		this.folder_uri = intent.getStringExtra( DownloadService.EXTRA_FOLDER_URI );
+		this.flashair_url = intent.getStringExtra( DownloadService.EXTRA_TARGET_URL );
+		this.folder_uri = intent.getStringExtra( DownloadService.EXTRA_LOCAL_FOLDER );
 		this.interval = intent.getIntExtra( DownloadService.EXTRA_INTERVAL, 86400 );
 		this.file_type = intent.getStringExtra( DownloadService.EXTRA_FILE_TYPE );
 		this.force_wifi = intent.getBooleanExtra( DownloadService.EXTRA_FORCE_WIFI, false );
@@ -354,11 +351,11 @@ public class DownloadWorker extends WorkerBase{
 		default:
 			log.e( "unsupported target type %s", target_type );
 			break;
-		case TARGET_TYPE_FLASHAIR_AP:
-		case TARGET_TYPE_FLASHAIR_STA:
+		case Pref.TARGET_TYPE_FLASHAIR_AP:
+		case Pref.TARGET_TYPE_FLASHAIR_STA:
 			new FlashAir( service, this ).run();
 			break;
-		case TARGET_TYPE_PENTAX_KP:
+		case Pref.TARGET_TYPE_PENTAX_KP:
 			new PentaxKP( service, this ).run();
 			break;
 
@@ -396,7 +393,7 @@ public class DownloadWorker extends WorkerBase{
 			, cv
 			, file_name
 			, remote_path
-			, "" // local file uri
+			, local_uri
 			, state
 			, state_message
 			, lap_time

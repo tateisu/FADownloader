@@ -21,6 +21,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         >
 
         <View style="@style/setting_divider"/>
@@ -99,7 +101,7 @@
         <TextView
             style="@style/setting_row_label"
             android:labelFor="@+id/etFileType"
-            android:text="@string/file_type_caption"
+            android:text="@string/file_type"
             />
 
         <LinearLayout style="@style/setting_row_form">
@@ -142,7 +144,7 @@
 
         <TextView
             style="@style/setting_row_label"
-            android:text="@string/location_mode"
+            android:text="@string/geo_tagging_mode"
             />
 
         <LinearLayout style="@style/setting_row_form">
@@ -206,7 +208,7 @@
 
         <TextView
             style="@style/setting_row_label"
-            android:text="@string/fix_wifi_ap"
+            android:text="@string/force_wifi_ap"
             />
 
         <LinearLayout style="@style/setting_row_form">

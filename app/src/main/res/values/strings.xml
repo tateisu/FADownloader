@@ -1,45 +1,86 @@
 <resources  xmlns:tools="http://schemas.android.com/tools">
 
-    <string name="target_url">Target URL</string>
-
-    <string name="local_folder">Local Folder</string>
-    <string name="repeat_interval">Repeat Interval</string>
     <string name="repeat">Repeat</string>
     <string name="once">Once</string>
     <string name="stop">Stop</string>
-    <string name="file_type_caption">File Type</string>
-    <string name="app_permission_required">app permission required</string>
-    <string name="request_permission">request</string>
+
+    <string name="ok" translatable="false">OK</string>
     <string name="cancel">Cancel</string>
-    <string name="setting">setting</string>
-    <string name="dot_dot">…</string>
-    <string name="not_selected">(not selected)</string>
-    <string name="folder_not_ok">please specify Local Folder.</string>
-    <string name="url_not_ok">please specify FlashAir URL.</string>
-    <string name="interval_not_ok">please specify interval as integer greater than 0.</string>
-    <string name="file_type_empty">missing file type.</string>
-    <string name="log_clear">clear log</string>
-    <string name="question">\?</string>
     <string name="close">Close</string>
-    <string name="help_repeat_interval_text">Repeat IntervalにはREPEAT時の巡回間隔を秒数で指定します。\nデフォルトは30です。\nFlashAirは無線LANにアクセスがない場合に自動的に電源を切るタイムアウト(デフォルト300秒)が存在するため、それより少ない数字を指定することをオススメします。\n</string>
-    <string name="help_file_type_text">File type には、転送するファイルの拡張子を指定します。\n空白で区切って複数書けます。\n* はワイルドカードとして解釈されます。\nデフォルトは「.jp*」です</string>
-    <string name="help_flashair_url_text">FlashAir URL には、スマホからFlashAirにアクセスする際に使うFlashAir URLを指定してください。\nデフォルトは「http://flashair/」です。\n末尾の / を忘れないでね。 \nなお、サブフォルダを指定してもうまく動きません。</string>
-    <string name="help_mode_text1">REPEATを押すと転送サービスを開始し、ダウンロードを定期的に行います。\n押した直後は必ずフォルダ階層を全てスキャンします。\n2回目以降はスキャンの前にまずFlashAirカードのアップデートステータスを確認して、更新があった場合のみフォルダ階層をスキャンします。\nREPEAT状態の間は、端末再起動時に転送サービスを自動的に開始します。</string>
-    <string name="help_mode_text2">ONCEを押すと転送サービスを開始し、ダウンロードを1回だけ行います。\nフォルダ階層を全てスキャンし終えたら転送サービスは自動的に終了します。</string>
-    <string name="help_mode_text3">STOPを押すと転送サービスを終了します。\n実行中の転送処理は中断されます。\nバッテリー消費を軽減するため、使わない時はサービスを停止させましょう。</string>
-    <string name="help_local_folder_text1">Local Folder にはスマホ上の、画像をダウンロードして保存するフォルダを指定します</string>
-    <string name="help_local_folder_text2">「…」ボタンを押しても最初は「最近」しか選べません。\n右上のメニューから「内部ストレージを表示」を指定してください。</string>
-    <string name="help_local_folder_text3">左のサイドメニューからストレージを選んでください</string>
-    <string name="help_local_folder_text4">右上のメニューから「新しいフォルダ」を選んで、このアプリ用のフォルダを作成しましょう。\nフォルダの名前は何でも構いません。「FADownloader」などが無難です。\n</string>
-    <string name="help_local_folder_text5">作成したフォルダを開いた後、右下の「適用」ボタンを押してください</string>
-    <string name="screen_shot">ScreenShot</string>
+    <string name="request">Request</string>
+
+    <string name="dot_dot">…</string>
+    <string name="question">\?</string>
+
+    <string name="setting">Setting</string>
+    <string name="other">Other</string>
+
     <string name="log">Log</string>
+    <string name="log_clear">clear log</string>
+
+    <string name="download_record">Download record</string>
+    <string name="download_record_clear">clear download record</string>
+
+    <string name="target_type">Target Type</string>
+    <string name="target_type_help" translatable="false">Target Type には機器の種別を指定してください\n
+\n
+FlashAir APモードはFlashAirのAPにスマホを接続する場合に使います\n
+このモードではWi-Fi AP半強制機能を利用可能です\n
+\n
+FlashAir STAモードはスマホのテザリング機能を有効にして、FlashAirを子機として接続する場合に使います。\n
+(スマホとFlashAir カードの無線LAN設定は別途行ってください)\n
+FADownloaderはテザリング内部のLANにUDPパケットをばらまいた後にARPテーブルを参照することで、FlashAirカードのIPアドレスを自動的に検出します。</string>
+    <string name="target_type_0">FlashAir APモード</string>
+    <string name="target_type_1">FlashAir STAモード</string>
+    <string name="target_type_2" translatable="false">Pentax KP等</string>
+    <string name="target_type_invalid">target type invalid.</string>
+
+    <string name="target_url">Target URL</string>
+    <string name="target_url_help" translatable="false">Target URL にはアクセス対象のURLを指定してください。
+\n\nTarget TypeごとにURLは保存されます。
+\n\nFlashAir APモードの場合、デフォルトは「http://flashair/」です。
+\n末尾の/は必須です。サブフォルダを指定してもうまく動きません。
+
+\n\nFlashAir STAモードの場合、デフォルトは「http://flashair/」ですが、このままだと指定は無視されます。「http://(IPv4アドレス)/」を指定した場合はそのアドレスを優先的に確認します。
+\n末尾の/は必須です。サブフォルダを指定してもうまく動きません。
+
+\n\nPentax KPの場合、デフォルトは「http://192.168.0.1/」です。
+\n末尾の/は必須です。サブフォルダを指定してもうまく動きません。
+\n※ Pentax機と接続する際は「モバイルデータ接続」をOFFにすることをオススメします。
+</string>
+    <string name="target_url_not_ok">please specify Target URL.</string>
+
+    <string name="local_folder">Local Folder</string>
+    <string name="local_folder_help_text1" translatable="false">Local Folder にはスマホ上の、画像をダウンロードして保存するフォルダを指定します</string>
+    <string name="local_folder_help_text2" translatable="false">「…」ボタンを押しても最初は「最近」しか選べません。\n右上のメニューから「内部ストレージを表示」を指定してください。</string>
+    <string name="local_folder_help_text3" translatable="false">左のサイドメニューからストレージを選んでください</string>
+    <string name="local_folder_help_text4" translatable="false">右上のメニューから「新しいフォルダ」を選んで、このアプリ用のフォルダを作成しましょう。\nフォルダの名前は何でも構いません。「FADownloader」などが無難です。\n</string>
+    <string name="local_folder_help_text5" translatable="false">作成したフォルダを開いた後、右下の「適用」ボタンを押してください</string>
+    <string name="local_folder_not_ok">please specify Local Folder.</string>
+    <string name="not_selected">(not selected)</string>
+    <string name="screen_shot">ScreenShot</string>
+
+    <string name="file_type">File Type</string>
+    <string name="file_type_help" translatable="false">File type には、転送するファイルの拡張子を指定します。\n空白で区切って複数書けます。\n* はワイルドカードとして解釈されます。\nデフォルトは「.jp*」です</string>
+    <string name="file_type_empty">missing file type.</string>
+
+    <string name="repeat_interval">Repeat Interval</string>
+    <string name="repeat_interval_help_text" translatable="false">Repeat IntervalにはREPEAT時の巡回間隔を秒数で指定します。
+\nデフォルトは30です。
+\nTarget TypeがFlashAirの場合、カード側の無線LANタイムアウト(デフォルト300秒)未満の秒数を指定することをオススメします。
+\nTarget TypeがPentax KPの場合、WebSocket経由でカメラの更新状況が伝わるため、この数字は大きめでも問題ありません</string>
+    <string name="repeat_interval_not_ok">please specify Repeat Interval as integer greater than 0.</string>
+
+    <string name="app_permission_required">app permission required</string>
+    <string name="help_mode_text1" translatable="false">REPEATを押すと転送サービスを開始し、ダウンロードを定期的に行います。\n押した直後は必ずフォルダ階層を全てスキャンします。\n2回目以降はスキャンの前にまずFlashAirカードのアップデートステータスを確認して、更新があった場合のみフォルダ階層をスキャンします。\nREPEAT状態の間は、端末再起動時に転送サービスを自動的に開始します。</string>
+    <string name="help_mode_text2" translatable="false">ONCEを押すと転送サービスを開始し、ダウンロードを1回だけ行います。\nフォルダ階層を全てスキャンし終えたら転送サービスは自動的に終了します。</string>
+    <string name="help_mode_text3" translatable="false">STOPを押すと転送サービスを終了します。\n実行中の転送処理は中断されます。\nバッテリー消費を軽減するため、使わない時はサービスを停止させましょう。</string>
+
     <string name="service_start">service start.</string>
     <string name="service_idle">service idle</string>
     <string name="service_end">service stopped</string>
     <string name="broadcast_received">broadcast received: %1$s</string>
     <string name="manual_restart">manual restart</string>
-
     <string name="unsupported_intent_received">unsupported intent received. action=%1$s</string>
     <string name="thread_running">thread running</string>
     <string name="service_not_running">service not running. press REPEAT or ONCE to start.</string>
@@ -57,33 +98,37 @@
     <string name="wait_alarm">wait for alarm. remain=%1$s</string>
     <string name="network_check">network check</string>
     <string name="no_ap_associated">AP not associated.</string>
+
     <string name="flashair_update_status_check">FlashAir update check</string>
-    <string name="target_host_error">could not resolve target host. perhaps:device\'s Wi-Fi is not connected to target\'s Wi-Fi AP</string>
-    <string name="target_host_error_short">missing target host.</string>
     <string name="flashair_update_check_failed">FlashAir update check failed. %1$s %2$s</string>
     <string name="flashair_not_updated">FlashAir is not updated.</string>
+    <string name="flashair_update_status_error">FlashAir update status data error</string>
+
+    <string name="target_host_error">could not resolve target host. perhaps:device\'s Wi-Fi is not connected to target\'s Wi-Fi AP</string>
+    <string name="target_host_error_short">missing target host.</string>
     <string name="file_scan_completed">file scan completed.</string>
     <string name="repeat_off">not repeat</string>
     <string name="progress_folder">FOLDER %1$s</string>
     <string name="folder_list_failed">file listing failed. %1$s %2$s %3$s</string>
     <string name="download_file">DOWNLOADING: %1$s</string>
     <string name="thread_end">thread stopped</string>
-    <string name="flashair_update_status_error">FlashAir update status data error</string>
     <string name="geo_tagging_not_enabled">GeoTagging not enabled because this device can not use Location API of Google Play service</string>
     <string name="resolution_request_failed">resolution request failed.</string>
-    <string name="location_setting_change_unavailable">location setting change unavailable</string>
-    <string name="location_setting_returns_unknown_status">location setting returns unknown status %1$d</string>
     <string name="play_service_connection_failed">play service connection failed. (%1$d)%2$s</string>
     <string name="play_service_connection_suspended">play service connection suspended. (%1$d)%2$s</string>
 
-    <string name="location_update_request_result">location update request failed. (%1$d)%2$s</string>
-    <string name="location_mode">GeoTagging Mode</string>
+
+    <string name="geo_tagging_mode">GeoTagging Mode</string>
+    <string name="geo_tagging_mode_help">GeoTagging Modeを設定すると、スマホから位置情報を取得してJPEGファイルのEXIF情報に位置データを付与します。\nサービス起動中はずっと位置情報を要求し続けます。\n位置精度が高いモードほどバッテリー消費が大きいことに注意してください。\n\nGoogle Play サービスの位置情報APIを利用しているため、Playサービスのない端末では位置情報の埋め込みは使えません。</string>
+
     <string name="location_interval_desired">location update interval(desired)</string>
     <string name="location_interval_min">location update interval(min)</string>
-    <string name="help_location_mode">GeoTagging Modeを設定すると、スマホから位置情報を取得してJPEGファイルのEXIF情報に位置データを付与します。\nサービス起動中はずっと位置情報を要求し続けます。\n位置精度が高いモードほどバッテリー消費が大きいことに注意してください。\n\nGoogle Play サービスの位置情報APIを利用しているため、Playサービスのない端末では位置情報の埋め込みは使えません。</string>
     <string name="help_location_interval_min">location interval min には位置情報を更新する時間間隔の最低値を秒数で指定します。\n少ない数字ほど位置情報の精度は良くなりますが、バッテリー消費も大きくなります。</string>
     <string name="help_location_interval_desired">location interval desired には位置情報を更新する時間間隔の希望値を秒数で指定します。\n短い方が位置情報の精度は良くなりますが、バッテリー消費は大きくなります。\n\n端末やPlayサービスにより調整が行われるため、希望通りの時間間隔になるとは限りません。\n</string>
 
+    <string name="location_setting_change_unavailable">location setting change unavailable</string>
+    <string name="location_setting_returns_unknown_status">location setting returns unknown status %1$d</string>
+    <string name="location_update_request_result">location update request failed. (%1$d)%2$s</string>
 
     <string name="location_mode_0">OFF</string>
     <string name="location_mode_1">電力消費最低</string>
@@ -95,43 +140,45 @@
     <string name="location_changed">location changed. location.time=%1$s</string>
     <string name="location_last_known">location last known. location.time=%1$s</string>
     <string name="location_update_start">location update start.</string>
-    <string name="oss_license_info" tools:ignore="MissingTranslation">OSS license information</string>
+    <string name="oss_license_info">OSS license information</string>
     <string name="help_oss_license_long">このアプリは sephiroth74氏の Android-Exif-Extended ライブラリを(SAF対応のために少し改造して)使用しています。\nhttps://github.com/sephiroth74/Android-Exif-Extended\nThis software is licensed under the Apache 2 license, quoted below.\nLicensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. You may obtain a copy of the License at\nhttp://www.apache.org/licenses/LICENSE-2.0\nUnless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.\n</string>
     <string name="location_update_end">location update end</string>
     <string name="setting_desc">変更した設定はREPEAT/ONCEを押すと反映されます</string>
     <string name="remove_ad">remove ad</string>
-    <string name="other">Other</string>
-    <string name="fix_wifi_ap">Fix Wi-Fi AP</string>
-    <string name="wifi_ap_ssid">SSID for Wi-Fi AP</string>
-    <string name="help_force_wifi">Wi-Fi強制機能をONにしてFlashAir APのSSIDを入力すると、Wi-Fi接続がより安定します。\n・Wi-FiがOFFになっていたらONにします\n・指定したSSIDの優先度を上げます\n・指定したSSIDと現在の接続先が異なる場合、Wi-Fi APのスキャンを定期的に行います\n・指定したSSIDがスキャン結果に含まれる場合、そのWi-Fi AP に接続先を切り替えます\n</string>
-    <string name="help_ssid">SSIDにはFlashAir Wi-Fi APのSSIDを指定してください\n</string>
+
+    <string name="force_wifi_ap">Force Wi-Fi AP</string>
+    <string name="force_wifi_help" translatable="false">Wi-Fi強制機能をONにしてWi-Fi AP SSIDを入力すると、Wi-Fi接続がより安定します。\n・Wi-FiがOFFになっていたらONにします\n・指定したSSIDの優先度を上げます\n・指定したSSIDと現在の接続先が異なる場合、Wi-Fi APのスキャンを定期的に行います\n・指定したSSIDがスキャン結果に含まれる場合、そのWi-Fi APに接続先を切り替えます\n</string>
+
+    <string name="wifi_ap_ssid">Wi-Fi AP SSID</string>
+    <string name="wifi_ap_ssid_help" translatable="false">Wi-Fi AP SSIDにはターゲットのWi-Fi APのSSIDを指定してください</string>
+
     <string name="ssid_empty">SSID is empty.</string>
     <string name="not_enabled">無効</string>
+
     <string name="wifi_status_unknown">wifi status unknown</string>
     <string name="wifi_current_connection">WI-Fi AP:SSID=%1$s,id=%2$s,priority=%3$s,state=%4$s</string>
     <string name="wifi_target_ssid_not_found">Wi-Fi AP %1$s is not configured.</string>
     <string name="wifi_target_ssid_not_scanned">Wi-Fi SSID %1$s not in scan result.</string>
     <string name="wifi_scan_start">Wi-Fi scan start.</string>
+    <string name="wifi_setting">Wi-Fi setting</string>
+
     <string name="folder_up">go parent folder</string>
-    <string name="folder_select">「%1$s」を選択</string>
+    <string name="folder_select">select 「%1$s」</string>
     <string name="folder_picker">folder picker</string>
     <string name="folder_not_directory">it is not directory</string>
     <string name="folder_not_writable">folder is not writable</string>
-    <string name="wifi_setting">Wi-Fi setting</string>
+
     <string name="loading">(loading…)</string>
     <string name="open_map">open map app</string>
     <string name="play_store_missing">missing Play Store</string>
     <string name="create_sub_folder">create sub folder</string>
-    <string name="ok" translatable="false">OK</string>
     <string name="folder_name">folder name</string>
     <string name="folder_name_empty">folder name empty</string>
     <string name="folder_already_exist">folder already exist.</string>
     <string name="folder_creation_failed">folder creation failed.</string>
     <string name="target_unreachable">unreachable to Target URL.</string>
     <string name="network_not_good">network not good.</string>
-    <string name="help_local_folder_kitkat">Local Folder にはスマホ上の、画像をダウンロードして保存するフォルダを指定します\n\nAndroid 4.4.x の場合、このアプリからSDカードに書き込むことはできません。「Pictures」の下あたりにFADownloader用のフォルダを作成してください。\n</string>
-    <string name="download_record">download record</string>
-    <string name="download_record_clear">clear download record</string>
+    <string name="local_folder_help_kitkat">Local Folder にはスマホ上の、画像をダウンロードして保存するフォルダを指定します\n\nAndroid 4.4.x の場合、このアプリからSDカードに書き込むことはできません。「Pictures」の下あたりにFADownloader用のフォルダを作成してください。\n</string>
     <string name="reload">reload</string>
     <string name="ssid_picker">SSID picker</string>
     <string name="view">view</string>
@@ -147,20 +194,10 @@
     <string name="help_thumbnail_auto_rotate">ダウンロード履歴に表示されるサムネイルを、Exifの回転情報を使って自動回転します。デフォルトはONです。</string>
     <string name="help_copy_before_view_send">ダウンロード履歴から「見る/送る」で外部アプリを起動する際、Android OS バージョンによっては SDカードなどの non-primari storage へのアクセスが制限されるため、外部アプリがそのファイルを扱えないことがあります。\nこの設定をONにすると、外部アプリを開く際に、ファイルを端末のダウンロードフォルダにコピーして、コピー後のファイルURIを外部アプリに渡すようにします。\nデフォルトはOFFです。</string>
     <string name="network_status">network status: %1$s</string>
-    <string name="target_type">Target Type</string>
-    <string name="help_target_type">Target Type には機器の種別を指定してください\n
-\n
-FlashAir APモードはFlashAirのAPにスマホを接続する場合に使います\n
-このモードではWi-Fi AP半強制機能を利用可能です\n
-\n
-FlashAir STAモードはスマホのテザリング機能を有効にして、FlashAirを子機として接続する場合に使います。\n
-(スマホとFlashAir カードの無線LAN設定は別途行ってください)\n
-FADownloaderはテザリング内部のLANにUDPパケットをばらまいた後にARPテーブルを参照することで、FlashAirカードのIPアドレスを自動的に検出します。</string>
-    <string name="target_type_0">FlashAir APモード</string>
-    <string name="target_type_1">FlashAir STAモード</string>
-    <string name="target_type_invalid">target type invalid.</string>
-    <string name="target_file_list_parse_error">target file list parse error</string>
-    <string name="target_file_listing">target file listing</string>
-    <string name="target_type_2">Pentax KP等</string>
+
+
+
+    <string name="remote_file_list_parse_error">remote file list parse error</string>
+    <string name="remote_file_listing">remote file listing</string>
 
 </resources>

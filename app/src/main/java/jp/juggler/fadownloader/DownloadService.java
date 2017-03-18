@@ -28,8 +28,8 @@ public class DownloadService extends Service{
 	static final String ACTION_START = "start";
 
 	static final String EXTRA_REPEAT = "repeat";
-	static final String EXTRA_URI = "uri";
-	static final String EXTRA_FOLDER_URI = "folder_uri";
+	static final String EXTRA_TARGET_URL = "uri";
+	static final String EXTRA_LOCAL_FOLDER = "folder_uri";
 	static final String EXTRA_INTERVAL = "interval";
 	static final String EXTRA_FILE_TYPE = "file_type";
 	static final String EXTRA_LOCATION_INTERVAL_DESIRED = "location_interval_desired";

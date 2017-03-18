@@ -19,8 +19,9 @@ import android.widget.TextView;
 
 public class PageSetting extends PagerAdapterBase.PageViewHolder implements View.OnClickListener{
 
-	EditText etURL;
-	TextView tvFolder;
+	Spinner spTargetType;
+	EditText etTargetUrl;
+	TextView tvLocalFolder;
 	EditText etInterval;
 	EditText etFileType;
 	Spinner spLocationMode;
@@ -30,18 +31,21 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 	EditText etSSID;
 	Switch swThumbnailAutoRotate;
 	Switch swCopyBeforeViewSend;
-	Spinner spTargetType;
-View btnSSIDPicker;
+	View btnSSIDPicker;
+	boolean bLoading;
+	int last_target_type;
 
 	public PageSetting( Activity activity, View ignored ){
 		super( activity, ignored );
 	}
 
 	@Override protected void onPageCreate( int page_idx, View root ) throws Throwable{
+		bLoading = true;
+		last_target_type = -1;
 
-		spTargetType =(Spinner) root.findViewById( R.id.spTargetType );
-		etURL = (EditText) root.findViewById( R.id.etTargetUrl );
-		tvFolder = (TextView) root.findViewById( R.id.tvFolder );
+		spTargetType = (Spinner) root.findViewById( R.id.spTargetType );
+		etTargetUrl = (EditText) root.findViewById( R.id.etTargetUrl );
+		tvLocalFolder = (TextView) root.findViewById( R.id.tvFolder );
 		etInterval = (EditText) root.findViewById( R.id.etRepeatInterval );
 		etFileType = (EditText) root.findViewById( R.id.etFileType );
 		spLocationMode = (Spinner) root.findViewById( R.id.spLocationMode );
@@ -92,13 +96,11 @@ View btnSSIDPicker;
 			}
 		} );
 
-
 		ArrayAdapter<CharSequence> target_type_adapter = new ArrayAdapter<>(
 			activity
 			, android.R.layout.simple_spinner_item
 		);
 		target_type_adapter.setDropDownViewResource( R.layout.spinner_dropdown );
-
 		target_type_adapter.addAll(
 			activity.getString( R.string.target_type_0 ),
 			activity.getString( R.string.target_type_1 ),
@@ -107,29 +109,49 @@ View btnSSIDPicker;
 		spTargetType.setAdapter( target_type_adapter );
 		spTargetType.setOnItemSelectedListener( new AdapterView.OnItemSelectedListener(){
 			@Override public void onItemSelected( AdapterView<?> parent, View view, int position, long id ){
+				if( bLoading ) return;
+				if( last_target_type >= 0 ){
+					SharedPreferences.Editor e = Pref.pref( activity ).edit();
+					Pref.saveTargetUrl( e, last_target_type, etTargetUrl.getText().toString() );
+					e.apply();
+				}
+				last_target_type = position;
+				if( last_target_type >= 0 ){
+					// targetTypeごとに異なるURLをロードする
+					String sv = Pref.loadTargetUrl( Pref.pref( activity ), last_target_type );
+					if( sv != null ) etTargetUrl.setText( sv );
+				}
 				updateFormEnabled();
 			}
-
 			@Override public void onNothingSelected( AdapterView<?> parent ){
+				if( bLoading ) return;
+				if( last_target_type >= 0 ){
+					SharedPreferences.Editor e = Pref.pref( activity ).edit();
+					Pref.saveTargetUrl( e, last_target_type, etTargetUrl.getText().toString() );
+					e.apply();
+				}
+				last_target_type = -1;
 				updateFormEnabled();
 			}
 		} );
 
 		swForceWifi.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener(){
 			@Override public void onCheckedChanged( CompoundButton buttonView, boolean isChecked ){
+				if( bLoading ) return;
 				updateFormEnabled();
 			}
 		} );
 		swThumbnailAutoRotate.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener(){
 			@Override public void onCheckedChanged( CompoundButton buttonView, boolean isChecked ){
-				Pref.pref(activity).edit().putBoolean (Pref.UI_THUMBNAIL_AUTO_ROTATE,isChecked).apply();
-				((ActMain)activity).reloadDownloadRecord();
+				if( bLoading ) return;
+				Pref.pref( activity ).edit().putBoolean( Pref.UI_THUMBNAIL_AUTO_ROTATE, isChecked ).apply();
+				( (ActMain) activity ).reloadDownloadRecord();
 				updateFormEnabled();
 			}
 		} );
 		swCopyBeforeViewSend.setOnCheckedChangeListener( new CompoundButton.OnCheckedChangeListener(){
 			@Override public void onCheckedChanged( CompoundButton buttonView, boolean isChecked ){
-				Pref.pref(activity).edit().putBoolean (Pref.UI_COPY_BEFORE_VIEW_SEND,isChecked).apply();
+				Pref.pref( activity ).edit().putBoolean( Pref.UI_COPY_BEFORE_VIEW_SEND, isChecked ).apply();
 				updateFormEnabled();
 			}
 		} );
@@ -138,8 +160,8 @@ View btnSSIDPicker;
 	}
 
 	@Override protected void onPageDestroy( int page_idx, View root ) throws Throwable{
-		SharedPreferences.Editor e= Pref.pref(activity).edit();
-		ui_value_save(e);
+		SharedPreferences.Editor e = Pref.pref( activity ).edit();
+		ui_value_save( e );
 		e.apply();
 	}
 
@@ -156,20 +178,20 @@ View btnSSIDPicker;
 			if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
 				( (ActMain) activity ).openHelp( R.layout.help_local_folder );
 			}else{
-				( (ActMain) activity ).openHelp( activity.getString( R.string.help_local_folder_kitkat ) );
+				( (ActMain) activity ).openHelp( activity.getString( R.string.local_folder_help_kitkat ) );
 			}
 			break;
 		case R.id.btnHelpTargetUrl:
-			( (ActMain) activity ).openHelp( activity.getString( R.string.help_flashair_url_text ) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.target_url_help ) );
 			break;
 		case R.id.btnIntervalHelp:
-			( (ActMain) activity ).openHelp( activity.getString( R.string.help_repeat_interval_text ) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.repeat_interval_help_text ) );
 			break;
 		case R.id.btnFileTypeHelp:
-			( (ActMain) activity ).openHelp( activity.getString( R.string.help_file_type_text ) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.file_type_help ) );
 			break;
 		case R.id.btnLocationModeHelp:
-			( (ActMain) activity ).openHelp( activity.getString( R.string.help_location_mode ) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.geo_tagging_mode_help ) );
 			break;
 		case R.id.btnLocationIntervalDesiredHelp:
 			( (ActMain) activity ).openHelp( activity.getString( R.string.help_location_interval_desired ) );
@@ -178,10 +200,10 @@ View btnSSIDPicker;
 			( (ActMain) activity ).openHelp( activity.getString( R.string.help_location_interval_min ) );
 			break;
 		case R.id.btnForceWifiHelp:
-			( (ActMain) activity ).openHelp( activity.getString( R.string.help_force_wifi ) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.force_wifi_help ) );
 			break;
 		case R.id.btnSSIDHelp:
-			( (ActMain) activity ).openHelp( activity.getString( R.string.help_ssid ) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.wifi_ap_ssid_help ) );
 			break;
 		case R.id.btnThumbnailAutoRotateHelp:
 			( (ActMain) activity ).openHelp( activity.getString( R.string.help_thumbnail_auto_rotate ) );
@@ -190,24 +212,34 @@ View btnSSIDPicker;
 			( (ActMain) activity ).openHelp( activity.getString( R.string.help_copy_before_view_send ) );
 			break;
 		case R.id.btnTargetTypeHelp:
-			( (ActMain) activity ).openHelp( activity.getString( R.string.help_target_type ) );
+			( (ActMain) activity ).openHelp( activity.getString( R.string.target_type_help ) );
 			break;
-
 
 		}
 	}
 
 	// UIフォームの値を設定から読み出す
 	void ui_value_load(){
+		bLoading = true;
+
 		SharedPreferences pref = Pref.pref( activity );
 		String sv;
 		int iv;
 		//
+		last_target_type = -1;
 		iv = pref.getInt( Pref.UI_TARGET_TYPE, - 1 );
-		if( iv >= 0 && iv < spTargetType.getCount() ) spTargetType.setSelection( iv );
-		//
-		sv = pref.getString( Pref.UI_FLASHAIR_URL, null );
-		if( sv != null ) etURL.setText( sv );
+		if( iv >= 0 && iv < spTargetType.getCount() ){
+			spTargetType.setSelection( iv );
+
+			// targetTypeごとに異なるURLをロードする
+			sv = Pref.loadTargetUrl(pref,iv);
+			if( sv != null ){
+				etTargetUrl.setText( sv );
+				last_target_type = iv;
+			}
+		}
+
+
 		//
 		sv = pref.getString( Pref.UI_INTERVAL, null );
 		if( sv != null ) etInterval.setText( sv );
@@ -229,11 +261,12 @@ View btnSSIDPicker;
 		//
 		etSSID.setText( pref.getString( Pref.UI_SSID, "" ) );
 		//
-		swThumbnailAutoRotate.setChecked( pref.getBoolean( Pref.UI_THUMBNAIL_AUTO_ROTATE,  Pref.DEFAULT_THUMBNAIL_AUTO_ROTATE ) );
+		swThumbnailAutoRotate.setChecked( pref.getBoolean( Pref.UI_THUMBNAIL_AUTO_ROTATE, Pref.DEFAULT_THUMBNAIL_AUTO_ROTATE ) );
 		//
 		swCopyBeforeViewSend.setChecked( pref.getBoolean( Pref.UI_COPY_BEFORE_VIEW_SEND, false ) );
 
 		updateFormEnabled();
+		bLoading = false;
 	}
 
 	private void updateFormEnabled(){
@@ -241,7 +274,18 @@ View btnSSIDPicker;
 		etLocationIntervalDesired.setEnabled( location_enabled );
 		etLocationIntervalMin.setEnabled( location_enabled );
 
-		boolean force_wifi_enabled = spTargetType.getSelectedItemPosition() == 0;
+		int target_type = spTargetType.getSelectedItemPosition();
+		boolean force_wifi_enabled;
+		switch( target_type){
+		default:
+		case Pref.TARGET_TYPE_FLASHAIR_AP:
+		case Pref.TARGET_TYPE_PENTAX_KP:
+			force_wifi_enabled = true;
+			break;
+		case Pref.TARGET_TYPE_FLASHAIR_STA:
+			force_wifi_enabled = false;
+			break;
+		}
 		swForceWifi.setEnabled( force_wifi_enabled );
 
 		boolean ssid_enabled = force_wifi_enabled && swForceWifi.isChecked();
@@ -251,9 +295,14 @@ View btnSSIDPicker;
 
 	// UIフォームの値を設定ファイルに保存
 	void ui_value_save( SharedPreferences.Editor e ){
+
+		int target_type = spTargetType.getSelectedItemPosition();
+		if( target_type >= 0 && target_type < spTargetType.getCount() ){
+			Pref.saveTargetUrl( e,target_type,  etTargetUrl.getText().toString());
+		}
+
 		e
 			.putInt( Pref.UI_TARGET_TYPE, spTargetType.getSelectedItemPosition() )
-			.putString( Pref.UI_FLASHAIR_URL, etURL.getText().toString() )
 			.putString( Pref.UI_INTERVAL, etInterval.getText().toString() )
 			.putString( Pref.UI_FILE_TYPE, etFileType.getText().toString() )
 			.putInt( Pref.UI_LOCATION_MODE, spLocationMode.getSelectedItemPosition() )
@@ -262,6 +311,7 @@ View btnSSIDPicker;
 			.putBoolean( Pref.UI_FORCE_WIFI, swForceWifi.isChecked() )
 			.putString( Pref.UI_SSID, etSSID.getText().toString() )
 		;
+		// .apply() は呼び出し側で行う
 	}
 
 	// 転送先フォルダの選択を開始
@@ -270,7 +320,7 @@ View btnSSIDPicker;
 			@SuppressLint( "InlinedApi" ) Intent intent = new Intent( Intent.ACTION_OPEN_DOCUMENT_TREE );
 			activity.startActivityForResult( intent, ActMain.REQUEST_CODE_DOCUMENT );
 		}else{
-			FolderPicker.open( activity, ActMain.REQUEST_FOLDER_PICKER, tvFolder.getText().toString() );
+			FolderPicker.open( activity, ActMain.REQUEST_FOLDER_PICKER, tvLocalFolder.getText().toString() );
 
 		}
 	}
@@ -293,7 +343,7 @@ View btnSSIDPicker;
 			}
 		}
 
-		tvFolder.setText( TextUtils.isEmpty( name )
+		tvLocalFolder.setText( TextUtils.isEmpty( name )
 			? activity.getString( R.string.not_selected ) : name );
 	}
 

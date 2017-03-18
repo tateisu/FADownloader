@@ -440,7 +440,7 @@ public class NetworkTracker{
 				ns_list.afterAllNetwork();
 
 				// FlashAir STAモードの時の処理
-				if( target_type == DownloadWorker.TARGET_TYPE_FLASHAIR_STA ){
+				if( target_type == Pref.TARGET_TYPE_FLASHAIR_STA ){
 					return checkStaModeFlashAir();
 				}
 

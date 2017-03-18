@@ -129,7 +129,7 @@ public class PentaxKP{
 			log.i( "%s files queued.", thread.job_queue.size() );
 			return true;
 		}catch( Throwable ex ){
-			log.e( ex, R.string.target_file_list_parse_error );
+			log.e( ex, R.string.remote_file_list_parse_error );
 		}
 		thread.job_queue = null;
 		return false;
@@ -471,7 +471,7 @@ public class PentaxKP{
 				}
 
 				// フォルダスキャン開始
-				thread.setStatus( false, service.getString( R.string.target_file_listing ) );
+				thread.setStatus( false, service.getString( R.string.remote_file_listing ) );
 				thread.job_queue = new LinkedList<>();
 				if( ! loadFolder( network ) ){
 					thread.job_queue = null;

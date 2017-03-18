@@ -23,13 +23,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            android:text="@string/help_local_folder_text1"
+            android:text="@string/local_folder_help_text1"
             />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/help_local_folder_text2"
+            android:text="@string/local_folder_help_text2"
             />
 
         <ImageView
@@ -44,7 +44,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/help_local_folder_text3"
+            android:text="@string/local_folder_help_text3"
             />
 
         <ImageView
@@ -59,7 +59,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/help_local_folder_text4"
+            android:text="@string/local_folder_help_text4"
             />
 
         <ImageView
@@ -74,7 +74,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/help_local_folder_text5"
+            android:text="@string/local_folder_help_text5"
             />
 
         <ImageView

@@ -359,7 +359,7 @@ public class ActMain
 
 			dialog = new AlertDialog.Builder( this )
 				.setMessage( R.string.app_permission_required )
-				.setPositiveButton( R.string.request_permission, new DialogInterface.OnClickListener(){
+				.setPositiveButton( R.string.request, new DialogInterface.OnClickListener(){
 					@Override public void onClick( DialogInterface dialogInterface, int i ){
 						ActivityCompat.requestPermissions( ActMain.this, missing_permission_list.toArray( new String[ missing_permission_list.size() ] ), REQUEST_CODE_PERMISSION );
 					}
@@ -502,9 +502,11 @@ public class ActMain
 			return;
 		}
 
-		String flashair_url = pref.getString( Pref.UI_FLASHAIR_URL, "" ).trim();
-		if( TextUtils.isEmpty( flashair_url ) ){
-			showToast( true, getString( R.string.url_not_ok ) );
+		String target_url = Pref.loadTargetUrl( pref,target_type );
+		if( TextUtils.isEmpty( target_url ) ){
+			//TODO target type に応じたデフォルトを…
+			//TODO いや、target typeごとに設定を覚えて…
+			showToast( true, getString( R.string.target_url_not_ok ) );
 			return;
 		}
 
@@ -523,7 +525,7 @@ public class ActMain
 			}
 		}
 		if( TextUtils.isEmpty( folder_uri ) ){
-			showToast( true, getString( R.string.folder_not_ok ) );
+			showToast( true, getString( R.string.local_folder_not_ok ) );
 			return;
 		}
 
@@ -534,7 +536,7 @@ public class ActMain
 			interval = - 1;
 		}
 		if( repeat && interval < 1 ){
-			showToast( true, getString( R.string.interval_not_ok ) );
+			showToast( true, getString( R.string.repeat_interval_not_ok ) );
 			return;
 		}
 
@@ -604,8 +606,8 @@ public class ActMain
 
 		intent.putExtra( DownloadService.EXTRA_TARGET_TYPE, target_type );
 		intent.putExtra( DownloadService.EXTRA_REPEAT, repeat );
-		intent.putExtra( DownloadService.EXTRA_URI, flashair_url );
-		intent.putExtra( DownloadService.EXTRA_FOLDER_URI, folder_uri );
+		intent.putExtra( DownloadService.EXTRA_TARGET_URL, target_url );
+		intent.putExtra( DownloadService.EXTRA_LOCAL_FOLDER, folder_uri );
 		intent.putExtra( DownloadService.EXTRA_INTERVAL, interval );
 		intent.putExtra( DownloadService.EXTRA_FILE_TYPE, file_type );
 

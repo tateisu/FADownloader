@@ -346,7 +346,7 @@ public class FlashAir{
 			thread.setStatus( false, service.getString( R.string.network_check ) );
 			long network_check_start = SystemClock.elapsedRealtime();
 
-			if( thread.target_type == DownloadWorker.TARGET_TYPE_FLASHAIR_STA ){
+			if( thread.target_type == Pref.TARGET_TYPE_FLASHAIR_STA ){
 				while( ! thread.isCancelled() ){
 					boolean tracker_last_result = service.wifi_tracker.last_result.get();
 					String air_url = service.wifi_tracker.last_flash_air_url.get();
