@@ -63,7 +63,7 @@ public class ActMain
 
 	static final int REQUEST_CODE_PERMISSION = 1;
 	static final int REQUEST_CODE_DOCUMENT = 2;
-	static final int REQUEST_CHECK_SETTINGS = 3;
+	static final int REQUEST_RESOLUTION = 3;
 	static final int REQUEST_PURCHASE = 4;
 	static final int REQUEST_FOLDER_PICKER = 5;
 	static final int REQUEST_SSID_PICKER = 6;
@@ -186,7 +186,14 @@ public class ActMain
 		// mIabHelper が結果を処理した
 		if( mIabHelper != null && mIabHelper.handleActivityResult( requestCode, resultCode, resultData ) ) return;
 
-		if( requestCode == REQUEST_CODE_DOCUMENT ){
+		if( requestCode == REQUEST_RESOLUTION ){
+			if( resultCode == Activity.RESULT_OK ){
+				startDownloadService();
+			}else{
+				showToast( true,String.format("resolution request result: %s",resultCode) );
+			}
+
+		}else if( requestCode == REQUEST_CODE_DOCUMENT ){
 			if( resultCode == Activity.RESULT_OK ){
 				if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
 					try{
@@ -461,19 +468,37 @@ public class ActMain
 			Status status = locationSettingsResult.getStatus();
 			if( status == null ) return;
 			int status_code = status.getStatusCode();
+
 			switch( status_code ){
 			case LocationSettingsStatusCodes.SUCCESS:
 				startDownloadService();
 				break;
 			case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-				try{
-					// Show the dialog by calling startResolutionForResult(), and check the result
-					// in onActivityResult().
-					status.startResolutionForResult( ActMain.this, REQUEST_CHECK_SETTINGS );
-				}catch( IntentSender.SendIntentException ex ){
-					ex.printStackTrace();
-					Toast.makeText( ActMain.this, getString( R.string.resolution_request_failed ), Toast.LENGTH_LONG ).show();
+				if( Build.VERSION.SDK_INT <=17  ){
+
+					// SH-02E(4.1.2),F10d(4.2.2)などで
+					// Wi-Fiが無効だと RESOLUTION_REQUIRED を返すが、
+					// STAモード前提だとWi-FiはOFFで正しい
+					// startResolutionForResult で表示されるダイアログで
+					// OKしてもキャンセルしても戻るボタンを押してもresultCodeが0を返す
+					// ていうかGeoTagging modeをOFF以外のどれにしてもWi-FiをONにしろと警告が出る
+					// これなら何もチェックせずにサービスを開始した方がマシ
+					// なお、4.3のGalaxy Nexus ではこの問題は起きなかった
+
+					startDownloadService();
+
+				}else{
+					try{
+						// Show the dialog by calling startResolutionForResult(), and check the result
+						// in onActivityResult().
+						status.startResolutionForResult( ActMain.this, REQUEST_RESOLUTION );
+					}catch( IntentSender.SendIntentException ex ){
+						ex.printStackTrace();
+						Toast.makeText( ActMain.this, getString( R.string.resolution_request_failed ), Toast.LENGTH_LONG ).show();
+					}
+
 				}
+
 				break;
 			case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
 				Toast.makeText( ActMain.this, getString( R.string.location_setting_change_unavailable ), Toast.LENGTH_LONG ).show();

@@ -113,7 +113,7 @@ public class FlashAir{
 					int h = ( ( bits_time >> 11 ) & 0x1f );
 					int j = ( ( bits_time >> 5 ) & 0x3f );
 					int s = ( ( bits_time ) & 0x1f ) * 2;
-					log.f( "time=%s,%s,%s,%s,%s,%s", y, m, d, h, j, s );
+				//	log.f( "time=%s,%s,%s,%s,%s,%s", y, m, d, h, j, s );
 					calendar.set( y, m - 1, d, h, j, s );
 					calendar.set( Calendar.MILLISECOND, 500 );
 					time = calendar.getTimeInMillis();
