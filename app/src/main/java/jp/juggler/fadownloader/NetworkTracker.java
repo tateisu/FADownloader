@@ -288,57 +288,36 @@ public class NetworkTracker{
 
 		boolean checkFlashAirUrl( String check_url ){
 
-			log.h( "checkFlashAirUrl %s", check_url );
-
-			final String test_url = check_url + "command.cgi?op=108";
-			int rcode;
-
-			URL urlObject;
-			try{
-				urlObject = new URL( test_url );
-			}catch( MalformedURLException ex ){
-				ex.printStackTrace();
-				return false;
-			}
-
-			HttpURLConnection conn;
-			try{
-				conn = (HttpURLConnection) urlObject.openConnection();
-			}catch( IOException ex ){
-				ex.printStackTrace();
-				return false;
-			}
-
-			try{
-				conn.setDoInput( true );
-				conn.setConnectTimeout( 5000 );
-				conn.setReadTimeout( 5000 );
-				conn.setDoOutput( false );
-				conn.connect();
-			}catch( IOException ignored ){
-				return false;
-			}
-
-			try{
-				rcode = conn.getResponseCode();
-			}catch( IOException ex ){
-				ex.printStackTrace();
-				return false;
-			}
-
 			boolean bFound = false;
-
-			if( rcode == 200 ){
-				if( ! check_url.equals( last_flash_air_url.get() ) ){
-					log.i( "FlashAir found. %s", check_url );
-				}
-				last_flash_air_url.set( check_url );
-				bFound = true;
-			}
-
 			try{
-				conn.disconnect();
-			}catch( Throwable ignored ){
+				final String test_url = check_url + "command.cgi?op=108";
+				URL urlObject = new URL( test_url );
+				HttpURLConnection conn = (HttpURLConnection) urlObject.openConnection();
+				try{
+					conn.setDoInput( true );
+					conn.setConnectTimeout( 30000 );
+					conn.setReadTimeout( 30000 );
+					conn.setDoOutput( false );
+					conn.connect();
+					int rcode = conn.getResponseCode();
+					if( rcode != 200 ){
+						log.e("%s: checkFlashAirUrl() failed. HTTP error %s",check_url,rcode);
+					}else{
+						if( ! check_url.equals( last_flash_air_url.get() ) ){
+							log.i( "FlashAir found. %s", check_url );
+						}
+						last_flash_air_url.set( check_url );
+						bFound = true;
+					}
+				}finally{
+					try{
+						conn.disconnect();
+					}catch( Throwable ignored ){
+					}
+				}
+			}catch( Throwable ex ){
+				ex.printStackTrace();
+				log.e(ex,"%s: checkFlashAirUrl() failed.",check_url);
 			}
 
 			return bFound;
