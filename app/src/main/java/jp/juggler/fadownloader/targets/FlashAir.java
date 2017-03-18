@@ -3,7 +3,6 @@ package jp.juggler.fadownloader.targets;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
-import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.os.SystemClock;
@@ -11,7 +10,10 @@ import android.os.SystemClock;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.LinkedList;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -90,6 +92,7 @@ public class FlashAir{
 			log.e( ex, "folder list parse error." );
 			return;
 		}
+		GregorianCalendar calendar = new GregorianCalendar( TimeZone.getDefault() );
 
 		while( ! thread.isCancelled() && mLine.find() ){
 			String line = mLine.group( 1 );
@@ -99,8 +102,22 @@ public class FlashAir{
 			try{
 				long size = Long.parseLong( mAttr.group( 1 ), 10 );
 				int attr = Integer.parseInt( mAttr.group( 2 ), 10 );
-//							int date = Integer.parseInt( mAttr.group( 3 ), 10 );
-//							int time = Integer.parseInt( mAttr.group( 4 ), 10 );
+				//
+				long time;
+				{
+					int bits_date = Integer.parseInt( mAttr.group( 3 ), 10 );
+					int bits_time = Integer.parseInt( mAttr.group( 4 ), 10 );
+					int y = ( ( bits_date >> 9 ) & 0x7f ) + 1980;
+					int m = ( ( bits_date >> 5 ) & 0xf );
+					int d = ( ( bits_date ) & 0x1f );
+					int h = ( ( bits_time >> 11 ) & 0x1f );
+					int j = ( ( bits_time >> 5 ) & 0x3f );
+					int s = ( ( bits_time ) & 0x1f ) * 2;
+					log.f( "time=%s,%s,%s,%s,%s,%s", y, m, d, h, j, s );
+					calendar.set( y, m - 1, d, h, j, s );
+					calendar.set( Calendar.MILLISECOND, 500 );
+					time = calendar.getTimeInMillis();
+				}
 
 				// https://flashair-developers.com/ja/support/forum/#/discussion/3/%E3%82%AB%E3%83%B3%E3%83%9E%E5%8C%BA%E5%88%87%E3%82%8A
 				String dir = ( item.remote_path.equals( "/" ) ? "" : item.remote_path );
@@ -119,7 +136,7 @@ public class FlashAir{
 
 				if( ( attr & 0x10 ) != 0 ){
 					// フォルダはキューの頭に追加
-					thread.job_queue.addFirst( new QueueItem( remote_path, local_file, false, 0L ) );
+					thread.job_queue.addFirst( new QueueItem( file_name, remote_path, local_file ) );
 				}else{
 					for( Pattern re : thread.file_type_list ){
 						if( ! re.matcher( file_name ).find() ) continue;
@@ -129,9 +146,9 @@ public class FlashAir{
 						if( local_file.length( log, false ) >= size ) continue;
 
 						// ファイルはキューの末尾に追加
-						thread.job_queue.addLast( new QueueItem( remote_path, local_file, true, size ) );
-
-						thread.record( file_name, remote_path, "", size, 0L, DownloadRecord.STATE_QUEUED, "queued." );
+						QueueItem sub_item = new QueueItem( file_name, remote_path, local_file, size, time );
+						thread.job_queue.addLast( sub_item );
+						thread.record( sub_item, 0L, DownloadRecord.STATE_QUEUED, "queued." );
 
 						break;
 					}
@@ -153,11 +170,7 @@ public class FlashAir{
 
 			if( ! local_file.prepareFile( log, true ) ){
 				log.e( "%s//%s :skip. can not prepare local file.", item.remote_path, file_name );
-				thread.record(
-					file_name
-					, remote_path
-					, ""
-					, item.size
+				thread.record( item
 					, SystemClock.elapsedRealtime() - time_start
 					, DownloadRecord.STATE_LOCAL_FILE_PREPARE_ERROR
 					, "can not prepare local file."
@@ -203,83 +216,43 @@ public class FlashAir{
 			} );
 
 			if( thread.isCancelled() ){
-				thread.record(
-					file_name
-					, remote_path
-					, local_file.getFileUri( log, false )
-					, item.size
+				thread.record(item
 					, SystemClock.elapsedRealtime() - time_start
 					, DownloadRecord.STATE_CANCELLED
 					, "download cancelled."
 				);
-				return;
-			}
 
-			if( data == null ){
+				item.local_file.delete();
+			}else if( data == null ){
+				thread.checkHostError();
 				log.e( "FILE %s :HTTP error %s", file_name, thread.client.last_error );
 
-				thread.checkHostError();
+				thread.file_error = true;
 
-				thread.record(
-					file_name
-					, remote_path
-					, local_file.getFileUri( log, false )
-					, item.size
+				thread.record(item
 					, SystemClock.elapsedRealtime() - time_start
 					, DownloadRecord.STATE_DOWNLOAD_ERROR
 					, thread.client.last_error
 				);
 
-				thread.file_error = true;
-				return;
-			}
-
-			log.i( "FILE %s :download complete. %dms", file_name, SystemClock.elapsedRealtime() - time_start );
-
-			// 位置情報を取得する時にファイルの日時が使えないかと思ったけど
-			// タイムゾーンがわからん…
-
-			Location location = thread.callback.getLocation();
-			if( location != null && DownloadWorker.reJPEG.matcher( file_name ).find() ){
-				DownloadWorker.ErrorAndMessage em = thread.updateFileLocation( location, local_file );
-
-				thread.record(
-					file_name
-					, remote_path
-					, local_file.getFileUri( log, false )
-					, item.size
-					, SystemClock.elapsedRealtime() - time_start
-					, em.bError ? DownloadRecord.STATE_EXIF_MANGLING_ERROR : DownloadRecord.STATE_COMPLETED
-					, "location data: " + em.message
-				);
+				item.local_file.delete();
 			}else{
-
-				thread.record(
-					file_name
-					, remote_path
-					, local_file.getFileUri( log, false )
-					, item.size
-					, SystemClock.elapsedRealtime() - time_start
-					, DownloadRecord.STATE_COMPLETED
-					, "OK"
-				);
-
+				thread.afterDownload( item,SystemClock.elapsedRealtime() - time_start );
 			}
+
 		}catch( Throwable ex ){
 			ex.printStackTrace();
 			log.e( ex, "error." );
 
 			thread.file_error = true;
 
-			thread.record(
-				file_name
-				, remote_path
-				, local_file.getFileUri( log, false )
-				, item.size
+			thread.record( item
 				, SystemClock.elapsedRealtime() - time_start
 				, DownloadRecord.STATE_DOWNLOAD_ERROR
 				, LogWriter.formatError( ex, "?" )
 			);
+
+			item.local_file.delete();
 
 		}
 
@@ -426,7 +399,7 @@ public class FlashAir{
 
 				// フォルダスキャン開始
 				thread.job_queue = new LinkedList<>();
-				thread.job_queue.add( new QueueItem( "/", new LocalFile( service, thread.folder_uri ), false, 0L ) );
+				thread.job_queue.add( new QueueItem( "","/", new LocalFile( service, thread.folder_uri ) ) );
 				thread.file_error = false;
 				thread.queued_byte_count_max.set( Long.MAX_VALUE );
 			}

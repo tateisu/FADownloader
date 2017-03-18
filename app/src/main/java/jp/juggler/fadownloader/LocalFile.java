@@ -1,9 +1,15 @@
 package jp.juggler.fadownloader;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
+import android.provider.DocumentsContract;
+import android.support.annotation.NonNull;
 import android.support.v4.provider.DocumentFile;
+import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,6 +20,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Map;
 
 /*
 
@@ -224,12 +231,92 @@ public class LocalFile{
 		}
 	}
 
-	public String getFileUri( LogWriter log ,boolean bCreate){
-		if( ! prepareFile( log ,bCreate) ) return null;
+	public String getFileUri( LogWriter log, boolean bCreate ){
+		if( ! prepareFile( log, bCreate ) ) return null;
 		if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
 			return ( (DocumentFile) local_file ).getUri().toString();
 		}else{
 			return ( (File) local_file ).getAbsolutePath();
+		}
+	}
+
+	public static boolean isExternalStorageDocument( Uri uri ){
+		return "com.android.externalstorage.documents".equals( uri.getAuthority() );
+	}
+
+	private File fixFilePath( Context context, LogWriter log, @NonNull DocumentFile df ){
+		try{
+			if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
+				Uri uri = df.getUri();
+
+				if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ){
+					if( DocumentsContract.isDocumentUri( context, uri ) ){
+						if( isExternalStorageDocument( uri ) ){
+							final String docId = DocumentsContract.getDocumentId( uri );
+							final String[] split = docId.split( ":" );
+							if( split.length >= 2 ){
+								final String uuid = split[ 0 ];
+								if( "primary".equalsIgnoreCase( uuid ) ){
+									return new File( Environment.getExternalStorageDirectory() + "/" + split[ 1 ] );
+								}else{
+									Map<String, String> volume_map = Utils.getSecondaryStorageVolumesMap( context );
+									String volume_path = volume_map.get( uuid );
+									if( volume_path != null ){
+										return new File( volume_path + "/" + split[ 1 ] );
+									}
+								}
+							}
+						}
+					}
+				}
+
+				Cursor cursor = context.getContentResolver().query( uri, null, null, null, null );
+				if( cursor != null ){
+					try{
+						if( cursor.moveToFirst() ){
+							int col_count = cursor.getColumnCount();
+							for( int i = 0 ; i < col_count ; ++ i ){
+								int type = cursor.getType( i );
+								if( type != Cursor.FIELD_TYPE_STRING ) continue;
+								String name = cursor.getColumnName( i );
+								String value = cursor.isNull( i ) ? null : cursor.getString( i );
+								Log.d( "DownloadRecordViewer", String.format( "%s %s", name, value ) );
+								if( ! TextUtils.isEmpty( value ) ){
+									if( "filePath".equals( name ) ){
+										return new File( value );
+									}
+								}
+							}
+						}
+					}finally{
+						cursor.close();
+					}
+				}
+			}
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+			log.e( ex, "failed to fix file URI." );
+		}
+		return null;
+
+	}
+
+	public void setFileTime( Context context, LogWriter log, long time ){
+		try{
+			if( ! prepareFile( log, false ) ) return;
+			File path;
+			if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
+				DocumentFile df = (DocumentFile) local_file;
+				if( df == null || ! df.isFile() ) return;
+				path = fixFilePath( context, log, df );
+			}else{
+				path = (File) local_file;
+				if( path == null ) return;
+			}
+			if( path == null || ! path.isFile() ) return;
+			path.setLastModified( time );
+		}catch( Throwable ex ){
+			log.e( "setLastModified() failed." );
 		}
 	}
 

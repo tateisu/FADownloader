@@ -11,6 +11,7 @@ import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
@@ -30,7 +31,6 @@ import java.util.regex.Pattern;
 public class DownloadWorker extends WorkerBase{
 
 	public static final boolean RECORD_QUEUED_STATE = false;
-
 
 	public interface Callback{
 
@@ -377,10 +377,7 @@ public class DownloadWorker extends WorkerBase{
 	}
 
 	public void record(
-		String file_name
-		, String remote_path
-		, String local_uri
-		, long size
+		QueueItem item
 		, long lap_time
 		, int state
 		, String state_message
@@ -388,17 +385,49 @@ public class DownloadWorker extends WorkerBase{
 		if( ! DownloadWorker.RECORD_QUEUED_STATE ){
 			if( state == DownloadRecord.STATE_QUEUED ) return;
 		}
+		String local_uri = item.local_file.getFileUri( log, false );
+		if( local_uri == null ) local_uri = "";
 		DownloadRecord.insert(
 			service.getContentResolver()
 			, cv
-			, file_name
-			, remote_path
+			, item.name
+			, item.remote_path
 			, local_uri
 			, state
 			, state_message
 			, lap_time
-			, size
+			, item.size
 		);
+	}
+
+	public void afterDownload( QueueItem item, long lap_time ){
+		log.i( "FILE %s :download complete. %dms", item.name, lap_time );
+
+		// 位置情報を取得する時にファイルの日時が使えないかと思ったけど
+		// タイムゾーンがわからん…
+
+		Location location = callback.getLocation();
+		if( location != null && DownloadWorker.reJPEG.matcher( item.name ).find() ){
+			DownloadWorker.ErrorAndMessage em = updateFileLocation( location, item.local_file );
+			if( item.time > 0L ) item.local_file.setFileTime( service, log, item.time );
+
+			record(
+				item
+				, lap_time
+				, em.bError ? DownloadRecord.STATE_EXIF_MANGLING_ERROR : DownloadRecord.STATE_COMPLETED
+				, "GeoTagging: " + em.message
+			);
+		}else{
+			if( item.time > 0L ) item.local_file.setFileTime( service, log, item.time );
+
+			record(
+				item
+				, lap_time
+				, DownloadRecord.STATE_COMPLETED
+				, "OK"
+			);
+
+		}
 	}
 
 }
