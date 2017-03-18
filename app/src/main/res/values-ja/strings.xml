@@ -150,4 +150,5 @@
     <string name="network_status">通信状態: %1$s</string>
     <string name="remote_file_list_parse_error">接続先ファイル一覧のデータエラー</string>
     <string name="remote_file_listing">接続先ファイル一覧の取得中</string>
+    <string name="other_active_warning">Wi-Fi以外の接続 %1$s がActiveになっています。OFFにするとTargetに接続できるかもしれません</string>
 </resources>
