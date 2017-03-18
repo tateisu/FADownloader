@@ -44,6 +44,7 @@ import java.util.regex.Pattern;
 
 public class NetworkTracker{
 
+
 	interface Callback{
 
 		void onConnectionEvent( boolean is_connected, String cause );
@@ -138,7 +139,7 @@ public class NetworkTracker{
 	static class NetworkStateList extends ArrayList<NetworkStatus>{
 
 		NetworkStatus wifi_status = null;
-		boolean other_active = false;
+		String other_active;
 
 		public void eachNetworkInfo( boolean is_active, NetworkInfo ni ){
 			boolean is_wifi = ( ni.getType() == ConnectivityManager.TYPE_WIFI );
@@ -151,7 +152,7 @@ public class NetworkTracker{
 
 			if( is_active ){
 				ns.is_active = true;
-				if( ! is_wifi ) other_active = true;
+				if( ! is_wifi ) other_active = ns.type_name;
 			}
 		}
 
@@ -199,6 +200,11 @@ public class NetworkTracker{
 
 	public void getStatus( StringBuilder sb ){
 		sb.append( last_current_status );
+	}
+
+	final AtomicReference<String> last_other_active = new AtomicReference<>();
+	public String getOtherActive(){
+		return last_other_active.get();
 	}
 
 	class Worker extends WorkerBase{
@@ -438,6 +444,7 @@ public class NetworkTracker{
 					}
 				}
 				ns_list.afterAllNetwork();
+				last_other_active.set( ns_list.other_active);
 
 				// FlashAir STAモードの時の処理
 				if( target_type == Pref.TARGET_TYPE_FLASHAIR_STA ){
@@ -555,7 +562,7 @@ public class NetworkTracker{
 					switch( current_supp_state ){
 					case COMPLETED:
 						// その接続の認証が終わっていて、他の種類の接続がActiveでなければOK
-						return ! ns_list.other_active;
+						return ns_list.other_active == null;
 					case ASSOCIATING:
 					case ASSOCIATED:
 					case AUTHENTICATING:

@@ -82,6 +82,7 @@ public class PentaxKP{
 				return false;
 			}
 			LocalFile local_root = new LocalFile( service, thread.folder_uri );
+			LocalFile local_dcim = new LocalFile( local_root,"DCIM");
 			thread.job_queue = new LinkedList<>();
 			for( int i = 0, ie = root_dir.length() ; i < ie ; ++ i ){
 				if( thread.isCancelled() ) return false;
@@ -93,7 +94,7 @@ public class PentaxKP{
 				String sub_dir_name = subdir.optString( "name", null );
 				if( TextUtils.isEmpty( sub_dir_name ) ) continue;
 
-				LocalFile sub_dir_local = new LocalFile( local_root, sub_dir_name );
+				LocalFile sub_dir_local = new LocalFile( local_dcim, sub_dir_name );
 				JSONArray files = subdir.optJSONArray( "files" );
 				if( files == null ) continue;
 
@@ -411,12 +412,13 @@ public class PentaxKP{
 			}
 			if( thread.isCancelled() ) break;
 
+
 			// WebSocketがなければ開く
 			if( ws_client == null ){
 				thread.setStatus( false, "WebSocket creating" );
 				try{
 					WebSocketFactory factory = new WebSocketFactory();
-					ws_client = factory.createSocket( thread.flashair_url + "v1/changes", 5000 );
+					ws_client = factory.createSocket( thread.flashair_url + "v1/changes", 30000 );
 					ws_client.addListener( ws_listener );
 					ws_client.connect();
 					thread.waitEx( 2000L );
@@ -428,6 +430,12 @@ public class PentaxKP{
 				}catch( WebSocketException ex ){
 					ex.printStackTrace();
 					log.e( ex, "WebSocket connection failed(2)." );
+
+					String active_other = service.wifi_tracker.getOtherActive();
+					if( !TextUtils.isEmpty( active_other ) ){
+						log.w( R.string.other_active_warning,active_other);
+					}
+
 					thread.waitEx( 5000L );
 					continue;
 				}catch( IOException ex ){

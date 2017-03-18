@@ -199,5 +199,6 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
 
     <string name="remote_file_list_parse_error">remote file list parse error</string>
     <string name="remote_file_listing">remote file listing</string>
+    <string name="other_active_warning">Wi-Fi以外の接続 %1$s がActiveになっています。OFFにするとTargetに接続できるかもしれません</string>
 
 </resources>
