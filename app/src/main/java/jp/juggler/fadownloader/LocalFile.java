@@ -160,14 +160,15 @@ public class LocalFile{
 	}
 
 	@SuppressWarnings( "BooleanMethodIsAlwaysInverted" )
-	public boolean prepareFile( LogWriter log, boolean bCreate ){
+	public boolean prepareFile( LogWriter log, boolean bCreate ,String mime_type ){
 		try{
 			if( local_file == null && parent != null ){
 				if( parent.prepareDirectory( log, bCreate ) ){
 					local_file = parent.findChild( log, bCreate, name );
 					if( local_file == null && bCreate ){
 						if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
-							local_file = ( (DocumentFile) parent.local_file ).createFile( "application/octet-stream", name );
+							if( TextUtils.isEmpty( mime_type ) ) mime_type =  "application/octet-stream";
+							local_file = ( (DocumentFile) parent.local_file ).createFile(mime_type , name );
 						}else{
 							local_file = new File( (File) parent.local_file, name );
 						}
@@ -184,8 +185,8 @@ public class LocalFile{
 		return local_file != null;
 	}
 
-	public long length( LogWriter log, boolean bCreate ){
-		if( prepareFile( log, bCreate ) ){
+	public long length( LogWriter log ){
+		if( prepareFile( log, false,null ) ){
 			if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
 				return ( (DocumentFile) local_file ).length();
 			}else{
@@ -231,8 +232,8 @@ public class LocalFile{
 		}
 	}
 
-	public String getFileUri( LogWriter log, boolean bCreate ){
-		if( ! prepareFile( log, bCreate ) ) return null;
+	public String getFileUri( LogWriter log ){
+		if( ! prepareFile( log,false,null ) ) return null;
 		if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
 			return ( (DocumentFile) local_file ).getUri().toString();
 		}else{
@@ -303,7 +304,7 @@ public class LocalFile{
 
 	public void setFileTime( Context context, LogWriter log, long time ){
 		try{
-			if( ! prepareFile( log, false ) ) return;
+			if( ! prepareFile( log, false ,null) ) return;
 			File path;
 			if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
 				DocumentFile df = (DocumentFile) local_file;
@@ -314,6 +315,7 @@ public class LocalFile{
 				if( path == null ) return;
 			}
 			if( path == null || ! path.isFile() ) return;
+			//noinspection ResultOfMethodCallIgnored
 			path.setLastModified( time );
 		}catch( Throwable ex ){
 			log.e( "setLastModified() failed." );

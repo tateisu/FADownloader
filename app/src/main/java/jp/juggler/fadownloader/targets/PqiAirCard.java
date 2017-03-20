@@ -160,10 +160,12 @@ public class PqiAirCard{
 								// マッチした
 
 								// ローカルのファイルサイズを調べて既読スキップ
-								if( local_file.length( log, false ) >= size ) continue;
+								if( local_file.length( log ) >= size ) continue;
+
+								String mime_type = Utils.getMimeType( file_name);
 
 								// ファイルはキューの末尾に追加
-								QueueItem sub_item = new QueueItem( file_name, remote_path, local_file, size, time );
+								QueueItem sub_item = new QueueItem( file_name, remote_path, local_file, size, time ,mime_type);
 								thread.job_queue.addLast( sub_item );
 								thread.record( sub_item, 0L, DownloadRecord.STATE_QUEUED, "queued." );
 
@@ -188,8 +190,7 @@ public class PqiAirCard{
 		final LocalFile local_file = item.local_file;
 
 		try{
-
-			if( ! local_file.prepareFile( log, true ) ){
+			if( ! local_file.prepareFile( log, true,item.mime_type ) ){
 				log.e( "%s//%s :skip. can not prepare local file.", item.remote_path, file_name );
 				thread.record( item
 					, SystemClock.elapsedRealtime() - time_start

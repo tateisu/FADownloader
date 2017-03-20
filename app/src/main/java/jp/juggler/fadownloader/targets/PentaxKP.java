@@ -31,6 +31,7 @@ import jp.juggler.fadownloader.Utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,9 +39,13 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PentaxKP{
+
+	static final boolean CHECK_FILE_TIME = false;
+	static final boolean CHECK_FILE_SIZE = false;
 
 	final DownloadService service;
 	final DownloadWorker thread;
@@ -52,7 +57,7 @@ public class PentaxKP{
 		this.log = service.log;
 	}
 
-	static final Pattern reDateTime = Pattern.compile("(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)");
+	static final Pattern reDateTime = Pattern.compile( "(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)" );
 
 	boolean loadFolder( Object network ){
 		String cgi_url = thread.target_url + "v1/photos";
@@ -79,7 +84,7 @@ public class PentaxKP{
 				return false;
 			}
 			LocalFile local_root = new LocalFile( service, thread.folder_uri );
-			LocalFile local_dcim = new LocalFile( local_root,"DCIM");
+			LocalFile local_dcim = new LocalFile( local_root, "DCIM" );
 			thread.job_queue = new LinkedList<>();
 			for( int i = 0, ie = root_dir.length() ; i < ie ; ++ i ){
 				if( thread.isCancelled() ) return false;
@@ -97,92 +102,92 @@ public class PentaxKP{
 
 				for( int j = 0, je = files.length() ; j < je ; ++ j ){
 					if( thread.isCancelled() ) return false;
-					String fname = files.optString( j );
-					if( TextUtils.isEmpty( fname ) ) continue;
+					String file_name = files.optString( j );
+					if( TextUtils.isEmpty( file_name ) ) continue;
 					// file type matching
 					for( Pattern re : thread.file_type_list ){
 						if( thread.isCancelled() ) return false;
-						if( ! re.matcher( fname ).find() ) continue;
+						if( ! re.matcher( file_name ).find() ) continue;
 						// マッチした
 
-						String remote_path = "/" + sub_dir_name + "/" + fname;
-						LocalFile local_file = new LocalFile( sub_dir_local, fname );
-
-						long size = 1L; // PentaxのAPIだとこの時点ではサイズ不明
+						String remote_path = "/" + sub_dir_name + "/" + file_name;
+						LocalFile local_file = new LocalFile( sub_dir_local, file_name );
 
 						// ローカルにあるファイルのサイズが1以上ならスキップする
-						final long local_size = local_file.length( log, false );
+						final long local_size = local_file.length( log );
 						if( local_size >= 1L ) continue;
 
 						// 進捗表示用のファイルサイズは超適当
-						size = 1000000L;
-
-
-//						// ダウンロード進捗のためにサイズを調べる
-//						try{
-//							log.d("get file size for %s",remote_path);
-//							final String get_url = thread.target_url + "v1/photos" + Uri.encode( remote_path, "/_" ) + "?size=full";
-//							data = thread.client.getHTTP( log, network, get_url, new HTTPClientReceiver(){
-//								public byte[] onHTTPClientStream( LogWriter log, CancelChecker cancel_checker, InputStream in, int content_length ){
-//									return buf;
-//								}
-//							} );
-//							if( thread.isCancelled() )return false;
-//							if( data == null){
-//								thread.checkHostError();
-//								log.e( "can not get file size. %s",thread.client.last_error );
-//							}else{
-//								//// thread.client.dump_res_header( log );
-//								String sv = thread.client.getHeaderString( "Content-Length" ,null);
-//								if( !TextUtils.isEmpty( sv )){
-//									size = Long.parseLong( sv,10 );
-//								}
-//							}
-//						}catch( Throwable ex ){
-//							log.e( ex, "can not get file size." );
-//						}
-
+						long size = 1000000L;
+						if( CHECK_FILE_SIZE ){
+							// ダウンロード進捗のためにサイズを調べる
+							try{
+								log.d( "get file size for %s", remote_path );
+								final String get_url = thread.target_url + "v1/photos" + Uri.encode( remote_path, "/_" ) + "?size=full";
+								data = thread.client.getHTTP( log, network, get_url, new HTTPClientReceiver(){
+									public byte[] onHTTPClientStream( LogWriter log, CancelChecker cancel_checker, InputStream in, int content_length ){
+										return buf;
+									}
+								} );
+								if( thread.isCancelled() ) return false;
+								if( data == null ){
+									thread.checkHostError();
+									log.e( "can not get file size. %s", thread.client.last_error );
+								}else{
+									//// thread.client.dump_res_header( log );
+									String sv = thread.client.getHeaderString( "Content-Length", null );
+									if( ! TextUtils.isEmpty( sv ) ){
+										size = Long.parseLong( sv, 10 );
+									}
+								}
+							}catch( Throwable ex ){
+								log.e( ex, "can not get file size." );
+							}
+						}
 						long time = 0L;
-//						try{
-//							log.d("get file time for %s",remote_path);
-//							final String get_url = thread.target_url + "v1/photos" + Uri.encode( remote_path, "/_" ) + "/info";
-//							data = thread.client.getHTTP( log, network, get_url );
-//							if( thread.isCancelled() ) return false;
-//							if( data == null){
-//								thread.checkHostError();
-//								log.e( "can not get file time. %s",thread.client.last_error );
-//							}else{
-//								JSONObject file_info = new JSONObject( Utils.decodeUTF8( data ) );
-//								if( file_info.optInt( "errCode", 0 ) != 200 ){
-//									throw new RuntimeException( "server's errMsg:" + info.optString( "errMsg" ) );
-//								}
-//								Matcher matcher = reDateTime.matcher(file_info.optString("datetime",""));
-//								if( !matcher. find() ){
-//									log.e( "can not get file time. missing 'datetime' property.");
-//								}else{
-//									int y = Integer.parseInt (matcher.group(1),10);
-//									int m = Integer.parseInt (matcher.group(2),10);
-//									int d =Integer.parseInt (matcher.group(3),10);
-//									int h = Integer.parseInt (matcher.group(4),10);
-//									int min =Integer.parseInt (matcher.group(5),10);
-//									int s =Integer.parseInt (matcher.group(6),10);
-//									log.f( "time=%s,%s,%s,%s,%s,%s", y, m, d, h, min, s );
-//									calendar.set( y, m, d, h, min, s );
-//									calendar.set( Calendar.MILLISECOND, 500 );
-//									time = calendar.getTimeInMillis();
-//								}
-//							}
-//						}catch( Throwable ex ){
-//							log.e( ex, "can not get file time." );
-//						}
+						if( CHECK_FILE_TIME ){
+							try{
+								log.d( "get file time for %s", remote_path );
+								final String get_url = thread.target_url + "v1/photos" + Uri.encode( remote_path, "/_" ) + "/info";
+								data = thread.client.getHTTP( log, network, get_url );
+								if( thread.isCancelled() ) return false;
+								if( data == null ){
+									thread.checkHostError();
+									log.e( "can not get file time. %s", thread.client.last_error );
+								}else{
+									JSONObject file_info = new JSONObject( Utils.decodeUTF8( data ) );
+									if( file_info.optInt( "errCode", 0 ) != 200 ){
+										throw new RuntimeException( "server's errMsg:" + info.optString( "errMsg" ) );
+									}
+									Matcher matcher = reDateTime.matcher( file_info.optString( "datetime", "" ) );
+									if( ! matcher.find() ){
+										log.e( "can not get file time. missing 'datetime' property." );
+									}else{
+										int y = Integer.parseInt( matcher.group( 1 ), 10 );
+										int m = Integer.parseInt( matcher.group( 2 ), 10 );
+										int d = Integer.parseInt( matcher.group( 3 ), 10 );
+										int h = Integer.parseInt( matcher.group( 4 ), 10 );
+										int min = Integer.parseInt( matcher.group( 5 ), 10 );
+										int s = Integer.parseInt( matcher.group( 6 ), 10 );
+										log.f( "time=%s,%s,%s,%s,%s,%s", y, m, d, h, min, s );
+										calendar.set( y, m, d, h, min, s );
+										calendar.set( Calendar.MILLISECOND, 500 );
+										time = calendar.getTimeInMillis();
+									}
+								}
+							}catch( Throwable ex ){
+								log.e( ex, "can not get file time." );
+							}
+						}
+						String mime_type = Utils.getMimeType( file_name );
 
-						QueueItem item = new QueueItem( fname,remote_path, local_file, size ,time );
+						QueueItem item = new QueueItem( file_name, remote_path, local_file, size, time, mime_type );
 
 						// ファイルはキューの末尾に追加
-						thread.job_queue.addLast(item);
+						thread.job_queue.addLast( item );
 
 						thread.record(
-							item,0L
+							item, 0L
 							, DownloadRecord.STATE_QUEUED
 							, "queued."
 						);
@@ -209,9 +214,9 @@ public class PentaxKP{
 
 		try{
 
-			if( ! local_file.prepareFile( log, true ) ){
+			if( ! local_file.prepareFile( log, true, item.mime_type ) ){
 				log.e( "%s//%s :skip. can not prepare local file.", item.remote_path, file_name );
-				thread.record(item,SystemClock.elapsedRealtime() - time_start
+				thread.record( item, SystemClock.elapsedRealtime() - time_start
 					, DownloadRecord.STATE_LOCAL_FILE_PREPARE_ERROR
 					, "can not prepare local file."
 				);
@@ -257,7 +262,7 @@ public class PentaxKP{
 				}
 			} );
 
-			thread.afterDownload( time_start,data,item );
+			thread.afterDownload( time_start, data, item );
 
 		}catch( Throwable ex ){
 			ex.printStackTrace();
@@ -389,7 +394,6 @@ public class PentaxKP{
 			}
 			if( thread.isCancelled() ) break;
 
-
 			// WebSocketがなければ開く
 			if( ws_client == null ){
 				thread.setStatus( false, "WebSocket creating" );
@@ -409,8 +413,8 @@ public class PentaxKP{
 					log.e( ex, "WebSocket connection failed(2)." );
 
 					String active_other = service.wifi_tracker.getOtherActive();
-					if( !TextUtils.isEmpty( active_other ) ){
-						log.w( R.string.other_active_warning,active_other);
+					if( ! TextUtils.isEmpty( active_other ) ){
+						log.w( R.string.other_active_warning, active_other );
 					}
 
 					thread.waitEx( 5000L );

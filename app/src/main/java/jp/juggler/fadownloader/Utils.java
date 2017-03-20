@@ -476,6 +476,12 @@ public class Utils{
 		return String.format( "(%d)%s", state.ordinal(), state.toString() );
 	}
 
+	public static String getMimeType( String src ){
+		String ext = MimeTypeMap.getFileExtensionFromUrl( src );
+		if( ext==null) return null;
+		return MimeTypeMap.getSingleton().getMimeTypeFromExtension( ext.toLowerCase() );
+	}
+
 	static class FileInfo{
 
 		Uri uri;

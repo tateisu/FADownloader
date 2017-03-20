@@ -172,12 +172,13 @@ public class DownloadWorker extends WorkerBase{
 		}
 	}
 
-	@NonNull public ErrorAndMessage updateFileLocation( final Location location, LocalFile file ){
+	@NonNull public ErrorAndMessage updateFileLocation( final Location location, QueueItem item ){
 		ErrorAndMessage em = null;
 		try{
+			LocalFile file = item.local_file;
 
 			LocalFile tmp_path = new LocalFile( file.getParent(), "tmp-" + currentThread().getId() + "-" + android.os.Process.myPid() + "-" + file.getName() );
-			if( ! tmp_path.prepareFile( log, true ) ){
+			if( ! tmp_path.prepareFile( log, true ,item.mime_type) ){
 				return new ErrorAndMessage( true, "file creation failed." );
 			}
 
@@ -230,7 +231,7 @@ public class DownloadWorker extends WorkerBase{
 			}
 
 			// 更新後の方がファイルが小さいことがあるのか？
-			if( tmp_path.length( log, false ) < file.length( log, false ) ){
+			if( tmp_path.length( log ) < file.length( log ) ){
 				log.e( "EXIF付与したファイルの方が小さい!付与前後のファイルを残しておく" );
 				// この場合両方のファイルを残しておく
 				return new ErrorAndMessage( true, "EXIF付与したファイルの方が小さい" );
@@ -260,7 +261,7 @@ public class DownloadWorker extends WorkerBase{
 		if( ! DownloadWorker.RECORD_QUEUED_STATE ){
 			if( state == DownloadRecord.STATE_QUEUED ) return;
 		}
-		String local_uri = item.local_file.getFileUri( log, false );
+		String local_uri = item.local_file.getFileUri( log );
 		if( local_uri == null ) local_uri = "";
 		DownloadRecord.insert(
 			service.getContentResolver()
@@ -306,7 +307,7 @@ public class DownloadWorker extends WorkerBase{
 
 			Location location = callback.getLocation();
 			if( location != null && DownloadWorker.reJPEG.matcher( item.name ).find() ){
-				DownloadWorker.ErrorAndMessage em = updateFileLocation( location, item.local_file );
+				DownloadWorker.ErrorAndMessage em = updateFileLocation( location, item );
 				if( item.time > 0L ) item.local_file.setFileTime( service, log, item.time );
 
 				record(
