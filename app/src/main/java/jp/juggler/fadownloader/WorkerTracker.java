@@ -74,21 +74,21 @@ public class WorkerTracker{
 					worker.cancel( service.getString( R.string.manual_restart ) );
 					handler.postDelayed( proc_check, 3000L );
 					return;
-				}else{
-					Pref.pref( service ).edit()
-						.remove( Pref.LAST_IDLE_START )
-						.remove( Pref.FLASHAIR_UPDATE_STATUS_OLD )
-						.apply();
+				}
 
-					try{
-						will_restart = false;
-						worker_disposed = false;
-						worker = new DownloadWorker( service, start_param, worker_callback );
-						worker.start();
-					}catch( Throwable ex ){
-						ex.printStackTrace();
-						log.e( ex, "thread start failed." );
-					}
+				Pref.pref( service ).edit()
+					.remove( Pref.LAST_IDLE_START )
+					.remove( Pref.FLASHAIR_UPDATE_STATUS_OLD )
+					.apply();
+
+				try{
+					will_restart = false;
+					worker_disposed = false;
+					worker = new DownloadWorker( service, start_param, worker_callback );
+					worker.start();
+				}catch( Throwable ex ){
+					ex.printStackTrace();
+					log.e( ex, "thread start failed." );
 				}
 			}
 
@@ -101,10 +101,12 @@ public class WorkerTracker{
 						return;
 					}else if( ! worker_disposed ){
 						// dispose 完了を待つ
+						log.d("waiting dispose previous thread..");
 						handler.postDelayed( proc_check, 3000L );
 						return;
 					}
 				}
+
 				try{
 					will_wakeup = false;
 					worker_disposed = false;
