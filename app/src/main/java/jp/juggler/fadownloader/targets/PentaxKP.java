@@ -448,7 +448,10 @@ public class PentaxKP{
 			}else{
 				// キューがカラなら、最後にファイル一覧を取得した時刻から一定は待つ
 				remain = mLastFileListed.get() + thread.interval * 1000L - now;
-				thread.setStatus( false, service.getString( R.string.wait_short, Utils.formatTimeDuration( remain ) ) );
+				if( remain > 0L){
+					thread.setShortWait( remain );
+					continue;
+				}
 			}
 			if( remain > 0 ){
 				thread.waitEx( remain < 1000L ? remain : 1000L );

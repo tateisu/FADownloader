@@ -1,5 +1,7 @@
 package jp.juggler.fadownloader;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -163,6 +165,50 @@ public class DownloadWorker extends WorkerBase{
 			}
 		}
 		return list;
+	}
+
+	public boolean isTetheringType(){
+		switch(target_type){
+		default:
+			return false;
+		case Pref.TARGET_TYPE_FLASHAIR_STA:
+		case Pref.TARGET_TYPE_PQI_AIR_CARD_TETHER:
+			return true;
+		}
+	}
+
+	public void setShortWait(long remain){
+		wait_until.set( SystemClock.elapsedRealtime() + remain );
+		setStatus( false, service.getString( R.string.wait_short,MACRO_WAIT_UNTIL  ));
+		waitEx(remain);
+	}
+
+	public void setAlarm( long now,long remain ){
+		wait_until.set( SystemClock.elapsedRealtime() + remain );
+
+		try{
+			PendingIntent pi = Utils.createAlarmPendingIntent( service );
+
+			AlarmManager am = (AlarmManager) service.getSystemService( Context.ALARM_SERVICE ); // AlarmManager取得
+							/*
+							if( Build.VERSION.SDK_INT >= 23 ){
+								am.setExactAndAllowWhileIdle( AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime(), pi );
+								// レシーバーは受け取れるが端末のIDLE状態は解除されない。アプリが動けるのは10秒。IDLEからの復帰は15分に1度だけ許される
+							}else
+							*/
+			if( Build.VERSION.SDK_INT >= 21 ){
+				am.setAlarmClock( new AlarmManager.AlarmClockInfo( now + remain, pi ), pi );
+			}else if( Build.VERSION.SDK_INT >= 19 ){
+				am.setExact( AlarmManager.RTC_WAKEUP, now + remain, pi );
+			}else{
+				am.set( AlarmManager.RTC_WAKEUP, now + remain, pi );
+			}
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+			log.e( "待機の設定に失敗 %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+		}
+		cancel( service.getString( R.string.wait_alarm, Utils.formatTimeDuration( remain ) ) );
+
 	}
 
 	public static class ErrorAndMessage{
@@ -410,6 +456,12 @@ public class DownloadWorker extends WorkerBase{
 
 	public long last_file_count;
 
+
+	static final String MACRO_WAIT_UNTIL = "%WAIT_UNTIL%";
+	final AtomicLong wait_until = new AtomicLong(  );
+
+
+
 	public void setStatus( boolean bShowQueueCount, String s ){
 		if( ! bShowQueueCount ){
 			queued_file_count.set( 0L );
@@ -449,6 +501,10 @@ public class DownloadWorker extends WorkerBase{
 				, fc
 				, Utils.formatBytes( bc )
 			);
+		}else if( s!=null && s.contains( MACRO_WAIT_UNTIL ) ){
+			long remain = wait_until.get() - SystemClock.elapsedRealtime();
+			if( remain < 0L ) remain = 0L;
+			return s.replace( MACRO_WAIT_UNTIL, Utils.formatTimeDuration( remain ) );
 		}else{
 			return s;
 		}
@@ -457,6 +513,15 @@ public class DownloadWorker extends WorkerBase{
 	@SuppressWarnings( "ConstantConditions" ) @Override public void run(){
 		setStatus( false, service.getString( R.string.thread_start ) );
 		callback.onThreadStart();
+
+		// 古いアラームがあれば除去
+		try{
+			PendingIntent pi = Utils.createAlarmPendingIntent( service );
+			AlarmManager am = (AlarmManager) service.getSystemService( Context.ALARM_SERVICE );
+			am.cancel( pi );
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+		}
 
 		switch( target_type ){
 		default:

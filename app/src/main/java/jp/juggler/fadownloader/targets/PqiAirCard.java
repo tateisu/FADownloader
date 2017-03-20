@@ -1,10 +1,6 @@
 package jp.juggler.fadownloader.targets;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.net.Uri;
-import android.os.Build;
 import android.os.SystemClock;
 import android.text.TextUtils;
 
@@ -16,16 +12,11 @@ import org.w3c.dom.NodeList;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.text.ParseException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.LinkedList;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import jp.juggler.fadownloader.CancelChecker;
 import jp.juggler.fadownloader.DownloadRecord;
@@ -38,9 +29,6 @@ import jp.juggler.fadownloader.Pref;
 import jp.juggler.fadownloader.QueueItem;
 import jp.juggler.fadownloader.R;
 import jp.juggler.fadownloader.Utils;
-
-import static jp.juggler.fadownloader.targets.FlashAir.reAttr;
-import static jp.juggler.fadownloader.targets.FlashAir.reLine;
 
 public class PqiAirCard{
 
@@ -260,16 +248,6 @@ public class PqiAirCard{
 	public void run(){
 
 		while( ! thread.isCancelled() ){
-
-			// 古いアラームがあれば除去
-			try{
-				PendingIntent pi = Utils.createAlarmPendingIntent( service );
-				AlarmManager am = (AlarmManager) service.getSystemService( Context.ALARM_SERVICE );
-				am.cancel( pi );
-			}catch( Throwable ex ){
-				ex.printStackTrace();
-			}
-
 			if( thread.job_queue == null ){
 				// 指定時刻まで待機する
 				while( ! thread.isCancelled() ){
@@ -278,32 +256,10 @@ public class PqiAirCard{
 					long remain = last_file_listing + thread.interval * 1000L - now;
 					if( remain <= 0 ) break;
 
-					if( remain < ( 15 * 1000L ) ){
-						thread.setStatus( false, service.getString( R.string.wait_short, Utils.formatTimeDuration( remain ) ) );
-						thread.waitEx( remain > 1000L ? 1000L : remain );
+					if(  thread.isTetheringType() || remain < ( 15 * 1000L ) ){
+						thread.setShortWait( remain );
 					}else{
-						try{
-							PendingIntent pi = Utils.createAlarmPendingIntent( service );
-
-							AlarmManager am = (AlarmManager) service.getSystemService( Context.ALARM_SERVICE ); // AlarmManager取得
-							/*
-							if( Build.VERSION.SDK_INT >= 23 ){
-								am.setExactAndAllowWhileIdle( AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime(), pi );
-								// レシーバーは受け取れるが端末のIDLE状態は解除されない。アプリが動けるのは10秒。IDLEからの復帰は15分に1度だけ許される
-							}else
-							*/
-							if( Build.VERSION.SDK_INT >= 21 ){
-								am.setAlarmClock( new AlarmManager.AlarmClockInfo( now + remain, pi ), pi );
-							}else if( Build.VERSION.SDK_INT >= 19 ){
-								am.setExact( AlarmManager.RTC_WAKEUP, now + remain, pi );
-							}else{
-								am.set( AlarmManager.RTC_WAKEUP, now + remain, pi );
-							}
-						}catch( Throwable ex ){
-							ex.printStackTrace();
-							log.e( "待機の設定に失敗 %s %s", ex.getClass().getSimpleName(), ex.getMessage() );
-						}
-						thread.cancel( service.getString( R.string.wait_alarm, Utils.formatTimeDuration( remain ) ) );
+						thread.setAlarm(now,remain);
 						break;
 					}
 				}

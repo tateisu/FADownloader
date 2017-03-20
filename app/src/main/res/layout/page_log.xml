@@ -52,6 +52,7 @@
 
         android:paddingTop="@dimen/activity_vertical_margin"
         android:scrollbarStyle="outsideOverlay"
+        android:fastScrollEnabled="true"
         />
 
 </LinearLayout>
