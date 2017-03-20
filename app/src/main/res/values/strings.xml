@@ -204,5 +204,6 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="target_type_pqi_air_card_tether">PQI Air Card (Tethering)</string>
     <string name="log_clear_confirm">All log data will be deleted.  Are you sure?</string>
     <string name="log_collection_progress">preparing log file …</string>
+    <string name="download_complete_notification">%1$d files downloaded.</string>
 
 </resources>

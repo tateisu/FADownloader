@@ -71,6 +71,8 @@ public class ActMain
 
 	static final int LOADER_ID_LOG = 0;
 	static final int LOADER_ID_RECORD = 1;
+	public static final String EXTRA_TAB = "tab";
+	public static final String TAB_RECORD = "record";
 
 	TextView tvStatus;
 
@@ -318,6 +320,10 @@ public class ActMain
 			.addOnConnectionFailedListener( connection_fail_callback )
 			.addApi( LocationServices.API )
 			.build();
+
+		if(savedInstanceState == null){
+			handleIntent(getIntent());
+		}
 	}
 
 	@Override
@@ -331,6 +337,17 @@ public class ActMain
 		}
 
 		super.onDestroy();
+	}
+
+	@Override protected void onNewIntent( Intent intent ){
+		super.onNewIntent( intent );
+		handleIntent(intent);
+	}
+
+	void handleIntent(Intent intent){
+		if(intent==null) return;
+		String sv = intent.getStringExtra(EXTRA_TAB);
+		if(TAB_RECORD.equals( sv )) pager.setCurrentItem(page_idx_record );
 	}
 
 	/////////////////////////////////////////////////////////////////////////

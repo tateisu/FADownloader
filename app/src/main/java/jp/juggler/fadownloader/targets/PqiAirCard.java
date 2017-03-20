@@ -378,10 +378,9 @@ public class PqiAirCard{
 				}
 
 				// フォルダスキャン開始
-				thread.job_queue = new LinkedList<>();
+				thread.onFileScanStart();
 				thread.job_queue.add( new QueueItem( "", "/", new LocalFile( service, thread.folder_uri ) ) );
-				thread.file_error = false;
-				thread.queued_byte_count_max.set( Long.MAX_VALUE );
+
 			}
 
 			// ファイルスキャンの終了
@@ -389,13 +388,7 @@ public class PqiAirCard{
 				thread.job_queue = null;
 				thread.setStatus( false, service.getString( R.string.file_scan_completed ) );
 				if( ! thread.file_error ){
-					log.i( "ファイルスキャン完了" );
-
-					if( ! thread.repeat ){
-						Pref.pref( service ).edit().putInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP ).apply();
-						thread.cancel( service.getString( R.string.repeat_off ) );
-						thread.allow_stop_service = true;
-					}
+					thread.onFileScanComplete();
 				}
 				continue;
 			}

@@ -1,6 +1,7 @@
 package jp.juggler.fadownloader;
 
 import android.app.AlarmManager;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
@@ -40,6 +41,7 @@ public class DownloadService extends Service{
 	static final String EXTRA_TARGET_TYPE = "target_type" ;
 
 	static final int NOTIFICATION_ID_SERVICE = 1;
+	static final int NOTIFICATION_ID_DOWNLOAD_COMPLETE = 2;
 
 	public LogWriter log;
 
@@ -52,6 +54,8 @@ public class DownloadService extends Service{
 
 	LocationTracker location_tracker;
 	public NetworkTracker wifi_tracker;
+
+	NotificationManager mNotificationManager;
 
 	@Override public void onCreate(){
 		super.onCreate();
@@ -72,6 +76,8 @@ public class DownloadService extends Service{
 		WifiManager wm = (WifiManager) getApplicationContext().getSystemService( Context.WIFI_SERVICE );
 		wifi_lock = wm.createWifiLock( WifiManager.WIFI_MODE_FULL, getPackageName() );
 		wifi_lock.setReferenceCounted( false );
+
+		mNotificationManager = (NotificationManager)  getApplicationContext().getSystemService( Context.NOTIFICATION_SERVICE );
 
 		setServiceNotification( getString( R.string.service_idle ) );
 
@@ -277,6 +283,32 @@ public class DownloadService extends Service{
 			return location_tracker.getLocation();
 		}
 
+		@Override public void onAllFileQueued( long count ){
+			if( count > 0 ){
+				mNotificationManager.cancel( NOTIFICATION_ID_DOWNLOAD_COMPLETE );
+			}
+		}
+
+		@Override public void onAllFileCompleted( long count ){
+
+				NotificationCompat.Builder builder = new NotificationCompat.Builder( DownloadService.this );
+				builder.setSmallIcon( R.drawable.ic_service );
+				builder.setContentTitle( getString( R.string.app_name ) );
+				builder.setContentText( getString(R.string.download_complete_notification,count) );
+				builder.setTicker( getString(R.string.download_complete_notification,count) );
+				builder.setWhen( System.currentTimeMillis() );
+				builder.setDefaults(  NotificationCompat.DEFAULT_ALL );
+			builder.setAutoCancel( true );
+
+				Intent intent = new Intent( DownloadService.this, ActMain.class );
+			intent.putExtra(ActMain.EXTRA_TAB,ActMain.TAB_RECORD);
+				intent.setFlags( Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY );
+				PendingIntent pi = PendingIntent.getActivity( getApplicationContext(), 567, intent, 0 );
+				builder.setContentIntent( pi );
+
+				mNotificationManager.notify(  NOTIFICATION_ID_DOWNLOAD_COMPLETE, builder.build() );
+		}
+
 	};
 
 	static DownloadService service_instance;
@@ -326,6 +358,8 @@ public class DownloadService extends Service{
 
 		startForeground( NOTIFICATION_ID_SERVICE, builder.build() );
 	}
+
+
 
 	GoogleApiClient mGoogleApiClient;
 

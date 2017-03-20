@@ -33,6 +33,7 @@ public class DownloadWorker extends WorkerBase{
 
 	public static final boolean RECORD_QUEUED_STATE = false;
 
+
 	public interface Callback{
 
 		void releaseWakeLock();
@@ -44,6 +45,9 @@ public class DownloadWorker extends WorkerBase{
 		void onThreadEnd( boolean allow_stop_service );
 
 		Location getLocation();
+
+		void onAllFileQueued(long count);
+		void onAllFileCompleted(long count);
 	}
 
 	final DownloadService service;
@@ -331,6 +335,28 @@ public class DownloadWorker extends WorkerBase{
 
 	}
 
+	public void onFileScanStart(){
+		last_file_count = 0;
+		job_queue = new LinkedList<>();
+		file_error = false;
+		queued_byte_count_max.set( Long.MAX_VALUE );
+	}
+
+	public void onFileScanComplete(){
+		log.i( "ファイルスキャン完了" );
+
+		if( last_file_count > 0 ){
+			callback.onAllFileCompleted( last_file_count );
+		}
+
+		if( ! repeat ){
+			Pref.pref( service ).edit().putInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP ).apply();
+			cancel( service.getString( R.string.repeat_off ) );
+			allow_stop_service = true;
+		}
+	}
+
+
 	boolean isForcedSSID(){
 		if( ! force_wifi ) return true;
 		WifiManager wm = (WifiManager) service.getApplicationContext().getSystemService( Context.WIFI_SERVICE );
@@ -382,6 +408,8 @@ public class DownloadWorker extends WorkerBase{
 
 	private final AtomicReference<String> _status = new AtomicReference<>( "?" );
 
+	public long last_file_count;
+
 	public void setStatus( boolean bShowQueueCount, String s ){
 		if( ! bShowQueueCount ){
 			queued_file_count.set( 0L );
@@ -401,6 +429,8 @@ public class DownloadWorker extends WorkerBase{
 			queued_byte_count.set( bc );
 			if( bc > 0 && queued_byte_count_max.get() == Long.MAX_VALUE ){
 				queued_byte_count_max.set( bc );
+				last_file_count = fc;
+				callback.onAllFileQueued( fc );
 			}
 		}
 		_status.set( s );

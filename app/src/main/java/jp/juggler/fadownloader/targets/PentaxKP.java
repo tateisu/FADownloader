@@ -471,15 +471,15 @@ public class PentaxKP{
 				}
 
 				// フォルダスキャン開始
+				thread.onFileScanStart();
+
+
 				thread.setStatus( false, service.getString( R.string.remote_file_listing ) );
-				thread.job_queue = new LinkedList<>();
 				if( ! loadFolder( network ) ){
 					thread.job_queue = null;
 					continue;
 				}
 				mLastFileListed.set( System.currentTimeMillis() );
-				thread.file_error = false;
-				thread.queued_byte_count_max.set( Long.MAX_VALUE );
 			}
 
 			// ファイルスキャンの終了
@@ -487,12 +487,7 @@ public class PentaxKP{
 				thread.job_queue = null;
 				thread.setStatus( false, service.getString( R.string.file_scan_completed ) );
 				if( ! thread.file_error ){
-					log.i( "ファイルスキャン完了" );
-					if( ! thread.repeat ){
-						Pref.pref( service ).edit().putInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP ).apply();
-						thread.cancel( service.getString( R.string.repeat_off ) );
-						thread.allow_stop_service = true;
-					}
+					thread.onFileScanComplete();
 				}
 				continue;
 			}

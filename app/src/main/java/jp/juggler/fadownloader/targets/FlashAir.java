@@ -377,10 +377,9 @@ public class FlashAir{
 				}
 
 				// フォルダスキャン開始
-				thread.job_queue = new LinkedList<>();
+				thread.onFileScanStart();
 				thread.job_queue.add( new QueueItem( "","/", new LocalFile( service, thread.folder_uri ) ) );
-				thread.file_error = false;
-				thread.queued_byte_count_max.set( Long.MAX_VALUE );
+
 			}
 
 			// ファイルスキャンの終了
@@ -388,16 +387,11 @@ public class FlashAir{
 				thread.job_queue = null;
 				thread.setStatus( false, service.getString( R.string.file_scan_completed ) );
 				if( ! thread.file_error ){
-					log.i( "ファイルスキャン完了" );
 					Pref.pref( service ).edit()
 						.putLong( Pref.FLASHAIR_UPDATE_STATUS_OLD, flashair_update_status )
 						.apply();
 
-					if( ! thread.repeat ){
-						Pref.pref( service ).edit().putInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP ).apply();
-						thread.cancel( service.getString( R.string.repeat_off ) );
-						thread.allow_stop_service = true;
-					}
+					thread.onFileScanComplete();
 				}
 				continue;
 			}
@@ -405,6 +399,7 @@ public class FlashAir{
 			try{
 				final QueueItem head = thread.job_queue.getFirst();
 				if( head.is_file ){
+
 					// キューから除去するまえに残りサイズを計算したい
 					thread.setStatus( true, service.getString( R.string.download_file, head.remote_path ) );
 					thread.job_queue.removeFirst();
