@@ -46,7 +46,7 @@ public class DownloadService extends Service{
 	public LogWriter log;
 
 	boolean is_alive;
-	boolean allow_cancel_alarm;
+	boolean cancel_alarm_on_destroy;
 	PowerManager.WakeLock wake_lock;
 
 	WifiManager.WifiLock wifi_lock;
@@ -56,6 +56,7 @@ public class DownloadService extends Service{
 	public NetworkTracker wifi_tracker;
 
 	NotificationManager mNotificationManager;
+	WorkerTracker worker_tracker;
 
 	@Override public void onCreate(){
 		super.onCreate();
@@ -64,7 +65,7 @@ public class DownloadService extends Service{
 		handler = new Handler();
 
 		is_alive = true;
-		allow_cancel_alarm = false;
+		cancel_alarm_on_destroy = false;
 
 		log = new LogWriter( this );
 		log.d( getString( R.string.service_start ) );
@@ -99,16 +100,20 @@ public class DownloadService extends Service{
 				if( is_connected ){
 					int last_mode = Pref.pref( DownloadService.this ).getInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP );
 					if( last_mode != Pref.LAST_MODE_STOP ){
-						worker_wakeup( cause );
+						worker_tracker.wakeup( cause );
 					}
 				}
 			}
 		} );
+
+		worker_tracker = new WorkerTracker( this, log);
 	}
 
 	@Override public void onDestroy(){
 
 		is_alive = false;
+
+		worker_tracker.dispose();
 
 		location_tracker.dispose();
 		wifi_tracker.dispose();
@@ -117,11 +122,8 @@ public class DownloadService extends Service{
 			mGoogleApiClient.disconnect();
 		}
 
-		if( worker != null && worker.isAlive() ){
-			worker.cancel( getString( R.string.service_end ) );
-		}
 
-		if( allow_cancel_alarm ){
+		if( cancel_alarm_on_destroy ){
 			try{
 				PendingIntent pi = Utils.createAlarmPendingIntent( this );
 				AlarmManager am = (AlarmManager) getSystemService( Context.ALARM_SERVICE );
@@ -158,9 +160,9 @@ public class DownloadService extends Service{
 						action = broadcast_intent.getAction();
 
 						if( Receiver1.ACTION_ALARM.equals( action ) ){
-							worker_wakeup( "Alarm" );
+							worker_tracker.wakeup( "Alarm" );
 						}else if( Intent.ACTION_BOOT_COMPLETED.equals( action ) ){
-							worker_wakeup( "Boot completed" );
+							worker_tracker.wakeup( "Boot completed" );
 						}else{
 							log.d( getString( R.string.broadcast_received, action ) );
 						}
@@ -169,32 +171,7 @@ public class DownloadService extends Service{
 					WakefulBroadcastReceiver.completeWakefulIntent( intent );
 				}
 			}else if( ACTION_START.equals( action ) ){
-
-				try{
-					will_restart = true;
-					if( worker != null ){
-						worker.cancel( getString( R.string.manual_restart ) );
-						worker = null;
-					}
-				}catch( Throwable ex ){
-					ex.printStackTrace();
-					log.e( ex, "thread cancel failed." );
-				}finally{
-					will_restart = false;
-				}
-
-				try{
-					Pref.pref( this ).edit()
-						.remove( Pref.LAST_IDLE_START )
-						.remove( Pref.FLASHAIR_UPDATE_STATUS_OLD )
-						.apply();
-					worker = new DownloadWorker( this, intent, worker_callback );
-					worker.start();
-
-				}catch( Throwable ex ){
-					ex.printStackTrace();
-					log.e( ex, "thread start failed." );
-				}
+				worker_tracker.start(intent);
 			}else{
 				log.d( getString( R.string.unsupported_intent_received, action ) );
 			}
@@ -207,109 +184,77 @@ public class DownloadService extends Service{
 		return null;
 	}
 
-	/////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////
 
-	DownloadWorker worker;
-	boolean will_restart;
-
-	void worker_wakeup( String cause ){
-		if( worker != null && worker.isAlive() ){
-			worker.notifyEx();
-			return;
-		}
-
+	void releaseWakeLock(){
+		if( ! is_alive ) return;
 		try{
-			worker = new DownloadWorker( this, cause, worker_callback );
-			worker.start();
-
+			wake_lock.release();
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			log.e( ex, "thread start failed." );
+			log.e( ex, "WakeLock release failed." );
+		}
+		try{
+			wifi_lock.release();
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+			log.e( ex, "WifiLock release failed." );
+		}
+	}
+	void acquireWakeLock(){
+		if( ! is_alive ) return;
+		try{
+			wake_lock.acquire();
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+			log.e( ex, "WakeLock acquire failed." );
+		}
+		try{
+			wifi_lock.acquire();
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+			log.e( ex, "WifiLock acquire failed." );
+		}
+	}
+	public void onThreadStart(){
+		if( ! is_alive ) return;
+		setServiceNotification( getString( R.string.thread_running ) );
+	}
+
+	void onThreadEnd(boolean complete_and_no_repeat ){
+		if(!is_alive) return;
+
+		if( complete_and_no_repeat ){
+			DownloadService.this.cancel_alarm_on_destroy = true;
+			stopSelf();
+		}else{
+			setServiceNotification( getString( R.string.service_idle ) );
 		}
 	}
 
-	final DownloadWorker.Callback worker_callback = new DownloadWorker.Callback(){
-		@Override public void releaseWakeLock(){
-			if( ! is_alive ) return;
-			if( will_restart ) return;
-			try{
-				wake_lock.release();
-			}catch( Throwable ex ){
-				ex.printStackTrace();
-				log.e( ex, "WakeLock release failed." );
-			}
-			try{
-				wifi_lock.release();
-			}catch( Throwable ex ){
-				ex.printStackTrace();
-				log.e( ex, "WifiLock release failed." );
-			}
+	void clearDownloadCompleteNotification(long count){
+		if( count > 0 ){
+			mNotificationManager.cancel( NOTIFICATION_ID_DOWNLOAD_COMPLETE );
 		}
+	}
+	void setDownloadCompleteNotification(long count){
+		NotificationCompat.Builder builder = new NotificationCompat.Builder( DownloadService.this );
+		builder.setSmallIcon( R.drawable.ic_service );
+		builder.setContentTitle( getString( R.string.app_name ) );
+		builder.setContentText( getString(R.string.download_complete_notification,count) );
+		builder.setTicker( getString(R.string.download_complete_notification,count) );
+		builder.setWhen( System.currentTimeMillis() );
+		builder.setDefaults(  NotificationCompat.DEFAULT_ALL );
+		builder.setAutoCancel( true );
 
-		@Override public void acquireWakeLock(){
-			if( ! is_alive ) return;
-			try{
-				wake_lock.acquire();
-			}catch( Throwable ex ){
-				ex.printStackTrace();
-				log.e( ex, "WakeLock acquire failed." );
-			}
-			try{
-				wifi_lock.acquire();
-			}catch( Throwable ex ){
-				ex.printStackTrace();
-				log.e( ex, "WifiLock acquire failed." );
-			}
-		}
+		Intent intent = new Intent( DownloadService.this, ActMain.class );
+		intent.putExtra(ActMain.EXTRA_TAB,ActMain.TAB_RECORD);
+		intent.setFlags( Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY );
+		PendingIntent pi = PendingIntent.getActivity( getApplicationContext(), 567, intent, 0 );
+		builder.setContentIntent( pi );
 
-		@Override public void onThreadStart(){
-			setServiceNotification( getString( R.string.thread_running ) );
-		}
-
-		@Override public void onThreadEnd( boolean allow_stop_service ){
-			if(!is_alive) return;
-
-			if( ! will_restart ){
-				if( allow_stop_service ){
-					allow_cancel_alarm = true;
-					stopSelf();
-				}else{
-					setServiceNotification( getString( R.string.service_idle ) );
-				}
-			}
-		}
-
-		@Override public Location getLocation(){
-			return location_tracker.getLocation();
-		}
-
-		@Override public void onAllFileQueued( long count ){
-			if( count > 0 ){
-				mNotificationManager.cancel( NOTIFICATION_ID_DOWNLOAD_COMPLETE );
-			}
-		}
-
-		@Override public void onAllFileCompleted( long count ){
-
-				NotificationCompat.Builder builder = new NotificationCompat.Builder( DownloadService.this );
-				builder.setSmallIcon( R.drawable.ic_service );
-				builder.setContentTitle( getString( R.string.app_name ) );
-				builder.setContentText( getString(R.string.download_complete_notification,count) );
-				builder.setTicker( getString(R.string.download_complete_notification,count) );
-				builder.setWhen( System.currentTimeMillis() );
-				builder.setDefaults(  NotificationCompat.DEFAULT_ALL );
-			builder.setAutoCancel( true );
-
-				Intent intent = new Intent( DownloadService.this, ActMain.class );
-			intent.putExtra(ActMain.EXTRA_TAB,ActMain.TAB_RECORD);
-				intent.setFlags( Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY );
-				PendingIntent pi = PendingIntent.getActivity( getApplicationContext(), 567, intent, 0 );
-				builder.setContentIntent( pi );
-
-				mNotificationManager.notify(  NOTIFICATION_ID_DOWNLOAD_COMPLETE, builder.build() );
-		}
-
-	};
+		mNotificationManager.notify(  NOTIFICATION_ID_DOWNLOAD_COMPLETE, builder.build() );
+	}
 
 	static DownloadService service_instance;
 
@@ -333,10 +278,11 @@ public class DownloadService extends Service{
 		service_instance.wifi_tracker.getStatus(sb);
 		sb.append('\n');
 
-		if( service_instance.worker == null || ! service_instance.worker.isAlive() ){
+		DownloadWorker worker = service_instance.worker_tracker.worker;
+		if( worker == null || ! worker.isAlive() ){
 			sb.append( context.getString( R.string.thread_not_running_status ) );
 		}else{
-			sb.append( service_instance.worker.getStatus() );
+			sb.append( worker.getStatus() );
 		}
 
 		return sb.toString();
@@ -404,6 +350,5 @@ public class DownloadService extends Service{
 	public static Location getLocation(){
 		return location;
 	}
-
 
 }

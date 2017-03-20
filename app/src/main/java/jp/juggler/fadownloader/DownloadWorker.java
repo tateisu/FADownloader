@@ -42,7 +42,7 @@ public class DownloadWorker extends WorkerBase{
 
 		void onThreadStart();
 
-		void onThreadEnd( boolean allow_stop_service );
+		void onThreadEnd(boolean complete_and_no_repeat );
 
 		Location getLocation();
 
@@ -352,7 +352,7 @@ public class DownloadWorker extends WorkerBase{
 		if( ! repeat ){
 			Pref.pref( service ).edit().putInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP ).apply();
 			cancel( service.getString( R.string.repeat_off ) );
-			allow_stop_service = true;
+			complete_and_no_repeat = true;
 		}
 	}
 
@@ -398,7 +398,7 @@ public class DownloadWorker extends WorkerBase{
 	public final ContentValues cv = new ContentValues();
 	public boolean file_error = false;
 
-	public boolean allow_stop_service = false;
+	public boolean complete_and_no_repeat = false;
 	public LinkedList<QueueItem> job_queue = null;
 
 	public AtomicLong queued_byte_count_max = new AtomicLong();
@@ -487,7 +487,7 @@ public class DownloadWorker extends WorkerBase{
 		}
 		setStatus( false, service.getString( R.string.thread_end ) );
 		callback.releaseWakeLock();
-		callback.onThreadEnd( allow_stop_service );
+		callback.onThreadEnd( complete_and_no_repeat );
 	}
 
 }
