@@ -20,7 +20,6 @@ public class PageOther extends PagerAdapterBase.PageViewHolder implements View.O
 	@Override protected void onPageCreate( int page_idx, View root ) throws Throwable{
 		btnRemoveAd = root.findViewById( R.id.btnRemoveAd );
 
-		root.findViewById( R.id.btnLogClear ).setOnClickListener( this );
 		root.findViewById( R.id.btnOSSLicence ).setOnClickListener( this );
 		root.findViewById( R.id.btnWifiSetting ).setOnClickListener( this );
 		root.findViewById( R.id.btnOpenMap ).setOnClickListener( this );
@@ -35,10 +34,6 @@ public class PageOther extends PagerAdapterBase.PageViewHolder implements View.O
 
 	@Override public void onClick( View view ){
 		switch( view.getId() ){
-
-		case R.id.btnLogClear:
-			activity.getContentResolver().delete( LogData.meta.content_uri, null, null );
-			break;
 
 		case R.id.btnRecordClear:
 			activity.getContentResolver().delete( DownloadRecord.meta.content_uri, null, null );

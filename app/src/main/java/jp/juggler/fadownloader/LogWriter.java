@@ -157,6 +157,12 @@ public class LogWriter{
 	@SuppressWarnings( "unused" )
 	public static  String formatError( Throwable ex, String fmt, Object... args ){
 		if( args.length > 0 ) fmt = String.format( fmt, args );
-		return fmt + String.format( ":%s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+		return fmt + String.format( " :%s %s", ex.getClass().getSimpleName(), ex.getMessage() );
 	}
+
+	@SuppressWarnings( "unused" )
+	public static  String formatError( Throwable ex,Resources resources,int string_id, Object... args ){
+		return resources.getString(string_id,args) + String.format( " :%s %s", ex.getClass().getSimpleName(), ex.getMessage() );
+	}
+
 }

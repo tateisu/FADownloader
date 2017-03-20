@@ -151,4 +151,8 @@
     <string name="remote_file_list_parse_error">接続先ファイル一覧のデータエラー</string>
     <string name="remote_file_listing">接続先ファイル一覧の取得中</string>
     <string name="other_active_warning">Wi-Fi以外の接続 %1$s がActiveになっています。OFFにするとTargetに接続できるかもしれません</string>
+    <string name="log_clear_confirm">ログを全て消去します。よろしいですか？</string>
+    <string name="log_collection_progress">ログファイルの準備中…</string>
+    <string name="target_type_pqi_air_card">PQI Air Card</string>
+    <string name="target_type_pqi_air_card_tether">PQI Air Card (テザリング)</string>
 </resources>

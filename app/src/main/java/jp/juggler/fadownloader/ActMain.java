@@ -67,6 +67,7 @@ public class ActMain
 	static final int REQUEST_PURCHASE = 4;
 	static final int REQUEST_FOLDER_PICKER = 5;
 	static final int REQUEST_SSID_PICKER = 6;
+	public static final int REQUEST_CODE_SEND = 7;
 
 	static final int LOADER_ID_LOG = 0;
 	static final int LOADER_ID_RECORD = 1;

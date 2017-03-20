@@ -2,6 +2,7 @@ package jp.juggler.fadownloader;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -19,6 +20,7 @@ import java.util.Locale;
 
 import android.net.wifi.SupplicantState;
 import android.os.Bundle;
+import android.os.Looper;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.support.annotation.NonNull;
@@ -35,6 +37,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
+import android.widget.Toast;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -575,6 +578,76 @@ public class Utils{
 		if( node != null ) return node.getNodeValue();
 		return defval;
 	}
+
+	public static void showToast( final Activity activity, final boolean bLong, final String fmt, final Object... args ){
+		if( Looper.getMainLooper().getThread() != Thread.currentThread() ){
+			activity.runOnUiThread( new Runnable(){
+				@Override public void run(){
+					showToast(  activity,  bLong,  fmt,  args );
+				}
+			} );
+			return;
+		}
+
+		Toast.makeText(
+			activity
+			,( args.length ==0 ? fmt: String.format(fmt,args))
+			, bLong ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT
+		).show();
+	}
+
+	public static void showToast( final  Activity activity,final Throwable ex,final   String fmt,final Object... args ){
+
+		if( Looper.getMainLooper().getThread() != Thread.currentThread() ){
+			activity.runOnUiThread( new Runnable(){
+				@Override public void run(){
+					showToast(  activity,  ex,  fmt,  args );
+				}
+			} );
+			return;
+		}
+
+		Toast.makeText(
+			activity
+			, LogWriter.formatError( ex,fmt,args)
+			, Toast.LENGTH_LONG
+		).show();
+	}
+
+	public static void showToast(  final Activity activity,final  boolean bLong,final  int string_id,final Object... args ){
+
+		if( Looper.getMainLooper().getThread() != Thread.currentThread() ){
+			activity.runOnUiThread( new Runnable(){
+				@Override public void run(){
+					showToast(  activity,  bLong,  string_id,  args );
+				}
+			} );
+			return;
+		}
+		Toast.makeText(
+			activity
+			,activity.getString(string_id,args)
+			, bLong ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT
+		).show();
+	}
+
+	public static void showToast(  final Activity activity,final Throwable ex,  final  int string_id,final Object... args ){
+
+		if( Looper.getMainLooper().getThread() != Thread.currentThread() ){
+			activity.runOnUiThread( new Runnable(){
+				@Override public void run(){
+					showToast(  activity,  ex,  string_id,  args );
+				}
+			} );
+			return;
+		}
+		Toast.makeText(
+			activity
+			, LogWriter.formatError( ex,activity.getResources(),string_id,args)
+			, Toast.LENGTH_LONG
+		).show();
+	}
+
 
 }
 

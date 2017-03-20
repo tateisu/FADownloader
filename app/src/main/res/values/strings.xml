@@ -202,5 +202,7 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="other_active_warning">non-Wi-Fi connection %1$s is active.please turn it OFF to connect target.</string>
     <string name="target_type_pqi_air_card">PQI Air Card</string>
     <string name="target_type_pqi_air_card_tether">PQI Air Card (Tethering)</string>
+    <string name="log_clear_confirm">All log data will be deleted.  Are you sure?</string>
+    <string name="log_collection_progress">preparing log file …</string>
 
 </resources>

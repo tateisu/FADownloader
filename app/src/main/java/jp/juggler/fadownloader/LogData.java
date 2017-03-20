@@ -53,4 +53,22 @@ public class LogData{
 			return null;
 		}
 	}
+
+	public static String getLogLevelString(int level){
+		if( level >= LogData.LEVEL_FLOOD ){
+			return "Flood";
+		}else if( level >= LogData.LEVEL_HEARTBEAT ){
+			return "HeartBeat";
+		}else if( level >= LogData.LEVEL_DEBUG ){
+			return "Debug";
+		}else if( level >= LogData.LEVEL_VERBOSE ){
+			return "Verbose";
+		}else if( level >= LogData.LEVEL_INFO ){
+			return "Info";
+		}else if( level >= LogData.LEVEL_WARNING ){
+			return "Warning";
+		}else{
+			return "Error";
+		}
+	}
 }

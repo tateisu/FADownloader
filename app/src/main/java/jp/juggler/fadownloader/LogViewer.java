@@ -72,14 +72,14 @@ public class LogViewer implements LoaderManager.LoaderCallbacks<Cursor>{
 		TextView tvMessage;
 	}
 
+	static final SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss.SSS z", Locale.getDefault(  ) );
+
 	class LogAdapter extends CursorAdapter{
 
 		final LayoutInflater inflater = activity.getLayoutInflater();
 		final int colidx_time;
 		final int colidx_message;
 		final int colidx_level;
-
-		SimpleDateFormat date_fmt = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss.SSS z", Locale.getDefault(  ) );
 
 		public LogAdapter( Context context, Cursor c ){
 			super( context, c, false );
