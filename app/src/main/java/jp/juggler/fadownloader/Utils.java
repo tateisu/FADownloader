@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -35,8 +36,15 @@ import android.os.Build;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+
 import java.text.DecimalFormat;
 import java.util.Map;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 public class Utils{
 
@@ -535,6 +543,31 @@ public class Utils{
 			sb.append( s.substring( 1, s.length() ).toLowerCase() );
 		}
 		return sb.toString();
+	}
+
+	private static DocumentBuilder xml_builder;
+
+	public static Element parseXml( byte[] src ){
+		if( xml_builder == null ){
+			try{
+				xml_builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			}catch( Throwable ex ){
+				ex.printStackTrace();
+				return null;
+			}
+		}
+		try{
+			return xml_builder.parse( new ByteArrayInputStream( src ) ).getDocumentElement();
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+			return null;
+		}
+	}
+
+	public static String getAttribute( NamedNodeMap attr_map, String name, String defval ){
+		Node node = attr_map.getNamedItem( name );
+		if( node != null ) return node.getNodeValue();
+		return defval;
 	}
 
 }

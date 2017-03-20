@@ -30,9 +30,9 @@ FlashAir APモードはFlashAirのAPにスマホを接続する場合に使い�
 FlashAir STAモードはスマホのテザリング機能を有効にして、FlashAirを子機として接続する場合に使います。\n
 (スマホとFlashAir カードの無線LAN設定は別途行ってください)\n
 FADownloaderはテザリング内部のLANにUDPパケットをばらまいた後にARPテーブルを参照することで、FlashAirカードのIPアドレスを自動的に検出します。</string>
-    <string name="target_type_0">FlashAir APモード</string>
-    <string name="target_type_1">FlashAir STAモード</string>
-    <string name="target_type_2" translatable="false">Pentax KP等</string>
+    <string name="target_type_flashair_ap">FlashAir APモード</string>
+    <string name="target_type_flashair_sta">FlashAir STAモード</string>
+    <string name="target_type_pentax_kp" translatable="false">Pentax KP等</string>
     <string name="target_type_invalid">target type invalid.</string>
 
     <string name="target_url">Target URL</string>
@@ -200,5 +200,7 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="remote_file_list_parse_error">remote file list parse error</string>
     <string name="remote_file_listing">remote file listing</string>
     <string name="other_active_warning">non-Wi-Fi connection %1$s is active.please turn it OFF to connect target.</string>
+    <string name="target_type_pqi_air_card">PQI Air Card</string>
+    <string name="target_type_pqi_air_card_tether">PQI Air Card (Tethering)</string>
 
 </resources>

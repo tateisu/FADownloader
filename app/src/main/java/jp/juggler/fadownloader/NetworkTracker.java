@@ -22,12 +22,10 @@ import org.apache.commons.io.IOUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URL;
@@ -43,7 +41,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class NetworkTracker{
-
 
 	interface Callback{
 
@@ -203,9 +200,62 @@ public class NetworkTracker{
 	}
 
 	final AtomicReference<String> last_other_active = new AtomicReference<>();
+
 	public String getOtherActive(){
 		return last_other_active.get();
 	}
+
+	interface UrlChecker{
+
+		boolean checkUrl(  String url );
+	}
+
+	boolean checkUrl_sub( String target_url,String check_url ){
+		boolean bFound = false;
+		try{
+			URL urlObject = new URL( check_url );
+			HttpURLConnection conn = (HttpURLConnection) urlObject.openConnection();
+			try{
+				conn.setDoInput( true );
+				conn.setConnectTimeout( 30000 );
+				conn.setReadTimeout( 30000 );
+				conn.setDoOutput( false );
+				conn.connect();
+				int rcode = conn.getResponseCode();
+				if( rcode != 200 ){
+					log.e( "HTTP error %s. url=%s", rcode, check_url );
+				}else{
+					if( ! target_url.equals( last_flash_air_url.get() ) ){
+						log.i( "target detected. %s", target_url );
+					}
+					last_flash_air_url.set( target_url );
+					bFound = true;
+				}
+			}finally{
+				try{
+					conn.disconnect();
+				}catch( Throwable ignored ){
+				}
+			}
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+			log.e( ex, check_url );
+		}
+
+		return bFound;
+	}
+
+	final UrlChecker urlChecker_FlashAir = new UrlChecker(){
+		@Override public boolean checkUrl(  String target_url ){
+			return checkUrl_sub( target_url,target_url + "command.cgi?op=108");
+		}
+	};
+
+	final UrlChecker urlChecker_PqiAirCard = new UrlChecker(){
+		@Override public boolean checkUrl(  String target_url ){
+			return checkUrl_sub( target_url,target_url + "cgi-bin/get_config.pl");
+		}
+	};
 
 	class Worker extends WorkerBase{
 
@@ -220,10 +270,10 @@ public class NetworkTracker{
 
 		boolean isWifiAPEnabled(){
 			try{
-				Boolean b = (Boolean)wifiManager.getClass().getMethod( "isWifiApEnabled" ).invoke( wifiManager );
-				if(b!=null) return b;
-			}catch(Throwable ex){
-				ex.printStackTrace(  );
+				Boolean b = (Boolean) wifiManager.getClass().getMethod( "isWifiApEnabled" ).invoke( wifiManager );
+				if( b != null ) return b;
+			}catch( Throwable ex ){
+				ex.printStackTrace();
 			}
 			return false;
 		}
@@ -259,7 +309,6 @@ public class NetworkTracker{
 		void sprayUDPPacket( String nw_addr, String ip_base ){
 			long start = SystemClock.elapsedRealtime();
 
-
 			try{
 				byte[] data = new byte[ 1 ];
 				int port = 80;
@@ -286,54 +335,17 @@ public class NetworkTracker{
 			log.d( "sent UDP packet to '%s*' time=%s", ip_base, Utils.formatTimeDuration( SystemClock.elapsedRealtime() - start ) );
 		}
 
-		boolean checkFlashAirUrl( String check_url ){
-
-			boolean bFound = false;
-			try{
-				final String test_url = check_url + "command.cgi?op=108";
-				URL urlObject = new URL( test_url );
-				HttpURLConnection conn = (HttpURLConnection) urlObject.openConnection();
-				try{
-					conn.setDoInput( true );
-					conn.setConnectTimeout( 30000 );
-					conn.setReadTimeout( 30000 );
-					conn.setDoOutput( false );
-					conn.connect();
-					int rcode = conn.getResponseCode();
-					if( rcode != 200 ){
-						log.e("%s: checkFlashAirUrl() failed. HTTP error %s",check_url,rcode);
-					}else{
-						if( ! check_url.equals( last_flash_air_url.get() ) ){
-							log.i( "FlashAir found. %s", check_url );
-						}
-						last_flash_air_url.set( check_url );
-						bFound = true;
-					}
-				}finally{
-					try{
-						conn.disconnect();
-					}catch( Throwable ignored ){
-					}
-				}
-			}catch( Throwable ex ){
-				ex.printStackTrace();
-				log.e(ex,"%s: checkFlashAirUrl() failed.",check_url);
-			}
-
-			return bFound;
-		}
-
-		boolean checkStaModeFlashAir(){
+		boolean detectTetheringClient( UrlChecker url_checker ){
 
 			// 設定で指定されたURLを最初に試す
 			// ただしURLにIPアドレスが書かれている場合のみ
 			if( reIPAddr.matcher( target_url ).find() ){
-				if( checkFlashAirUrl( target_url ) ){
+				if( url_checker.checkUrl( target_url ) ){
 					return true;
 				}
 			}
 
-			if(! isWifiAPEnabled()){
+			if( ! isWifiAPEnabled() ){
 				log.d( "Wi-Fi Tethering is not enabled." );
 				return false;
 			}
@@ -354,7 +366,7 @@ public class NetworkTracker{
 			// ARPテーブル中のIPアドレスを確認
 			Matcher m = reArp.matcher( strArp );
 			while( m.find() ){
-				String item_ip =  m.group( 1 );
+				String item_ip = m.group( 1 );
 				String item_mac = m.group( 4 );
 
 				// MACアドレスが不明なエントリや
@@ -363,7 +375,7 @@ public class NetworkTracker{
 					|| ! item_ip.startsWith( ip_base )
 					) continue;
 
-				if( checkFlashAirUrl( "http://" +item_ip + "/" ) ){
+				if( url_checker.checkUrl( "http://" + item_ip + "/" ) ){
 					return true;
 				}
 			}
@@ -423,11 +435,14 @@ public class NetworkTracker{
 					}
 				}
 				ns_list.afterAllNetwork();
-				last_other_active.set( ns_list.other_active);
+				last_other_active.set( ns_list.other_active );
 
-				// FlashAir STAモードの時の処理
 				if( target_type == Pref.TARGET_TYPE_FLASHAIR_STA ){
-					return checkStaModeFlashAir();
+					// FlashAir STAモードの時の処理
+					return detectTetheringClient( urlChecker_FlashAir );
+				}else if( target_type == Pref.TARGET_TYPE_PQI_AIR_CARD_TETHER ){
+					// PQI Air Card Tethering モードの時の処理
+					return detectTetheringClient( urlChecker_PqiAirCard );
 				}
 
 				// Wi-Fiが無効なら有効にする

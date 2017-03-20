@@ -18,6 +18,7 @@ import android.text.TextUtils;
 import it.sephiroth.android.library.exif2.ExifInterface;
 import jp.juggler.fadownloader.targets.FlashAir;
 import jp.juggler.fadownloader.targets.PentaxKP;
+import jp.juggler.fadownloader.targets.PqiAirCard;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -49,7 +50,7 @@ public class DownloadWorker extends WorkerBase{
 	public final Callback callback;
 
 	public final boolean repeat;
-	public String flashair_url;
+	public String target_url;
 	public final String folder_uri;
 	public final int interval;
 	final String file_type;
@@ -66,7 +67,7 @@ public class DownloadWorker extends WorkerBase{
 
 		log.i( R.string.thread_ctor_params );
 		this.repeat = intent.getBooleanExtra( DownloadService.EXTRA_REPEAT, false );
-		this.flashair_url = intent.getStringExtra( DownloadService.EXTRA_TARGET_URL );
+		this.target_url = intent.getStringExtra( DownloadService.EXTRA_TARGET_URL );
 		this.folder_uri = intent.getStringExtra( DownloadService.EXTRA_LOCAL_FOLDER );
 		this.interval = intent.getIntExtra( DownloadService.EXTRA_INTERVAL, 86400 );
 		this.file_type = intent.getStringExtra( DownloadService.EXTRA_FILE_TYPE );
@@ -82,7 +83,7 @@ public class DownloadWorker extends WorkerBase{
 		Pref.pref( service ).edit()
 			.putBoolean( Pref.WORKER_REPEAT, repeat )
 			.putInt( Pref.WORKER_TARGET_TYPE, target_type )
-			.putString( Pref.WORKER_FLASHAIR_URL, flashair_url )
+			.putString( Pref.WORKER_FLASHAIR_URL, target_url )
 			.putString( Pref.WORKER_FOLDER_URI, folder_uri )
 			.putInt( Pref.WORKER_INTERVAL, interval )
 			.putString( Pref.WORKER_FILE_TYPE, file_type )
@@ -95,7 +96,7 @@ public class DownloadWorker extends WorkerBase{
 
 		file_type_list = file_type_parse();
 
-		service.wifi_tracker.updateSetting( force_wifi, ssid, target_type, flashair_url );
+		service.wifi_tracker.updateSetting( force_wifi, ssid, target_type, target_url );
 
 		service.location_tracker.updateSetting( location_setting );
 	}
@@ -108,7 +109,7 @@ public class DownloadWorker extends WorkerBase{
 		log.i( R.string.thread_ctor_restart, cause );
 		SharedPreferences pref = Pref.pref( service );
 		this.repeat = pref.getBoolean( Pref.WORKER_REPEAT, false );
-		this.flashair_url = pref.getString( Pref.WORKER_FLASHAIR_URL, null );
+		this.target_url = pref.getString( Pref.WORKER_FLASHAIR_URL, null );
 		this.folder_uri = pref.getString( Pref.WORKER_FOLDER_URI, null );
 		this.interval = pref.getInt( Pref.WORKER_INTERVAL, 86400 );
 		this.file_type = pref.getString( Pref.WORKER_FILE_TYPE, null );
@@ -124,7 +125,7 @@ public class DownloadWorker extends WorkerBase{
 
 		file_type_list = file_type_parse();
 
-		service.wifi_tracker.updateSetting( force_wifi, ssid, target_type, flashair_url );
+		service.wifi_tracker.updateSetting( force_wifi, ssid, target_type, target_url );
 
 		service.location_tracker.updateSetting( location_setting );
 	}
@@ -250,6 +251,85 @@ public class DownloadWorker extends WorkerBase{
 		}
 	}
 
+	public void record(
+		QueueItem item
+		, long lap_time
+		, int state
+		, String state_message
+	){
+		if( ! DownloadWorker.RECORD_QUEUED_STATE ){
+			if( state == DownloadRecord.STATE_QUEUED ) return;
+		}
+		String local_uri = item.local_file.getFileUri( log, false );
+		if( local_uri == null ) local_uri = "";
+		DownloadRecord.insert(
+			service.getContentResolver()
+			, cv
+			, item.name
+			, item.remote_path
+			, local_uri
+			, state
+			, state_message
+			, lap_time
+			, item.size
+		);
+	}
+
+	public void afterDownload( long time_start, byte[] data, QueueItem item ){
+		long lap_time = SystemClock.elapsedRealtime() - time_start;
+		if( isCancelled() ){
+			record( item
+				, lap_time
+				, DownloadRecord.STATE_CANCELLED
+				, "download cancelled."
+			);
+
+			item.local_file.delete();
+		}else if( data == null ){
+			checkHostError();
+			log.e( "FILE %s :HTTP error %s", item.name, client.last_error );
+
+			file_error = true;
+
+			record( item
+				, lap_time
+				, DownloadRecord.STATE_DOWNLOAD_ERROR
+				, client.last_error
+			);
+
+			item.local_file.delete();
+		}else{
+			log.i( "FILE %s :download complete. %dms", item.name, lap_time );
+
+			// 位置情報を取得する時にファイルの日時が使えないかと思ったけど
+			// タイムゾーンがわからん…
+
+			Location location = callback.getLocation();
+			if( location != null && DownloadWorker.reJPEG.matcher( item.name ).find() ){
+				DownloadWorker.ErrorAndMessage em = updateFileLocation( location, item.local_file );
+				if( item.time > 0L ) item.local_file.setFileTime( service, log, item.time );
+
+				record(
+					item
+					, lap_time
+					, em.bError ? DownloadRecord.STATE_EXIF_MANGLING_ERROR : DownloadRecord.STATE_COMPLETED
+					, "GeoTagging: " + em.message
+				);
+			}else{
+				if( item.time > 0L ) item.local_file.setFileTime( service, log, item.time );
+
+				record(
+					item
+					, lap_time
+					, DownloadRecord.STATE_COMPLETED
+					, "OK"
+				);
+
+			}
+		}
+
+	}
+
 	boolean isForcedSSID(){
 		if( ! force_wifi ) return true;
 		WifiManager wm = (WifiManager) service.getApplicationContext().getSystemService( Context.WIFI_SERVICE );
@@ -358,7 +438,10 @@ public class DownloadWorker extends WorkerBase{
 		case Pref.TARGET_TYPE_PENTAX_KP:
 			new PentaxKP( service, this ).run();
 			break;
-
+		case Pref.TARGET_TYPE_PQI_AIR_CARD:
+		case Pref.TARGET_TYPE_PQI_AIR_CARD_TETHER:
+			new PqiAirCard( service, this ).run();
+			break;
 		}
 
 		// 未取得状態のファイルを履歴から消す
@@ -374,60 +457,6 @@ public class DownloadWorker extends WorkerBase{
 		setStatus( false, service.getString( R.string.thread_end ) );
 		callback.releaseWakeLock();
 		callback.onThreadEnd( allow_stop_service );
-	}
-
-	public void record(
-		QueueItem item
-		, long lap_time
-		, int state
-		, String state_message
-	){
-		if( ! DownloadWorker.RECORD_QUEUED_STATE ){
-			if( state == DownloadRecord.STATE_QUEUED ) return;
-		}
-		String local_uri = item.local_file.getFileUri( log, false );
-		if( local_uri == null ) local_uri = "";
-		DownloadRecord.insert(
-			service.getContentResolver()
-			, cv
-			, item.name
-			, item.remote_path
-			, local_uri
-			, state
-			, state_message
-			, lap_time
-			, item.size
-		);
-	}
-
-	public void afterDownload( QueueItem item, long lap_time ){
-		log.i( "FILE %s :download complete. %dms", item.name, lap_time );
-
-		// 位置情報を取得する時にファイルの日時が使えないかと思ったけど
-		// タイムゾーンがわからん…
-
-		Location location = callback.getLocation();
-		if( location != null && DownloadWorker.reJPEG.matcher( item.name ).find() ){
-			DownloadWorker.ErrorAndMessage em = updateFileLocation( location, item.local_file );
-			if( item.time > 0L ) item.local_file.setFileTime( service, log, item.time );
-
-			record(
-				item
-				, lap_time
-				, em.bError ? DownloadRecord.STATE_EXIF_MANGLING_ERROR : DownloadRecord.STATE_COMPLETED
-				, "GeoTagging: " + em.message
-			);
-		}else{
-			if( item.time > 0L ) item.local_file.setFileTime( service, log, item.time );
-
-			record(
-				item
-				, lap_time
-				, DownloadRecord.STATE_COMPLETED
-				, "OK"
-			);
-
-		}
 	}
 
 }

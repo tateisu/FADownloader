@@ -102,9 +102,11 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		);
 		target_type_adapter.setDropDownViewResource( R.layout.spinner_dropdown );
 		target_type_adapter.addAll(
-			activity.getString( R.string.target_type_0 ),
-			activity.getString( R.string.target_type_1 ),
-			activity.getString( R.string.target_type_2 )
+			activity.getString( R.string.target_type_flashair_ap )
+			,activity.getString( R.string.target_type_flashair_sta )
+			,activity.getString( R.string.target_type_pentax_kp )
+			,activity.getString( R.string.target_type_pqi_air_card )
+			,activity.getString( R.string.target_type_pqi_air_card_tether )
 		);
 		spTargetType.setAdapter( target_type_adapter );
 		spTargetType.setOnItemSelectedListener( new AdapterView.OnItemSelectedListener(){

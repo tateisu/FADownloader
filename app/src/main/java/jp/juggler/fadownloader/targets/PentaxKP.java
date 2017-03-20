@@ -5,7 +5,6 @@ import jp.juggler.fadownloader.DownloadRecord;
 import jp.juggler.fadownloader.DownloadService;
 import jp.juggler.fadownloader.DownloadWorker;
 
-import android.location.Location;
 import android.net.Uri;
 import android.os.SystemClock;
 import android.text.TextUtils;
@@ -32,7 +31,6 @@ import jp.juggler.fadownloader.Utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,7 +38,6 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PentaxKP{
@@ -58,7 +55,7 @@ public class PentaxKP{
 	static final Pattern reDateTime = Pattern.compile("(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)");
 
 	boolean loadFolder( Object network ){
-		String cgi_url = thread.flashair_url + "v1/photos";
+		String cgi_url = thread.target_url + "v1/photos";
 		byte[] data = thread.client.getHTTP( log, network, cgi_url );
 		if( thread.isCancelled() ) return false;
 		if( data == null ){
@@ -124,7 +121,7 @@ public class PentaxKP{
 //						// ダウンロード進捗のためにサイズを調べる
 //						try{
 //							log.d("get file size for %s",remote_path);
-//							final String get_url = thread.flashair_url + "v1/photos" + Uri.encode( remote_path, "/_" ) + "?size=full";
+//							final String get_url = thread.target_url + "v1/photos" + Uri.encode( remote_path, "/_" ) + "?size=full";
 //							data = thread.client.getHTTP( log, network, get_url, new HTTPClientReceiver(){
 //								public byte[] onHTTPClientStream( LogWriter log, CancelChecker cancel_checker, InputStream in, int content_length ){
 //									return buf;
@@ -148,7 +145,7 @@ public class PentaxKP{
 						long time = 0L;
 //						try{
 //							log.d("get file time for %s",remote_path);
-//							final String get_url = thread.flashair_url + "v1/photos" + Uri.encode( remote_path, "/_" ) + "/info";
+//							final String get_url = thread.target_url + "v1/photos" + Uri.encode( remote_path, "/_" ) + "/info";
 //							data = thread.client.getHTTP( log, network, get_url );
 //							if( thread.isCancelled() ) return false;
 //							if( data == null){
@@ -221,7 +218,7 @@ public class PentaxKP{
 				return;
 			}
 
-			final String get_url = thread.flashair_url + "v1/photos" + Uri.encode( remote_path, "/_" ) + "?size=full";
+			final String get_url = thread.target_url + "v1/photos" + Uri.encode( remote_path, "/_" ) + "?size=full";
 			byte[] data = thread.client.getHTTP( log, network, get_url, new HTTPClientReceiver(){
 
 				final byte[] buf = new byte[ 2048 ];
@@ -260,27 +257,7 @@ public class PentaxKP{
 				}
 			} );
 
-			if( thread.isCancelled() ){
-				local_file.delete();
-				thread.record(
-					item, SystemClock.elapsedRealtime() - time_start
-					, DownloadRecord.STATE_CANCELLED
-					, "download cancelled."
-				);
-			}else if( data == null ){
-				local_file.delete();
-
-				thread.checkHostError();
-				log.e( "FILE %s :HTTP error %s", file_name, thread.client.last_error );
-
-				thread.file_error = true;
-				thread.record( item, SystemClock.elapsedRealtime() - time_start
-					, DownloadRecord.STATE_DOWNLOAD_ERROR
-					, thread.client.last_error
-				);
-			}else{
-				thread.afterDownload( item, SystemClock.elapsedRealtime() - time_start );
-			}
+			thread.afterDownload( time_start,data,item );
 
 		}catch( Throwable ex ){
 			ex.printStackTrace();
@@ -418,7 +395,7 @@ public class PentaxKP{
 				thread.setStatus( false, "WebSocket creating" );
 				try{
 					WebSocketFactory factory = new WebSocketFactory();
-					ws_client = factory.createSocket( thread.flashair_url + "v1/changes", 30000 );
+					ws_client = factory.createSocket( thread.target_url + "v1/changes", 30000 );
 					ws_client.addListener( ws_listener );
 					ws_client.connect();
 					thread.waitEx( 2000L );

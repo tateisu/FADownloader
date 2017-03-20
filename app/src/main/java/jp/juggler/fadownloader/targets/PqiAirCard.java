@@ -6,16 +6,26 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 import android.os.SystemClock;
+import android.text.TextUtils;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.ParseException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.LinkedList;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import jp.juggler.fadownloader.CancelChecker;
 import jp.juggler.fadownloader.DownloadRecord;
@@ -29,50 +39,53 @@ import jp.juggler.fadownloader.QueueItem;
 import jp.juggler.fadownloader.R;
 import jp.juggler.fadownloader.Utils;
 
-public class FlashAir{
+import static jp.juggler.fadownloader.targets.FlashAir.reAttr;
+import static jp.juggler.fadownloader.targets.FlashAir.reLine;
 
-	static final Pattern reLine = Pattern.compile( "([^\\x0d\\x0a]+)" );
-	static final Pattern reAttr = Pattern.compile( ",(\\d+),(\\d+),(\\d+),(\\d+)$" );
-
-	// static final long ERROR_BREAK = -1L;
-	static final long ERROR_CONTINUE = - 2L;
+public class PqiAirCard{
 
 	final DownloadWorker thread;
 	final DownloadService service;
 	final LogWriter log;
 
-	long flashair_update_status = 0L;
-
-	public FlashAir( DownloadService service, DownloadWorker thread ){
+	public PqiAirCard( DownloadService service, DownloadWorker thread ){
 		this.service = service;
 		this.thread = thread;
 		this.log = service.log;
 	}
 
-	long getFlashAirUpdateStatus( Object network ){
-		String cgi_url = thread.target_url + "command.cgi?op=121";
-		byte[] data = thread.client.getHTTP( log, network, cgi_url );
-		if( thread.isCancelled() ) return ERROR_CONTINUE;
+	static final Pattern reDate = Pattern.compile( "(\\w+)\\s+(\\d+)\\s+(\\d+):(\\d+):(\\d+)\\s+(\\d+)" );
 
-		if( data == null ){
-			thread.checkHostError();
-			log.e( R.string.flashair_update_check_failed, cgi_url, thread.client.last_error );
-			return ERROR_CONTINUE;
+	final GregorianCalendar calendar = new GregorianCalendar( TimeZone.getDefault() );
+
+	static final String[] month_array = new String[]{
+		"January".toLowerCase(),
+		"February".toLowerCase(),
+		"March".toLowerCase(),
+		"April".toLowerCase(),
+		"May".toLowerCase(),
+		"June".toLowerCase(),
+		"July".toLowerCase(),
+		"August".toLowerCase(),
+		"September".toLowerCase(),
+		"October".toLowerCase(),
+		"November".toLowerCase(),
+		"December".toLowerCase(),
+	};
+
+	// 月の省略形から月の数字(1-12)を返す
+	static int parseMonth( String target ){
+		target = target.toLowerCase();
+		for( int i = 0, ie = month_array.length ; i < ie ; ++ i ){
+			if( month_array[ i ].startsWith( target ) ) return i + 1;
 		}
-		try{
-			//noinspection ConstantConditions
-			return Long.parseLong( Utils.decodeUTF8( data ).trim() );
-		}catch( Throwable ex ){
-			log.e( R.string.flashair_update_status_error );
-			thread.cancel( service.getString( R.string.flashair_update_status_error ) );
-			return ERROR_CONTINUE;
-		}
+		throw new RuntimeException( "invalid month name :" + target );
 	}
 
 	void loadFolder( final Object network, final QueueItem item ){
 
 		// フォルダを読む
-		String cgi_url = thread.target_url + "command.cgi?op=100&DIR=" + Uri.encode( item.remote_path );
+		String cgi_url = thread.target_url + "cgi-bin/wifi_filelist?fn=/mnt/sd" + Uri.encode( item.remote_path, "/_-" ) + (item.remote_path.length() > 1 ? "/" : "");
 		byte[] data = thread.client.getHTTP( log, network, cgi_url );
 		if( thread.isCancelled() ) return;
 
@@ -83,81 +96,89 @@ public class FlashAir{
 			return;
 		}
 
-		Matcher mLine;
-		try{
-			//noinspection ConstantConditions
-			mLine = reLine.matcher( Utils.decodeUTF8( data ) );
-		}catch( Throwable ex ){
-			ex.printStackTrace();
-			log.e( ex, "folder list parse error." );
-			return;
-		}
-		GregorianCalendar calendar = new GregorianCalendar( TimeZone.getDefault() );
+	//	Element root = Utils.parseXml( "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"+ Utils.decodeUTF8( data ) );
+		Element root = Utils.parseXml( data );
+		if( root != null ){
+			if( "filelist".equals( root.getTagName() ) ){
+				NodeList child_list = root.getChildNodes();
+				if( child_list != null ){
+					for( int i = 0, ie = child_list.getLength() ; i < ie ; ++ i ){
+						if( thread.isCancelled() ) break;
+						Node node = child_list.item( i );
+						if( ! "file".equals( node.getNodeName() ) ) continue;
+						NamedNodeMap attr = node.getAttributes();
+						if( attr == null ) continue;
+						String file_name = Utils.getAttribute( attr, "name", null );
+						String size_str = Utils.getAttribute( attr, "size", null );
+						String date_str = Utils.getAttribute( attr, "date", null );
+						String type_str = Utils.getAttribute( attr, "type", null );
+						if( TextUtils.isEmpty( file_name ) ) continue;
+						if( TextUtils.isEmpty( size_str ) ) continue;
+						if( TextUtils.isEmpty( date_str ) ) continue;
+						if( TextUtils.isEmpty( type_str ) ) continue;
+						long size;
+						try{
+							size = Long.parseLong( size_str, 10 );
+						}catch( NumberFormatException ex ){
+							ex.printStackTrace();
+							log.e( "incorrect size: %s", size_str );
+							continue;
+						}
+						long time;
+						try{
+							Matcher matcher = reDate.matcher( date_str );
+							if( ! matcher.find() ){
+								log.e( "incorrect date: %s", date_str );
+								continue;
+							}
+							int y = Integer.parseInt( matcher.group( 6 ), 10 );
+							int m = parseMonth( matcher.group( 1 ) );
+							int d = Integer.parseInt( matcher.group( 2 ), 10 );
+							int h = Integer.parseInt( matcher.group( 3 ), 10 );
+							int j = Integer.parseInt( matcher.group( 4 ), 10 );
+							int s = Integer.parseInt( matcher.group( 5 ), 10 );
+							//	log.f( "time=%s,%s,%s,%s,%s,%s", y, m, d, h, j, s );
+							calendar.set( y, m - 1, d, h, j, s );
+							calendar.set( Calendar.MILLISECOND, 500 );
+							time = calendar.getTimeInMillis();
+						}catch( NumberFormatException ex ){
+							ex.printStackTrace();
+							continue;
+						}
+						String dir = ( item.remote_path.equals( "/" ) ? "" : item.remote_path );
 
-		while( ! thread.isCancelled() && mLine.find() ){
-			String line = mLine.group( 1 );
-			Matcher mAttr = reAttr.matcher( line );
-			if( ! mAttr.find() ) continue;
+						String remote_path = dir + "/" + file_name;
+						final LocalFile local_file = new LocalFile( item.local_file, file_name );
 
-			try{
-				long size = Long.parseLong( mAttr.group( 1 ), 10 );
-				int attr = Integer.parseInt( mAttr.group( 2 ), 10 );
-				//
-				long time;
-				{
-					int bits_date = Integer.parseInt( mAttr.group( 3 ), 10 );
-					int bits_time = Integer.parseInt( mAttr.group( 4 ), 10 );
-					int y = ( ( bits_date >> 9 ) & 0x7f ) + 1980;
-					int m = ( ( bits_date >> 5 ) & 0xf );
-					int d = ( ( bits_date ) & 0x1f );
-					int h = ( ( bits_time >> 11 ) & 0x1f );
-					int j = ( ( bits_time >> 5 ) & 0x3f );
-					int s = ( ( bits_time ) & 0x1f ) * 2;
-				//	log.f( "time=%s,%s,%s,%s,%s,%s", y, m, d, h, j, s );
-					calendar.set( y, m - 1, d, h, j, s );
-					calendar.set( Calendar.MILLISECOND, 500 );
-					time = calendar.getTimeInMillis();
-				}
+						if( ! type_str.equals( "0" ) ){
+							// フォルダはキューの頭に追加
+							thread.job_queue.addFirst( new QueueItem( file_name, remote_path, local_file ) );
+						}else{
+							// ファイル
+							for( Pattern re : thread.file_type_list ){
+								if( ! re.matcher( file_name ).find() ) continue;
+								// マッチした
 
-				// https://flashair-developers.com/ja/support/forum/#/discussion/3/%E3%82%AB%E3%83%B3%E3%83%9E%E5%8C%BA%E5%88%87%E3%82%8A
-				String dir = ( item.remote_path.equals( "/" ) ? "" : item.remote_path );
-				String file_name = line.substring( dir.length() + 1, mAttr.start() );
+								// ローカルのファイルサイズを調べて既読スキップ
+								if( local_file.length( log, false ) >= size ) continue;
 
-				if( ( attr & 2 ) != 0 ){
-					// skip hidden file
-					continue;
-				}else if( ( attr & 4 ) != 0 ){
-					// skip system file
-					continue;
-				}
+								// ファイルはキューの末尾に追加
+								QueueItem sub_item = new QueueItem( file_name, remote_path, local_file, size, time );
+								thread.job_queue.addLast( sub_item );
+								thread.record( sub_item, 0L, DownloadRecord.STATE_QUEUED, "queued." );
 
-				String remote_path = dir + "/" + file_name;
-				final LocalFile local_file = new LocalFile( item.local_file, file_name );
+								break;
+							}
+						}
 
-				if( ( attr & 0x10 ) != 0 ){
-					// フォルダはキューの頭に追加
-					thread.job_queue.addFirst( new QueueItem( file_name, remote_path, local_file ) );
-				}else{
-					for( Pattern re : thread.file_type_list ){
-						if( ! re.matcher( file_name ).find() ) continue;
-						// マッチした
-
-						// ローカルのファイルサイズを調べて既読スキップ
-						if( local_file.length( log, false ) >= size ) continue;
-
-						// ファイルはキューの末尾に追加
-						QueueItem sub_item = new QueueItem( file_name, remote_path, local_file, size, time );
-						thread.job_queue.addLast( sub_item );
-						thread.record( sub_item, 0L, DownloadRecord.STATE_QUEUED, "queued." );
-
-						break;
 					}
+
 				}
-			}catch( Throwable ex ){
-				ex.printStackTrace();
-				log.e( ex, "folder list parse error: %s", line );
+				return;
 			}
 		}
+		log.e( R.string.folder_list_failed, item.remote_path, cgi_url, "(xml parse error)" );
+		thread.file_error = true;
 	}
 
 	private void loadFile( Object network, QueueItem item ){
@@ -178,7 +199,7 @@ public class FlashAir{
 				return;
 			}
 
-			final String get_url = thread.target_url + Uri.encode( remote_path );
+			final String get_url = thread.target_url + "/sd" + Uri.encode( remote_path,"/_-" );
 			byte[] data = thread.client.getHTTP( log, network, get_url, new HTTPClientReceiver(){
 				final byte[] buf = new byte[ 2048 ];
 
@@ -296,7 +317,7 @@ public class FlashAir{
 			thread.setStatus( false, service.getString( R.string.network_check ) );
 			long network_check_start = SystemClock.elapsedRealtime();
 
-			if( thread.target_type == Pref.TARGET_TYPE_FLASHAIR_STA ){
+			if( thread.target_type == Pref.TARGET_TYPE_PQI_AIR_CARD_TETHER ){
 				while( ! thread.isCancelled() ){
 					boolean tracker_last_result = service.wifi_tracker.last_result.get();
 					String air_url = service.wifi_tracker.last_flash_air_url.get();
@@ -344,25 +365,6 @@ public class FlashAir{
 			if( thread.job_queue == null ){
 				Pref.pref( service ).edit().putLong( Pref.LAST_IDLE_START, System.currentTimeMillis() ).apply();
 
-				// FlashAir アップデートステータスを確認
-				thread.setStatus( false, service.getString( R.string.flashair_update_status_check ) );
-				flashair_update_status = getFlashAirUpdateStatus( network );
-				if( flashair_update_status == ERROR_CONTINUE ){
-					continue;
-				}else{
-					long old = Pref.pref( service ).getLong( Pref.FLASHAIR_UPDATE_STATUS_OLD, - 1L );
-					if( flashair_update_status == old && old != - 1L ){
-						// 前回スキャン開始時と同じ数字なので変更されていない
-						log.d( R.string.flashair_not_updated );
-						continue;
-					}else{
-						log.d( "flashair updated %d %d"
-							, old
-							, flashair_update_status
-						);
-					}
-				}
-
 				// 未取得状態のファイルを履歴から消す
 				if( DownloadWorker.RECORD_QUEUED_STATE ){
 					service.getContentResolver().delete(
@@ -376,7 +378,7 @@ public class FlashAir{
 
 				// フォルダスキャン開始
 				thread.job_queue = new LinkedList<>();
-				thread.job_queue.add( new QueueItem( "","/", new LocalFile( service, thread.folder_uri ) ) );
+				thread.job_queue.add( new QueueItem( "", "/", new LocalFile( service, thread.folder_uri ) ) );
 				thread.file_error = false;
 				thread.queued_byte_count_max.set( Long.MAX_VALUE );
 			}
@@ -387,9 +389,6 @@ public class FlashAir{
 				thread.setStatus( false, service.getString( R.string.file_scan_completed ) );
 				if( ! thread.file_error ){
 					log.i( "ファイルスキャン完了" );
-					Pref.pref( service ).edit()
-						.putLong( Pref.FLASHAIR_UPDATE_STATUS_OLD, flashair_update_status )
-						.apply();
 
 					if( ! thread.repeat ){
 						Pref.pref( service ).edit().putInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP ).apply();

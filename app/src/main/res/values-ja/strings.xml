@@ -18,8 +18,8 @@
 
 
     <string name="target_type">Target Type</string>
-    <string name="target_type_0">FlashAir APモード</string>
-    <string name="target_type_1">FlashAir STAモード</string>
+    <string name="target_type_flashair_ap">FlashAir APモード</string>
+    <string name="target_type_flashair_sta">FlashAir STAモード</string>
     <string name="target_type_invalid">Target Typeを指定してください</string>
 
     <string name="target_url">Target URL</string>

@@ -13,33 +13,47 @@ public class Pref{
 	public static final int TARGET_TYPE_FLASHAIR_AP = 0;
 	public static final int TARGET_TYPE_FLASHAIR_STA = 1;
 	public static final int TARGET_TYPE_PENTAX_KP = 2;
+	public static final int TARGET_TYPE_PQI_AIR_CARD = 3;
+	public static final int TARGET_TYPE_PQI_AIR_CARD_TETHER = 4;
 
 	public static String loadTargetUrl( SharedPreferences pref, int target_type ){
 		switch( target_type ){
 		default:
 		case TARGET_TYPE_FLASHAIR_AP:
-			return pref.getString( Pref.UI_TARGET_URL_0, "http://flashair/"  );
+			return pref.getString( Pref.UI_TARGET_URL_FLASHAIR_AP, "http://flashair/"  );
 
 		case TARGET_TYPE_FLASHAIR_STA:
-			return pref.getString( Pref.UI_TARGET_URL_1, "http://flashair/" );
+			return pref.getString( Pref.UI_TARGET_URL_FLASHAIR_STA, "http://flashair/" );
 
 		case TARGET_TYPE_PENTAX_KP:
-			return pref.getString( Pref.UI_TARGET_URL_2, "http://192.168.0.1/" );
+			return pref.getString( Pref.UI_TARGET_URL_PENTAX_KP, "http://192.168.0.1/" );
+
+		case TARGET_TYPE_PQI_AIR_CARD:
+			return pref.getString( Pref.UI_TARGET_URL_PQI_AIR_CARD, "http://192.168.1.1/" );
+
+		case TARGET_TYPE_PQI_AIR_CARD_TETHER:
+			return pref.getString( Pref.UI_TARGET_URL_PQI_AIR_CARD_TETHER, "http://AutoDetect/" );
 		}
 	}
 
 	public static void saveTargetUrl( SharedPreferences.Editor edit, int target_type, String value ){
 		switch( target_type ){
 		case TARGET_TYPE_FLASHAIR_AP:
-			edit.putString( Pref.UI_TARGET_URL_0, value );
+			edit.putString( Pref.UI_TARGET_URL_FLASHAIR_AP, value );
 			break;
 
 		case TARGET_TYPE_FLASHAIR_STA:
-			edit.putString( Pref.UI_TARGET_URL_1, value );
+			edit.putString( Pref.UI_TARGET_URL_FLASHAIR_STA, value );
 			break;
 
 		case TARGET_TYPE_PENTAX_KP:
-			edit.putString( Pref.UI_TARGET_URL_2, value );
+			edit.putString( Pref.UI_TARGET_URL_PENTAX_KP, value );
+			break;
+		case TARGET_TYPE_PQI_AIR_CARD:
+			edit.putString( Pref.UI_TARGET_URL_PQI_AIR_CARD, value );
+			break;
+		case TARGET_TYPE_PQI_AIR_CARD_TETHER:
+			edit.putString( Pref.UI_TARGET_URL_PQI_AIR_CARD_TETHER, value );
 			break;
 		}
 	}
@@ -48,9 +62,13 @@ public class Pref{
 	public static final String UI_REPEAT = "ui_repeat";
 	public static final String UI_LAST_PAGE = "ui_last_page";
 	public static final String UI_TARGET_TYPE = "ui_target_type";
-	public static final String UI_TARGET_URL_0 = "ui_flashair_url"; // 歴史的な理由でキー名が特別
-	public static final String UI_TARGET_URL_1 = "ui_target_url_1";
-	public static final String UI_TARGET_URL_2 = "ui_target_url_2";
+	public static final String UI_TARGET_URL_FLASHAIR_AP = "ui_flashair_url"; // 歴史的な理由でキー名が特別
+	public static final String UI_TARGET_URL_FLASHAIR_STA= "ui_target_url_1";
+	public static final String UI_TARGET_URL_PENTAX_KP = "ui_target_url_2";
+	public static final String UI_TARGET_URL_PQI_AIR_CARD = "ui_target_url_pqi_air_card";
+	public static final String UI_TARGET_URL_PQI_AIR_CARD_TETHER = "ui_target_url_pqi_air_card_tether";
+
+
 	public static final String UI_FOLDER_URI = "ui_folder_uri";
 	public static final String UI_INTERVAL = "ui_interval";
 	public static final String UI_FILE_TYPE = "ui_file_type";
