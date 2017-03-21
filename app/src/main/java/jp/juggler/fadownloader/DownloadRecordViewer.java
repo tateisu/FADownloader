@@ -463,7 +463,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 	}
 
 	private void openDetailDialog( final DownloadRecord data, String name ){
-		View v = activity.getLayoutInflater().inflate( R.layout.download_record_detail_dialog, null, false );
+		View v = activity.getLayoutInflater().inflate( R.layout.dlg_download_record, null, false );
 
 		TextView tvStateCode = ( (TextView) v.findViewById( R.id.tvStateCode ) );
 		tvStateCode.setText( DownloadRecord.formatStateText( activity, data.state_code, data.state_message ) );

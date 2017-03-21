@@ -156,4 +156,5 @@
     <string name="target_type_pqi_air_card">PQI Air Card</string>
     <string name="target_type_pqi_air_card_tether">PQI Air Card (テザリング)</string>
     <string name="download_complete_notification">%1$dファイルをダウンロードしました</string>
+    <string name="new_file">新しいファイル</string>
 </resources>

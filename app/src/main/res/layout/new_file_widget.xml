@@ -37,7 +37,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/download_completed"
+            android:text="@string/new_file"
             android:textColor="#fff"
             android:textSize="12dp"
             android:gravity="center"

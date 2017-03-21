@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
+    package="jp.juggler.fadownloader"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="jp.juggler.fadownloader"
     >
 
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -13,7 +13,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="com.android.vending.BILLING" />
+    <uses-permission android:name="com.android.vending.BILLING"/>
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
 
     <application
@@ -32,17 +32,19 @@
             />
 
         <service
-            android:name="jp.juggler.fadownloader.DownloadCountService"
+            android:name="jp.juggler.fadownloader.NewFileService"
             />
 
         <receiver
-            android:name="jp.juggler.fadownloader.DownloadCountWidget"
+            android:name="jp.juggler.fadownloader.NewFileWidget"
             >
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
             </intent-filter>
-            <meta-data android:name="android.appwidget.provider"
-                       android:resource="@xml/download_count_widget_info"/>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/new_file_widget"
+                />
         </receiver>
 
         <receiver
@@ -59,8 +61,8 @@
             android:name="jp.juggler.fadownloader.ActMain"
             android:icon="@drawable/ic_launcher"
             android:launchMode="singleTask"
-            android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="sensorPortrait"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -73,15 +75,15 @@
             android:name="jp.juggler.fadownloader.FolderPicker"
             android:icon="@drawable/ic_launcher"
             android:label="@string/folder_picker"
-            android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="sensorPortrait"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             />
         <activity
             android:name="jp.juggler.fadownloader.SSIDPicker"
             android:icon="@drawable/ic_launcher"
             android:label="@string/ssid_picker"
-            android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="sensorPortrait"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             />
     </application>
 

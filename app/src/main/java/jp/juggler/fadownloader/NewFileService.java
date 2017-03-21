@@ -2,8 +2,6 @@ package jp.juggler.fadownloader;
 
 import android.app.IntentService;
 import android.app.PendingIntent;
-import android.appwidget.AppWidgetManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,7 +9,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 
-public class DownloadCountService extends IntentService{
+public class NewFileService extends IntentService{
 
 	static final int NOTIFICATION_ID_DOWNLOAD_COMPLETE = 2;
 
@@ -59,23 +57,23 @@ public class DownloadCountService extends IntentService{
 		builder.setAutoCancel( true );
 
 		{
-			Intent intent = new Intent( context, DownloadCountService.class );
+			Intent intent = new Intent( context, NewFileService.class );
 			intent.setAction( ACTION_TAP );
 			PendingIntent pi = PendingIntent.getService( context, 567, intent, PendingIntent.FLAG_UPDATE_CURRENT );
 			builder.setContentIntent( pi );
 		}
 		{
-			Intent intent = new Intent( context, DownloadCountService.class );
+			Intent intent = new Intent( context, NewFileService.class );
 			intent.setAction( ACTION_DELETE );
 			PendingIntent pi = PendingIntent.getService( context, 568, intent, PendingIntent.FLAG_UPDATE_CURRENT );
 			builder.setDeleteIntent( pi );
 		}
 
 		NotificationManagerCompat.from( context ).notify( NOTIFICATION_ID_DOWNLOAD_COMPLETE, builder.build() );
-		DownloadCountWidget.update( context );
+		NewFileWidget.update( context );
 	}
 
-	public DownloadCountService(){
+	public NewFileService(){
 		super( "DownloadCountService" );
 	}
 
@@ -89,7 +87,7 @@ public class DownloadCountService extends IntentService{
 			}
 			NotificationManagerCompat.from( this ).cancel( NOTIFICATION_ID_DOWNLOAD_COMPLETE );
 			Pref.pref( this ).edit().putLong( Pref.DOWNLOAD_COMPLETE_COUNT, 0 ).apply();
-			DownloadCountWidget.update( this );
+			NewFileWidget.update( this );
 		}
 	}
 

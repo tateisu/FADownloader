@@ -232,10 +232,10 @@ public class DownloadService extends Service{
 	}
 
 	void addHiddenDownloadCount( long count){
-		DownloadCountService.addHiddenDownloadCount( this,count );
+		NewFileService.addHiddenDownloadCount( this,count );
 	}
 	public boolean hasHiddenDownloadCount(){
-		return DownloadCountService.hasHiddenDownloadCount( this );
+		return NewFileService.hasHiddenDownloadCount( this );
 	}
 
 	static DownloadService service_instance;
