@@ -280,7 +280,7 @@ public class DownloadService extends Service{
 		builder.setOngoing( true );
 
 		Intent intent = new Intent( this, ActMain.class );
-		intent.setFlags( Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY );
+		intent.addFlags( Intent.FLAG_ACTIVITY_NEW_TASK |Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY );
 		PendingIntent pi = PendingIntent.getActivity( getApplicationContext(), 567, intent, 0 );
 		builder.setContentIntent( pi );
 

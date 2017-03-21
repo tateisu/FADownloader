@@ -81,8 +81,8 @@ public class NewFileService extends IntentService{
 		if( intent != null ){
 			if( ACTION_TAP.equals( intent.getAction() ) ){
 				intent = new Intent( this, ActMain.class );
+				intent.addFlags( Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY );
 				intent.putExtra( ActMain.EXTRA_TAB, ActMain.TAB_RECORD );
-				intent.setFlags( Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY );
 				startActivity( intent );
 			}
 			NotificationManagerCompat.from( this ).cancel( NOTIFICATION_ID_DOWNLOAD_COMPLETE );
