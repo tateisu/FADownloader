@@ -150,14 +150,12 @@ public class WorkerTracker{
 			return service.location_tracker.getLocation();
 		}
 
-		@Override public void onAllFileQueued( long count ){
-			if( tracker_disposed ) return;
-			service.clearDownloadCompleteNotification( count );
+		@Override public void onAllFileCompleted( long count ){
+			service.addHiddenDownloadCount( count );
 		}
 
-		@Override public void onAllFileCompleted( long count ){
-			if( tracker_disposed ) return;
-			service.setDownloadCompleteNotification( count );
+		@Override public boolean hasHiddenDownloadCount(){
+			return service.hasHiddenDownloadCount( );
 		}
 	};
 }

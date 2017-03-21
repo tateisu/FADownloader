@@ -20,7 +20,7 @@ import jp.juggler.fadownloader.HTTPClientReceiver;
 import jp.juggler.fadownloader.LocalFile;
 import jp.juggler.fadownloader.LogWriter;
 import jp.juggler.fadownloader.Pref;
-import jp.juggler.fadownloader.QueueItem;
+import jp.juggler.fadownloader.ScanItem;
 import jp.juggler.fadownloader.R;
 import jp.juggler.fadownloader.Utils;
 
@@ -64,7 +64,7 @@ public class FlashAir{
 		}
 	}
 
-	void loadFolder( final Object network, final QueueItem item ){
+	void loadFolder( final Object network, final ScanItem item ){
 
 		// フォルダを読む
 		String cgi_url = thread.target_url + "command.cgi?op=100&DIR=" + Uri.encode( item.remote_path );
@@ -131,7 +131,7 @@ public class FlashAir{
 
 				if( ( attr & 0x10 ) != 0 ){
 					// フォルダはキューの頭に追加
-					thread.job_queue.addFirst( new QueueItem( file_name, remote_path, local_file ) );
+					thread.job_queue.addFolder( new ScanItem( file_name, remote_path, local_file ) );
 				}else{
 					for( Pattern re : thread.file_type_list ){
 						if( ! re.matcher( file_name ).find() ) continue;
@@ -143,8 +143,8 @@ public class FlashAir{
 						String mime_type = Utils.getMimeType( file_name );
 
 						// ファイルはキューの末尾に追加
-						QueueItem sub_item = new QueueItem( file_name, remote_path, local_file, size, time, mime_type );
-						thread.job_queue.addLast( sub_item );
+						ScanItem sub_item = new ScanItem( file_name, remote_path, local_file, size, time, mime_type );
+						thread.job_queue.addFile( sub_item );
 						thread.record( sub_item, 0L, DownloadRecord.STATE_QUEUED, "queued." );
 
 						break;
@@ -157,7 +157,7 @@ public class FlashAir{
 		}
 	}
 
-	private void loadFile( Object network, QueueItem item ){
+	private void loadFile( Object network, ScanItem item ){
 		final long time_start = SystemClock.elapsedRealtime();
 		final String file_name = new File( item.remote_path ).getName();
 		final String remote_path = item.remote_path;
@@ -236,7 +236,7 @@ public class FlashAir{
 
 		while( ! thread.isCancelled() ){
 
-			if( thread.job_queue == null ){
+			if( thread.job_queue == null && ! thread.callback.hasHiddenDownloadCount() ){
 				// 指定時刻まで待機する
 				while( ! thread.isCancelled() ){
 					long now = System.currentTimeMillis();
@@ -321,6 +321,7 @@ public class FlashAir{
 					if( flashair_update_status == old && old != - 1L ){
 						// 前回スキャン開始時と同じ数字なので変更されていない
 						log.d( R.string.flashair_not_updated );
+						thread.onFileScanComplete(0);
 						continue;
 					}else{
 						log.d( "flashair updated %d %d"
@@ -343,36 +344,31 @@ public class FlashAir{
 
 				// フォルダスキャン開始
 				thread.onFileScanStart();
-				thread.job_queue.add( new QueueItem( "", "/", new LocalFile( service, thread.folder_uri ) ) );
-
-			}
-
-			// ファイルスキャンの終了
-			if( thread.job_queue.isEmpty() ){
-				thread.job_queue = null;
-				thread.setStatus( false, service.getString( R.string.file_scan_completed ) );
-				if( ! thread.file_error ){
-					Pref.pref( service ).edit()
-						.putLong( Pref.FLASHAIR_UPDATE_STATUS_OLD, flashair_update_status )
-						.apply();
-
-					thread.onFileScanComplete();
-				}
-				continue;
+				thread.job_queue.addFolder( new ScanItem( "", "/", new LocalFile( service, thread.folder_uri ) ) );
 			}
 
 			try{
-				final QueueItem head = thread.job_queue.getFirst();
-				if( head.is_file ){
-
+				if( ! thread.job_queue.queue_folder.isEmpty() ){
+					ScanItem item = thread.job_queue.queue_folder.removeFirst();
+					thread.setStatus( false, service.getString( R.string.progress_folder, item.remote_path ) );
+					loadFolder( network, item );
+				}else if( !  thread.job_queue.queue_file.isEmpty() ){
 					// キューから除去するまえに残りサイズを計算したい
-					thread.setStatus( true, service.getString( R.string.download_file, head.remote_path ) );
-					thread.job_queue.removeFirst();
-					loadFile( network, head );
+					final ScanItem item = thread.job_queue.queue_file.getFirst();
+					thread.setStatus( true, service.getString( R.string.download_file, item.remote_path ) );
+					thread.job_queue.queue_file.removeFirst();
+					loadFile( network, item );
 				}else{
-					thread.setStatus( false, service.getString( R.string.progress_folder, head.remote_path ) );
-					thread.job_queue.removeFirst();
-					loadFolder( network, head );
+					// ファイルスキャンの終了
+					long file_count = thread.job_queue.file_count;
+					thread.job_queue = null;
+					thread.setStatus( false, service.getString( R.string.file_scan_completed ) );
+					if( ! thread.file_error ){
+						Pref.pref( service ).edit()
+							.putLong( Pref.FLASHAIR_UPDATE_STATUS_OLD, flashair_update_status )
+							.apply();
+						thread.onFileScanComplete(file_count);
+					}
 				}
 			}catch( Throwable ex ){
 				ex.printStackTrace();

@@ -6,6 +6,7 @@ import android.text.TextUtils;
 
 public class Pref{
 
+
 	public static SharedPreferences pref( Context context ){
 		return context.getSharedPreferences( "app_pref", Context.MODE_PRIVATE );
 	}
@@ -152,5 +153,9 @@ public class Pref{
 	public static final String FLASHAIR_UPDATE_STATUS_OLD = "flashair_update_status_old";
 
 	public static final String REMOVE_AD_PURCHASED = "remove_ad_purchased";
+
+	// ダウンロード完了通知に表示する数字
+	public static final String DOWNLOAD_COMPLETE_COUNT = "download_complete_count";
+	public static final String DOWNLOAD_COMPLETE_COUNT_HIDDEN = "download_complete_count_hidden";
 
 }

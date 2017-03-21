@@ -15,6 +15,7 @@
     <dimen name="button_padding_vertical_material">@dimen/control_padding_material</dimen>
     <dimen name="button_padding_horizontal_material">8dp</dimen>
 
+    <dimen name="widget_margin">8dp</dimen>
 
 
 </resources>

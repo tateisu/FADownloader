@@ -24,7 +24,7 @@ import jp.juggler.fadownloader.HTTPClientReceiver;
 import jp.juggler.fadownloader.LocalFile;
 import jp.juggler.fadownloader.LogWriter;
 import jp.juggler.fadownloader.Pref;
-import jp.juggler.fadownloader.QueueItem;
+import jp.juggler.fadownloader.ScanItem;
 import jp.juggler.fadownloader.R;
 import jp.juggler.fadownloader.Utils;
 
@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -85,7 +84,6 @@ public class PentaxKP{
 			}
 			LocalFile local_root = new LocalFile( service, thread.folder_uri );
 			LocalFile local_dcim = new LocalFile( local_root, "DCIM" );
-			thread.job_queue = new LinkedList<>();
 			for( int i = 0, ie = root_dir.length() ; i < ie ; ++ i ){
 				if( thread.isCancelled() ) return false;
 
@@ -181,10 +179,10 @@ public class PentaxKP{
 						}
 						String mime_type = Utils.getMimeType( file_name );
 
-						QueueItem item = new QueueItem( file_name, remote_path, local_file, size, time, mime_type );
+						ScanItem item = new ScanItem( file_name, remote_path, local_file, size, time, mime_type );
 
 						// ファイルはキューの末尾に追加
-						thread.job_queue.addLast( item );
+						thread.job_queue.addFile( item );
 
 						thread.record(
 							item, 0L
@@ -196,7 +194,7 @@ public class PentaxKP{
 					}
 				}
 			}
-			log.i( "%s files queued.", thread.job_queue.size() );
+			log.i( "%s files queued.", thread.job_queue.file_count );
 			return true;
 		}catch( Throwable ex ){
 			log.e( ex, R.string.remote_file_list_parse_error );
@@ -206,7 +204,7 @@ public class PentaxKP{
 		return false;
 	}
 
-	void loadFile( Object network, QueueItem item ){
+	void loadFile( Object network, ScanItem item ){
 		long time_start = SystemClock.elapsedRealtime();
 		final String remote_path = item.remote_path;
 		final LocalFile local_file = item.local_file;
@@ -442,10 +440,12 @@ public class PentaxKP{
 				// カメラが更新された後数秒は待機する
 				thread.setStatus( false, "waiting camera storage." );
 				remain = mCameraUpdateTime.get() + 2000L - now;
-			}else if( thread.job_queue != null ){
+			}else if( thread.job_queue != null || thread.callback.hasHiddenDownloadCount() ){
 				// キューにある項目を処理する
+				// 隠れたダウンロードカウントがある場合もスキャンをやり直す
 				remain = 0L;
 			}else{
+
 				// キューがカラなら、最後にファイル一覧を取得した時刻から一定は待つ
 				remain = mLastFileListed.get() + thread.interval * 1000L - now;
 				if( remain > 0L){
@@ -475,8 +475,6 @@ public class PentaxKP{
 
 				// フォルダスキャン開始
 				thread.onFileScanStart();
-
-
 				thread.setStatus( false, service.getString( R.string.remote_file_listing ) );
 				if( ! loadFolder( network ) ){
 					thread.job_queue = null;
@@ -485,27 +483,25 @@ public class PentaxKP{
 				mLastFileListed.set( System.currentTimeMillis() );
 			}
 
-			// ファイルスキャンの終了
-			if( thread.job_queue.isEmpty() ){
-				thread.job_queue = null;
-				thread.setStatus( false, service.getString( R.string.file_scan_completed ) );
-				if( ! thread.file_error ){
-					thread.onFileScanComplete();
-				}
-				continue;
-			}
-
 			try{
-				final QueueItem head = thread.job_queue.getFirst();
-				if( head.is_file ){
+				if( !thread.job_queue.queue_folder.isEmpty() ){
+					final ScanItem head = thread.job_queue.queue_folder.removeFirst();
+					thread.setStatus( false, service.getString( R.string.progress_folder, head.remote_path ) );
+					// ここは通らない
+				}else if( !thread.job_queue.queue_file.isEmpty() ){
 					// キューから除去するまえに残りサイズを計算したい
+					final ScanItem head = thread.job_queue.queue_file.getFirst();
 					thread.setStatus( true, service.getString( R.string.download_file, head.remote_path ) );
-					thread.job_queue.removeFirst();
+					thread.job_queue.queue_file.removeFirst();
 					loadFile( network, head );
 				}else{
-					thread.setStatus( false, service.getString( R.string.progress_folder, head.remote_path ) );
-					thread.job_queue.removeFirst();
-
+					// ファイルスキャンの終了
+					long file_count = thread.job_queue.file_count;
+					thread.job_queue = null;
+					thread.setStatus( false, service.getString( R.string.file_scan_completed ) );
+					if( ! thread.file_error ){
+						thread.onFileScanComplete(file_count);
+					}
 				}
 			}catch( Throwable ex ){
 				ex.printStackTrace();

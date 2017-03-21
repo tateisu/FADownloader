@@ -25,7 +25,6 @@ import jp.juggler.fadownloader.targets.PqiAirCard;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -48,8 +47,9 @@ public class DownloadWorker extends WorkerBase{
 
 		Location getLocation();
 
-		void onAllFileQueued(long count);
 		void onAllFileCompleted(long count);
+
+		boolean hasHiddenDownloadCount();
 	}
 
 	final DownloadService service;
@@ -222,7 +222,7 @@ public class DownloadWorker extends WorkerBase{
 		}
 	}
 
-	@NonNull public ErrorAndMessage updateFileLocation( final Location location, QueueItem item ){
+	@NonNull public ErrorAndMessage updateFileLocation( final Location location, ScanItem item ){
 		ErrorAndMessage em = null;
 		try{
 			LocalFile file = item.local_file;
@@ -303,7 +303,7 @@ public class DownloadWorker extends WorkerBase{
 	}
 
 	public void record(
-		QueueItem item
+		ScanItem item
 		, long lap_time
 		, int state
 		, String state_message
@@ -326,7 +326,7 @@ public class DownloadWorker extends WorkerBase{
 		);
 	}
 
-	public void afterDownload( long time_start, byte[] data, QueueItem item ){
+	public void afterDownload( long time_start, byte[] data, ScanItem item ){
 		long lap_time = SystemClock.elapsedRealtime() - time_start;
 		if( isCancelled() ){
 			record( item
@@ -382,20 +382,19 @@ public class DownloadWorker extends WorkerBase{
 	}
 
 	public void onFileScanStart(){
-		last_file_count = 0;
-		job_queue = new LinkedList<>();
+		job_queue = new ScanItem.Queue();
 		file_error = false;
 		queued_byte_count_max.set( Long.MAX_VALUE );
 	}
 
-	public void onFileScanComplete(){
+	public void onFileScanComplete(long file_count){
 		log.i( "ファイルスキャン完了" );
 
-		if( last_file_count > 0 ){
-			callback.onAllFileCompleted( last_file_count );
-		}
+		callback.onAllFileCompleted( file_count );
 
 		if( ! repeat ){
+			callback.onAllFileCompleted( 0 );
+
 			Pref.pref( service ).edit().putInt( Pref.LAST_MODE, Pref.LAST_MODE_STOP ).apply();
 			cancel( service.getString( R.string.repeat_off ) );
 			complete_and_no_repeat = true;
@@ -445,7 +444,7 @@ public class DownloadWorker extends WorkerBase{
 	public boolean file_error = false;
 
 	public boolean complete_and_no_repeat = false;
-	public LinkedList<QueueItem> job_queue = null;
+	public ScanItem.Queue job_queue = null;
 
 	public AtomicLong queued_byte_count_max = new AtomicLong();
 
@@ -454,13 +453,8 @@ public class DownloadWorker extends WorkerBase{
 
 	private final AtomicReference<String> _status = new AtomicReference<>( "?" );
 
-	public long last_file_count;
-
-
 	static final String MACRO_WAIT_UNTIL = "%WAIT_UNTIL%";
 	final AtomicLong wait_until = new AtomicLong(  );
-
-
 
 	public void setStatus( boolean bShowQueueCount, String s ){
 		if( ! bShowQueueCount ){
@@ -470,7 +464,7 @@ public class DownloadWorker extends WorkerBase{
 			long fc = 0L;
 			long bc = 0L;
 			if( job_queue != null ){
-				for( QueueItem item : job_queue ){
+				for( ScanItem item : job_queue.queue_file ){
 					if( item.is_file ){
 						++ fc;
 						bc += item.size;
@@ -481,8 +475,6 @@ public class DownloadWorker extends WorkerBase{
 			queued_byte_count.set( bc );
 			if( bc > 0 && queued_byte_count_max.get() == Long.MAX_VALUE ){
 				queued_byte_count_max.set( bc );
-				last_file_count = fc;
-				callback.onAllFileQueued( fc );
 			}
 		}
 		_status.set( s );

@@ -41,7 +41,6 @@ public class DownloadService extends Service{
 	static final String EXTRA_TARGET_TYPE = "target_type" ;
 
 	static final int NOTIFICATION_ID_SERVICE = 1;
-	static final int NOTIFICATION_ID_DOWNLOAD_COMPLETE = 2;
 
 	public LogWriter log;
 
@@ -232,28 +231,11 @@ public class DownloadService extends Service{
 		}
 	}
 
-	void clearDownloadCompleteNotification(long count){
-		if( count > 0 ){
-			mNotificationManager.cancel( NOTIFICATION_ID_DOWNLOAD_COMPLETE );
-		}
+	void addHiddenDownloadCount( long count){
+		DownloadCountService.addHiddenDownloadCount( this,count );
 	}
-	void setDownloadCompleteNotification(long count){
-		NotificationCompat.Builder builder = new NotificationCompat.Builder( DownloadService.this );
-		builder.setSmallIcon( R.drawable.ic_service );
-		builder.setContentTitle( getString( R.string.app_name ) );
-		builder.setContentText( getString(R.string.download_complete_notification,count) );
-		builder.setTicker( getString(R.string.download_complete_notification,count) );
-		builder.setWhen( System.currentTimeMillis() );
-		builder.setDefaults(  NotificationCompat.DEFAULT_ALL );
-		builder.setAutoCancel( true );
-
-		Intent intent = new Intent( DownloadService.this, ActMain.class );
-		intent.putExtra(ActMain.EXTRA_TAB,ActMain.TAB_RECORD);
-		intent.setFlags( Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY );
-		PendingIntent pi = PendingIntent.getActivity( getApplicationContext(), 567, intent, 0 );
-		builder.setContentIntent( pi );
-
-		mNotificationManager.notify(  NOTIFICATION_ID_DOWNLOAD_COMPLETE, builder.build() );
+	public boolean hasHiddenDownloadCount(){
+		return DownloadCountService.hasHiddenDownloadCount( this );
 	}
 
 	static DownloadService service_instance;
