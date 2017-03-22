@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.media.MediaScannerConnection;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
@@ -22,6 +23,7 @@ import jp.juggler.fadownloader.targets.FlashAir;
 import jp.juggler.fadownloader.targets.PentaxKP;
 import jp.juggler.fadownloader.targets.PqiAirCard;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -59,12 +61,13 @@ public class DownloadWorker extends WorkerBase{
 	public String target_url;
 	public final String folder_uri;
 	public final int interval;
-	final String file_type;
-	final LogWriter log;
+	public final String file_type;
+	public final LogWriter log;
 	public final ArrayList<Pattern> file_type_list;
-	final boolean force_wifi;
-	final String ssid;
+	public final boolean force_wifi;
+	public final String ssid;
 	public final int target_type;
+	public final LocationTracker.Setting location_setting;
 
 	public DownloadWorker( DownloadService service, Intent intent, Callback callback ){
 		this.service = service;
@@ -81,7 +84,7 @@ public class DownloadWorker extends WorkerBase{
 		this.ssid = intent.getStringExtra( DownloadService.EXTRA_SSID );
 		this.target_type = intent.getIntExtra( DownloadService.EXTRA_TARGET_TYPE, 0 );
 
-		LocationTracker.Setting location_setting = new LocationTracker.Setting();
+		this.location_setting = new LocationTracker.Setting();
 		location_setting.interval_desired = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_DESIRED, LocationTracker.DEFAULT_INTERVAL_DESIRED );
 		location_setting.interval_min = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_MIN, LocationTracker.DEFAULT_INTERVAL_MIN );
 		location_setting.mode = intent.getIntExtra( DownloadService.EXTRA_LOCATION_MODE, LocationTracker.DEFAULT_MODE );
@@ -100,11 +103,10 @@ public class DownloadWorker extends WorkerBase{
 			.putString( Pref.WORKER_SSID, ssid )
 			.apply();
 
-		file_type_list = file_type_parse();
+		this.file_type_list = file_type_parse();
 
-		service.wifi_tracker.updateSetting( force_wifi, ssid, target_type, target_url );
+		init();
 
-		service.location_tracker.updateSetting( location_setting );
 	}
 
 	public DownloadWorker( DownloadService service, String cause, Callback callback ){
@@ -124,15 +126,19 @@ public class DownloadWorker extends WorkerBase{
 		this.ssid = pref.getString( Pref.WORKER_SSID, null );
 		this.target_type = pref.getInt( Pref.WORKER_TARGET_TYPE, 0 );
 
-		LocationTracker.Setting location_setting = new LocationTracker.Setting();
+		this.location_setting = new LocationTracker.Setting();
 		location_setting.interval_desired = pref.getLong( Pref.WORKER_LOCATION_INTERVAL_DESIRED, LocationTracker.DEFAULT_INTERVAL_DESIRED );
 		location_setting.interval_min = pref.getLong( Pref.WORKER_LOCATION_INTERVAL_MIN, LocationTracker.DEFAULT_INTERVAL_MIN );
 		location_setting.mode = pref.getInt( Pref.WORKER_LOCATION_MODE, LocationTracker.DEFAULT_MODE );
 
-		file_type_list = file_type_parse();
+		this.file_type_list = file_type_parse();
 
+		init();
+
+	}
+
+	void init(){
 		service.wifi_tracker.updateSetting( force_wifi, ssid, target_type, target_url );
-
 		service.location_tracker.updateSetting( location_setting );
 	}
 
@@ -366,6 +372,8 @@ public class DownloadWorker extends WorkerBase{
 					, em.bError ? DownloadRecord.STATE_EXIF_MANGLING_ERROR : DownloadRecord.STATE_COMPLETED
 					, "GeoTagging: " + em.message
 				);
+
+				setMediaScanner( item );
 			}else{
 				if( item.time > 0L ) item.local_file.setFileTime( service, log, item.time );
 
@@ -375,10 +383,25 @@ public class DownloadWorker extends WorkerBase{
 					, DownloadRecord.STATE_COMPLETED
 					, "OK"
 				);
+				setMediaScanner( item );
 
 			}
 		}
 
+	}
+
+	private void setMediaScanner( ScanItem item  ){
+		if( item.mime_type != null ){
+			File file = item.local_file.getFile(service,log);
+			if( file != null ){
+				MediaScannerConnection.scanFile(
+					service
+					,new String[]{ file.getAbsolutePath() }
+					,new String[]{ item.mime_type}
+					,null
+				);
+			}
+		}
 	}
 
 	public void onFileScanStart(){

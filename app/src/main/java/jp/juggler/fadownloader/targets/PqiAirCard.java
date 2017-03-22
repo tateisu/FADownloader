@@ -150,7 +150,7 @@ public class PqiAirCard{
 								// ローカルのファイルサイズを調べて既読スキップ
 								if( local_file.length( log ) >= size ) continue;
 
-								String mime_type = Utils.getMimeType( file_name);
+								String mime_type = Utils.getMimeType( log,file_name);
 
 								// ファイルはキューの末尾に追加
 								ScanItem sub_item = new ScanItem( file_name, remote_path, local_file, size, time ,mime_type);

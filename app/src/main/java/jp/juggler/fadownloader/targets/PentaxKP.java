@@ -177,7 +177,7 @@ public class PentaxKP{
 								log.e( ex, "can not get file time." );
 							}
 						}
-						String mime_type = Utils.getMimeType( file_name );
+						String mime_type = Utils.getMimeType( log,file_name );
 
 						ScanItem item = new ScanItem( file_name, remote_path, local_file, size, time, mime_type );
 

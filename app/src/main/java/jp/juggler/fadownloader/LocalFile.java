@@ -241,62 +241,14 @@ public class LocalFile{
 		}
 	}
 
-	public static boolean isExternalStorageDocument( Uri uri ){
-		return "com.android.externalstorage.documents".equals( uri.getAuthority() );
-	}
-
-	private File fixFilePath( Context context, LogWriter log, @NonNull DocumentFile df ){
+	public File getFile( Context context, LogWriter log ){
 		try{
-			if( Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION ){
-				Uri uri = df.getUri();
-
-				if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ){
-					if( DocumentsContract.isDocumentUri( context, uri ) ){
-						if( isExternalStorageDocument( uri ) ){
-							final String docId = DocumentsContract.getDocumentId( uri );
-							final String[] split = docId.split( ":" );
-							if( split.length >= 2 ){
-								final String uuid = split[ 0 ];
-								if( "primary".equalsIgnoreCase( uuid ) ){
-									return new File( Environment.getExternalStorageDirectory() + "/" + split[ 1 ] );
-								}else{
-									Map<String, String> volume_map = Utils.getSecondaryStorageVolumesMap( context );
-									String volume_path = volume_map.get( uuid );
-									if( volume_path != null ){
-										return new File( volume_path + "/" + split[ 1 ] );
-									}
-								}
-							}
-						}
-					}
-				}
-
-				Cursor cursor = context.getContentResolver().query( uri, null, null, null, null );
-				if( cursor != null ){
-					try{
-						if( cursor.moveToFirst() ){
-							int col_count = cursor.getColumnCount();
-							for( int i = 0 ; i < col_count ; ++ i ){
-								int type = cursor.getType( i );
-								if( type != Cursor.FIELD_TYPE_STRING ) continue;
-								String name = cursor.getColumnName( i );
-								String value = cursor.isNull( i ) ? null : cursor.getString( i );
-								Log.d( "DownloadRecordViewer", String.format( "%s %s", name, value ) );
-								if( ! TextUtils.isEmpty( value ) ){
-									if( "filePath".equals( name ) ){
-										return new File( value );
-									}
-								}
-							}
-						}
-					}finally{
-						cursor.close();
-					}
-				}
-			}
+			String str_uri = getFileUri(log);
+			if( str_uri ==null ) return null;
+			return Utils.getFile( context, str_uri );
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			log.e( ex, "failed to fix file URI." );
+			log.e( ex, "getFile() failed." );
 		}
 		return null;
 
@@ -304,20 +256,12 @@ public class LocalFile{
 
 	public void setFileTime( Context context, LogWriter log, long time ){
 		try{
-			if( ! prepareFile( log, false ,null) ) return;
-			File path;
-			if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
-				DocumentFile df = (DocumentFile) local_file;
-				if( df == null || ! df.isFile() ) return;
-				path = fixFilePath( context, log, df );
-			}else{
-				path = (File) local_file;
-				if( path == null ) return;
-			}
+			File path = getFile(context,log);
 			if( path == null || ! path.isFile() ) return;
 			//noinspection ResultOfMethodCallIgnored
 			path.setLastModified( time );
 		}catch( Throwable ex ){
+			ex.printStackTrace();
 			log.e( "setLastModified() failed." );
 		}
 	}

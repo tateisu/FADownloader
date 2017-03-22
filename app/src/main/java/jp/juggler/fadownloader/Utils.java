@@ -16,14 +16,17 @@ import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 import android.net.wifi.SupplicantState;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Looper;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.SparseBooleanArray;
@@ -474,15 +477,42 @@ public class Utils{
 		}
 	}
 
-	public static String getSupplicantStateString( SupplicantState state ){
-		if( state == null ) return null;
-		return String.format( "(%d)%s", state.ordinal(), state.toString() );
+	static HashMap<String,String> mime_type_ex = null;
+	static final Object mime_type_ex_lock = new Object();
+	static String findMimeTypeEx(String ext){
+		synchronized( mime_type_ex_lock ){
+			if( mime_type_ex == null ){
+				HashMap<String, String> tmp = new HashMap<>();
+				tmp.put( "BDM", "application/vnd.syncml.dm+wbxml" );
+				tmp.put( "DAT", "" );
+				tmp.put( "TID", "" );
+				tmp.put( "js", "text/javascript" );
+				tmp.put( "sh", "application/x-sh" );
+				tmp.put( "lua", "text/x-lua" );
+				mime_type_ex = tmp;
+			}
+			return mime_type_ex.get(ext);
+		}
 	}
 
-	public static String getMimeType( String src ){
+	public static String getMimeType( LogWriter log, String src ){
 		String ext = MimeTypeMap.getFileExtensionFromUrl( src );
-		if( ext==null) return null;
-		return MimeTypeMap.getSingleton().getMimeTypeFromExtension( ext.toLowerCase() );
+		if( !TextUtils.isEmpty( ext  ) ){
+			ext =ext.toLowerCase(Locale.US  );
+
+			//
+			String mime_type = MimeTypeMap.getSingleton().getMimeTypeFromExtension( ext );
+			if( !TextUtils.isEmpty( mime_type  ) ) return mime_type;
+
+			//
+			mime_type = findMimeTypeEx(ext);
+			if( !TextUtils.isEmpty( mime_type  ) )return mime_type;
+
+			// 戻り値が空文字列の場合とnullの場合があり、空文字列の場合は既知でありログ出力しない
+
+			if( mime_type == null && log != null ) log.w("getMimeType(): unknown file extension '%s'",ext);
+		}
+		return "application/octet-stream";
 	}
 
 	static class FileInfo{
@@ -647,6 +677,89 @@ public class Utils{
 			, Toast.LENGTH_LONG
 		).show();
 	}
+
+
+
+	public static boolean isExternalStorageDocument( Uri uri ){
+		return "com.android.externalstorage.documents".equals( uri.getAuthority() );
+	}
+	private static final String PATH_TREE = "tree";
+	private static final String PATH_DOCUMENT = "document";
+
+	public static String getDocumentId(Uri documentUri) {
+		final List<String> paths = documentUri.getPathSegments();
+		if (paths.size() >= 2 && PATH_DOCUMENT.equals(paths.get(0))) {
+			// document
+			return paths.get(1);
+		}
+		if (paths.size() >= 4 && PATH_TREE.equals(paths.get(0))
+			&& PATH_DOCUMENT.equals(paths.get(2))) {
+			// document in tree
+			return paths.get(3);
+		}
+		if (paths.size() >= 2 && PATH_TREE.equals(paths.get(0))) {
+			// tree
+			return paths.get(1);
+		}
+		throw new IllegalArgumentException("Invalid URI: " + documentUri);
+	}
+
+	public static @Nullable File getFile( Context context, @NonNull String path ){
+		try{
+			if( path.startsWith( "/" )) return new File(path);
+			Uri uri = Uri.parse( path );
+			if( "file".equals( uri.getScheme() )) return new File(uri.getPath());
+
+			if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ){
+				if( isExternalStorageDocument( uri ) ){
+					try{
+						final String docId = getDocumentId( uri );
+						final String[] split = docId.split( ":" );
+						if( split.length >= 2 ){
+							final String uuid = split[ 0 ];
+							if( "primary".equalsIgnoreCase( uuid ) ){
+								return new File( Environment.getExternalStorageDirectory() + "/" + split[ 1 ] );
+							}else{
+								Map<String, String> volume_map = Utils.getSecondaryStorageVolumesMap( context );
+								String volume_path = volume_map.get( uuid );
+								if( volume_path != null ){
+									return new File( volume_path + "/" + split[ 1 ] );
+								}
+							}
+						}
+					}catch( Throwable ex2 ){
+						ex2.printStackTrace();
+					}
+				}
+			}
+			// MediaStore Uri
+			Cursor cursor = context.getContentResolver().query( uri, null, null, null, null );
+			if( cursor != null ){
+				try{
+					if( cursor.moveToFirst() ){
+						int col_count = cursor.getColumnCount();
+						for( int i = 0 ; i < col_count ; ++ i ){
+							int type = cursor.getType( i );
+							if( type != Cursor.FIELD_TYPE_STRING ) continue;
+							String name = cursor.getColumnName( i );
+							String value = cursor.isNull( i ) ? null : cursor.getString( i );
+							if( ! TextUtils.isEmpty( value ) ){
+								if( "filePath".equals( name ) ){
+									return new File( value );
+								}
+							}
+						}
+					}
+				}finally{
+					cursor.close();
+				}
+			}
+		}catch( Throwable ex ){
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
 
 
 }
