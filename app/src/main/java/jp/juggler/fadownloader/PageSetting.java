@@ -31,6 +31,7 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 	EditText etSSID;
 	Switch swThumbnailAutoRotate;
 	Switch swCopyBeforeViewSend;
+	Switch swProtectedOnly;
 	View btnSSIDPicker;
 	boolean bLoading;
 	int last_target_type;
@@ -41,7 +42,7 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 
 	@Override protected void onPageCreate( int page_idx, View root ) throws Throwable{
 		bLoading = true;
-		last_target_type = -1;
+		last_target_type = - 1;
 
 		spTargetType = (Spinner) root.findViewById( R.id.spTargetType );
 		etTargetUrl = (EditText) root.findViewById( R.id.etTargetUrl );
@@ -56,6 +57,7 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		swThumbnailAutoRotate = (Switch) root.findViewById( R.id.swThumbnailAutoRotate );
 		swCopyBeforeViewSend = (Switch) root.findViewById( R.id.swCopyBeforeViewSend );
 		btnSSIDPicker = root.findViewById( R.id.btnSSIDPicker );
+		swProtectedOnly = (Switch) root.findViewById( R.id.swProtectedOnly );
 
 		root.findViewById( R.id.btnFolderPicker ).setOnClickListener( this );
 		root.findViewById( R.id.btnHelpFolderPicker ).setOnClickListener( this );
@@ -71,6 +73,7 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		root.findViewById( R.id.btnThumbnailAutoRotateHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnCopyBeforeViewSendHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnTargetTypeHelp ).setOnClickListener( this );
+		root.findViewById( R.id.btnHelpProtectedOnly ).setOnClickListener( this );
 
 		ArrayAdapter<CharSequence> location_mode_adapter = new ArrayAdapter<>(
 			activity
@@ -103,10 +106,10 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		target_type_adapter.setDropDownViewResource( R.layout.spinner_dropdown );
 		target_type_adapter.addAll(
 			activity.getString( R.string.target_type_flashair_ap )
-			,activity.getString( R.string.target_type_flashair_sta )
-			,activity.getString( R.string.target_type_pentax_kp )
-			,activity.getString( R.string.target_type_pqi_air_card )
-			,activity.getString( R.string.target_type_pqi_air_card_tether )
+			, activity.getString( R.string.target_type_flashair_sta )
+			, activity.getString( R.string.target_type_pentax_kp )
+			, activity.getString( R.string.target_type_pqi_air_card )
+			, activity.getString( R.string.target_type_pqi_air_card_tether )
 		);
 		spTargetType.setAdapter( target_type_adapter );
 		spTargetType.setOnItemSelectedListener( new AdapterView.OnItemSelectedListener(){
@@ -125,6 +128,7 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 				}
 				updateFormEnabled();
 			}
+
 			@Override public void onNothingSelected( AdapterView<?> parent ){
 				if( bLoading ) return;
 				if( last_target_type >= 0 ){
@@ -132,7 +136,7 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 					Pref.saveTargetUrl( e, last_target_type, etTargetUrl.getText().toString() );
 					e.apply();
 				}
-				last_target_type = -1;
+				last_target_type = - 1;
 				updateFormEnabled();
 			}
 		} );
@@ -216,6 +220,9 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		case R.id.btnTargetTypeHelp:
 			( (ActMain) activity ).openHelp( activity.getString( R.string.target_type_help ) );
 			break;
+		case R.id.btnHelpProtectedOnly:
+			( (ActMain) activity ).openHelp( activity.getString( R.string.protected_only_help ) );
+			break;
 
 		}
 	}
@@ -228,19 +235,18 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		String sv;
 		int iv;
 		//
-		last_target_type = -1;
+		last_target_type = - 1;
 		iv = pref.getInt( Pref.UI_TARGET_TYPE, - 1 );
 		if( iv >= 0 && iv < spTargetType.getCount() ){
 			spTargetType.setSelection( iv );
 
 			// targetTypeごとに異なるURLをロードする
-			sv = Pref.loadTargetUrl(pref,iv);
+			sv = Pref.loadTargetUrl( pref, iv );
 			if( sv != null ){
 				etTargetUrl.setText( sv );
 				last_target_type = iv;
 			}
 		}
-
 
 		//
 		sv = pref.getString( Pref.UI_INTERVAL, null );
@@ -266,41 +272,21 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		swThumbnailAutoRotate.setChecked( pref.getBoolean( Pref.UI_THUMBNAIL_AUTO_ROTATE, Pref.DEFAULT_THUMBNAIL_AUTO_ROTATE ) );
 		//
 		swCopyBeforeViewSend.setChecked( pref.getBoolean( Pref.UI_COPY_BEFORE_VIEW_SEND, false ) );
-
+		//
+		swProtectedOnly.setChecked( pref.getBoolean( Pref.UI_PROTECTED_ONLY,false ) );
+		//
 		updateFormEnabled();
 		bLoading = false;
 	}
 
-	private void updateFormEnabled(){
-		boolean location_enabled = ( spLocationMode.getSelectedItemPosition() > 0 );
-		etLocationIntervalDesired.setEnabled( location_enabled );
-		etLocationIntervalMin.setEnabled( location_enabled );
 
-		int target_type = spTargetType.getSelectedItemPosition();
-		boolean force_wifi_enabled;
-		switch( target_type){
-		default:
-		case Pref.TARGET_TYPE_FLASHAIR_AP:
-		case Pref.TARGET_TYPE_PENTAX_KP:
-			force_wifi_enabled = true;
-			break;
-		case Pref.TARGET_TYPE_FLASHAIR_STA:
-			force_wifi_enabled = false;
-			break;
-		}
-		swForceWifi.setEnabled( force_wifi_enabled );
-
-		boolean ssid_enabled = force_wifi_enabled && swForceWifi.isChecked();
-		etSSID.setEnabled( ssid_enabled );
-		btnSSIDPicker.setEnabled( ssid_enabled );
-	}
 
 	// UIフォームの値を設定ファイルに保存
 	void ui_value_save( SharedPreferences.Editor e ){
 
 		int target_type = spTargetType.getSelectedItemPosition();
 		if( target_type >= 0 && target_type < spTargetType.getCount() ){
-			Pref.saveTargetUrl( e,target_type,  etTargetUrl.getText().toString());
+			Pref.saveTargetUrl( e, target_type, etTargetUrl.getText().toString() );
 		}
 
 		e
@@ -312,8 +298,53 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 			.putString( Pref.UI_LOCATION_INTERVAL_MIN, etLocationIntervalMin.getText().toString() )
 			.putBoolean( Pref.UI_FORCE_WIFI, swForceWifi.isChecked() )
 			.putString( Pref.UI_SSID, etSSID.getText().toString() )
+			.putBoolean( Pref.UI_PROTECTED_ONLY, swProtectedOnly.isChecked() )
 		;
 		// .apply() は呼び出し側で行う
+	}
+
+	private void updateFormEnabled(){
+
+		final int target_type = spTargetType.getSelectedItemPosition();
+
+		{
+			boolean location_enabled = ( spLocationMode.getSelectedItemPosition() > 0 );
+			etLocationIntervalDesired.setEnabled( location_enabled );
+			etLocationIntervalMin.setEnabled( location_enabled );
+		}
+
+		{
+			boolean force_wifi_enabled;
+			switch( target_type ){
+			default:
+				force_wifi_enabled = true;
+				break;
+			case Pref.TARGET_TYPE_FLASHAIR_STA:
+			case Pref.TARGET_TYPE_PQI_AIR_CARD_TETHER:
+				force_wifi_enabled = false;
+				break;
+			}
+			swForceWifi.setEnabled( force_wifi_enabled );
+			//
+			boolean ssid_enabled = force_wifi_enabled && swForceWifi.isChecked();
+			etSSID.setEnabled( ssid_enabled );
+			btnSSIDPicker.setEnabled( ssid_enabled );
+		}
+
+		{
+			boolean protected_only_enabled;
+			switch( target_type ){
+			default:
+				protected_only_enabled = false;
+				break;
+			case Pref.TARGET_TYPE_FLASHAIR_AP:
+			case Pref.TARGET_TYPE_FLASHAIR_STA:
+				protected_only_enabled = true;
+				break;
+			}
+			swProtectedOnly.setEnabled( protected_only_enabled );
+		}
+
 	}
 
 	// 転送先フォルダの選択を開始

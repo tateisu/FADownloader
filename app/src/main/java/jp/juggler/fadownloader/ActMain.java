@@ -538,7 +538,6 @@ public class ActMain
 
 		// 設定から値を読んでバリデーション
 
-
 		int target_type = pref.getInt( Pref.UI_TARGET_TYPE, - 1 );
 		if( target_type < 0 ){
 			showToast( true, getString( R.string.target_type_invalid ) );
@@ -637,6 +636,9 @@ public class ActMain
 			}
 		}
 
+		boolean protected_only = pref.getBoolean( Pref.UI_PROTECTED_ONLY,false );
+
+
 		// 最後に押したボタンを覚えておく
 		pref.edit()
 			.putInt( Pref.LAST_MODE, repeat ? Pref.LAST_MODE_REPEAT : Pref.LAST_MODE_ONCE )
@@ -659,6 +661,7 @@ public class ActMain
 		intent.putExtra( DownloadService.EXTRA_LOCATION_MODE, location_mode );
 		intent.putExtra( DownloadService.EXTRA_FORCE_WIFI, force_wifi );
 		intent.putExtra( DownloadService.EXTRA_SSID, ssid );
+		intent.putExtra( DownloadService.EXTRA_PROTECTED_ONLY, protected_only );
 
 		startService( intent );
 	}

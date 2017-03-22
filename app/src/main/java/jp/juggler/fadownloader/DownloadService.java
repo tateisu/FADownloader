@@ -41,6 +41,7 @@ public class DownloadService extends Service{
 	static final String EXTRA_TARGET_TYPE = "target_type" ;
 
 	static final int NOTIFICATION_ID_SERVICE = 1;
+	public static final String EXTRA_PROTECTED_ONLY = "protected_only";
 
 	public LogWriter log;
 

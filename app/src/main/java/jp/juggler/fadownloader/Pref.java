@@ -6,7 +6,6 @@ import android.text.TextUtils;
 
 public class Pref{
 
-
 	public static SharedPreferences pref( Context context ){
 		return context.getSharedPreferences( "app_pref", Context.MODE_PRIVATE );
 	}
@@ -69,7 +68,6 @@ public class Pref{
 	public static final String UI_TARGET_URL_PQI_AIR_CARD = "ui_target_url_pqi_air_card";
 	public static final String UI_TARGET_URL_PQI_AIR_CARD_TETHER = "ui_target_url_pqi_air_card_tether";
 
-
 	public static final String UI_FOLDER_URI = "ui_folder_uri";
 	public static final String UI_INTERVAL = "ui_interval";
 	public static final String UI_FILE_TYPE = "ui_file_type";
@@ -80,6 +78,7 @@ public class Pref{
 	public static final String UI_SSID = "ui_ssid";
 	public static final String UI_THUMBNAIL_AUTO_ROTATE = "ui_thumbnail_auto_rotate";
 	public static final String UI_COPY_BEFORE_VIEW_SEND = "ui_copy_before_view_send";
+	public static final String UI_PROTECTED_ONLY = "ui_protected_only";
 
 	public static final boolean DEFAULT_THUMBNAIL_AUTO_ROTATE = true;
 
@@ -147,6 +146,7 @@ public class Pref{
 	public static final String WORKER_LOCATION_MODE = "worker_location_mode";
 	public static final String WORKER_FORCE_WIFI = "worker_force_wifi";
 	public static final String WORKER_SSID = "worker_ssid";
+	public static final String WORKER_PROTECTED_ONLY = "worker_protected_only";
 
 	// ファイルスキャンが完了した時刻
 	public static final String LAST_IDLE_START = "last_idle_start";

@@ -68,6 +68,7 @@ public class DownloadWorker extends WorkerBase{
 	public final String ssid;
 	public final int target_type;
 	public final LocationTracker.Setting location_setting;
+	public final boolean protected_only;
 
 	public DownloadWorker( DownloadService service, Intent intent, Callback callback ){
 		this.service = service;
@@ -83,7 +84,7 @@ public class DownloadWorker extends WorkerBase{
 		this.force_wifi = intent.getBooleanExtra( DownloadService.EXTRA_FORCE_WIFI, false );
 		this.ssid = intent.getStringExtra( DownloadService.EXTRA_SSID );
 		this.target_type = intent.getIntExtra( DownloadService.EXTRA_TARGET_TYPE, 0 );
-
+		this.protected_only = intent.getBooleanExtra( DownloadService.EXTRA_PROTECTED_ONLY, false );
 		this.location_setting = new LocationTracker.Setting();
 		location_setting.interval_desired = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_DESIRED, LocationTracker.DEFAULT_INTERVAL_DESIRED );
 		location_setting.interval_min = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_MIN, LocationTracker.DEFAULT_INTERVAL_MIN );
@@ -101,6 +102,7 @@ public class DownloadWorker extends WorkerBase{
 			.putInt( Pref.WORKER_LOCATION_MODE, location_setting.mode )
 			.putBoolean( Pref.WORKER_FORCE_WIFI, force_wifi )
 			.putString( Pref.WORKER_SSID, ssid )
+			.putBoolean( Pref.WORKER_PROTECTED_ONLY, protected_only )
 			.apply();
 
 		this.file_type_list = file_type_parse();
@@ -125,6 +127,7 @@ public class DownloadWorker extends WorkerBase{
 		this.force_wifi = pref.getBoolean( Pref.WORKER_FORCE_WIFI, false );
 		this.ssid = pref.getString( Pref.WORKER_SSID, null );
 		this.target_type = pref.getInt( Pref.WORKER_TARGET_TYPE, 0 );
+		this.protected_only = pref.getBoolean( Pref.WORKER_PROTECTED_ONLY, false );
 
 		this.location_setting = new LocationTracker.Setting();
 		location_setting.interval_desired = pref.getLong( Pref.WORKER_LOCATION_INTERVAL_DESIRED, LocationTracker.DEFAULT_INTERVAL_DESIRED );

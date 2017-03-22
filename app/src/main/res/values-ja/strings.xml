@@ -157,4 +157,6 @@
     <string name="target_type_pqi_air_card_tether">PQI Air Card (テザリング)</string>
     <string name="download_complete_notification">%1$dファイルをダウンロードしました</string>
     <string name="new_file">新しいファイル</string>
+    <string name="protected_only">読み取り専用属性のついたファイルだけを転送</string>
+    <string name="protected_only_help">ONにすると、プロテクト(リードオンリー属性)のついたファイルだけを転送対象にします。 現時点ではFlashAirのみこの機能に対応しています</string>
 </resources>

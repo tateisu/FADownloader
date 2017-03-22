@@ -122,6 +122,27 @@
 
         <TextView
             style="@style/setting_row_label"
+            android:text="@string/protected_only"
+            />
+
+        <LinearLayout style="@style/setting_row_form">
+
+            <Switch
+                android:id="@+id/swProtectedOnly"
+                style="@style/setting_horizontal_stretch"
+                android:gravity="center"
+                />
+
+            <Button
+                android:id="@+id/btnHelpProtectedOnly"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
+
+        <View style="@style/setting_divider"/>
+
+        <TextView
+            style="@style/setting_row_label"
             android:labelFor="@+id/etRepeatInterval"
             android:text="@string/repeat_interval"
             />

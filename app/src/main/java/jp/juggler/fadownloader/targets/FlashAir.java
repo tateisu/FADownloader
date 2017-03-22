@@ -133,6 +133,14 @@ public class FlashAir{
 					// フォルダはキューの頭に追加
 					thread.job_queue.addFolder( new ScanItem( file_name, remote_path, local_file ) );
 				}else{
+
+					if(  thread.protected_only ){
+						if( (attr&1) ==0 ){
+							// リードオンリー属性がオフ
+							continue;
+						}
+					}
+
 					for( Pattern re : thread.file_type_list ){
 						if( ! re.matcher( file_name ).find() ) continue;
 						// マッチした
