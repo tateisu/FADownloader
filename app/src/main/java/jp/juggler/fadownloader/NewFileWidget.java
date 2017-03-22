@@ -12,39 +12,35 @@ public class NewFileWidget extends AppWidgetProvider{
 
 	@Override public void onUpdate( Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds ){
 
-		long previous_count = Pref.pref( context ).getLong( Pref.DOWNLOAD_COMPLETE_COUNT, 0L );
+		if( appWidgetIds.length == 0 ) return;
+		ComponentName c_name = new ComponentName( context, NewFileWidget.class );
 
-		appWidgetManager
-			.updateAppWidget(
-				new ComponentName( context,NewFileWidget.class )
-				, createRemoteViews(context,previous_count)
-			);
+		long count = Pref.pref( context ).getLong( Pref.DOWNLOAD_COMPLETE_COUNT, 0L );
 
+		appWidgetManager.updateAppWidget( c_name, createRemoteViews( context, count ) );
 	}
 
 	public static void update( Context context ){
+		ComponentName c_name = new ComponentName( context, NewFileWidget.class );
+		AppWidgetManager appWidgetManager = AppWidgetManager.getInstance( context );
+		int[] appWidgetIds = appWidgetManager.getAppWidgetIds( c_name );
+		if( appWidgetIds == null || appWidgetIds.length == 0 ) return;
 
-		long previous_count = Pref.pref( context ).getLong( Pref.DOWNLOAD_COMPLETE_COUNT, 0L );
+		long count = Pref.pref( context ).getLong( Pref.DOWNLOAD_COMPLETE_COUNT, 0L );
 
-		AppWidgetManager
-			.getInstance( context )
-			.updateAppWidget(
-				new ComponentName( context,NewFileWidget.class )
-				, createRemoteViews(context,previous_count)
-			);
+		appWidgetManager.updateAppWidget( c_name, createRemoteViews( context, count ) );
 	}
 
-	private static RemoteViews createRemoteViews(Context context,long count){
-		// Create an Intent to launch ExampleActivity
-		Intent intent = new Intent(context, NewFileService.class);
+	private static RemoteViews createRemoteViews( Context context, long count ){
+		// NewFileService を ACTION_TAP つきで呼び出すPendingIntent
+		Intent intent = new Intent( context, NewFileService.class );
 		intent.setAction( NewFileService.ACTION_TAP );
-		PendingIntent pendingIntent = PendingIntent.getService( context, 569, intent, 0);
+		PendingIntent pendingIntent = PendingIntent.getService( context, 569, intent, 0 );
 
-		// Get the layout for the App Widget and attach an on-click listener
-		// to the button
-		RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.new_file_widget );
-		views.setTextViewText( R.id.tvCount, Long.toString(count));
-		views.setOnClickPendingIntent(R.id.llWidget, pendingIntent);
+		// RemoteViewsを調整
+		RemoteViews views = new RemoteViews( context.getPackageName(), R.layout.new_file_widget );
+		views.setTextViewText( R.id.tvCount, Long.toString( count ) );
+		views.setOnClickPendingIntent( R.id.llWidget, pendingIntent );
 
 		return views;
 	}
