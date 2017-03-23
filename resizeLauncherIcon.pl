@@ -5,8 +5,19 @@ use Image::Magick;
 
 sub resize{
 	my($src_file,$dst_file,$resize_w,$resize_h) = @_;
+
 	my $image = new Image::Magick;
+
 	$image->read($src_file);
+
+	my($src_w,$src_h) = $image->Get(qw( width height));
+
+	if( not $resize_w ){
+		$resize_w = $resize_h * $src_w / $src_h;
+	}elsif( not $resize_h ){
+		$resize_h = $resize_w * $src_h / $src_w;
+	}
+
 	$image -> Resize(
 		width  => $resize_w,
 		height => $resize_h,
@@ -16,37 +27,26 @@ sub resize{
 	print "$dst_file\n";
 }
 
+my @scale_list = (
+	[qw( mdpi 1 )],
+	[qw( hdpi 1.5 )],
+	[qw( xhdpi 2 )],
+	[qw( xxhdpi 3 )],
+	[qw( xxxhdpi 4 )],
+);
+
+sub resize_scales{
+	my($src,$res_dir,$dir_prefix,$res_name,$w,$h)=@_;
+	for(@scale_list){
+		my($dir_suffix,$scale)=@$_;
+		my $subdir = "$res_dir/$dir_prefix-$dir_suffix";
+		mkdir($subdir,0777);
+		resize( $src, "$subdir/$res_name.png", $scale * $w, $scale * $h );
+	}
+}
+
+
 my $res_dir = "app/src/main/res";
-
-{
-	my $res_name = "ic_launcher";
-	my $src = "ic_launcher-512.png";
-
-	for(
-		[qw( mipmap-mdpi 48 )],
-		[qw( mipmap-hdpi 72 )],
-		[qw( mipmap-xhdpi 96 )],
-		[qw( mipmap-xxhdpi 144 )],
-		[qw( mipmap-xxxhdpi 192 )],
-	){
-		my($subdir,$size)=@$_;
-		mkdir("$res_dir/$subdir",0777);
-		resize( $src, "$res_dir/$subdir/$res_name.png", $size,$size );
-	}
-}
-{
-	my $res_name = "ic_service";
-	my $src = "ic_service-512.png";
-
-	for(
-		[qw( drawable-mdpi 24 )],
-		[qw( drawable-hdpi 36 )],
-		[qw( drawable-xhdpi 48 )],
-		[qw( drawable-xxhdpi 72 )],
-		[qw( drawable-xxxhdpi 96 )],
-	){
-		my($subdir,$size)=@$_;
-		mkdir("$res_dir/$subdir",0777);
-		resize( $src, "$res_dir/$subdir/$res_name.png", $size,$size );
-	}
-}
+resize_scales( "ic_launcher-512.png",$res_dir,"mipmap","ic_launcher",0,48);
+resize_scales( "ic_app_logo-512.png",$res_dir,"drawable","ic_app_logo",0,32);
+resize_scales( "ic_service-512.png",$res_dir,"drawable","ic_service",0,24);

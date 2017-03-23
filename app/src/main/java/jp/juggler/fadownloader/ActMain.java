@@ -19,11 +19,14 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.provider.DocumentFile;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -102,6 +105,11 @@ public class ActMain
 		}
 	}
 
+
+	@Override public boolean onOptionsItemSelected( MenuItem item ){
+		return true;
+	}
+
 	boolean is_resume = false;
 
 	@Override protected void onResume(){
@@ -128,11 +136,11 @@ public class ActMain
 			mAdView.pause();
 		}
 
-		SharedPreferences.Editor e = Pref.pref(this).edit();
-		e.putInt(Pref.UI_LAST_PAGE, pager.getCurrentItem() );
+		SharedPreferences.Editor e = Pref.pref( this ).edit();
+		e.putInt( Pref.UI_LAST_PAGE, pager.getCurrentItem() );
 
 		PageSetting page = pager_adapter.getPage( page_idx_setting );
-		if( page != null ) page.ui_value_save(e);
+		if( page != null ) page.ui_value_save( e );
 
 		e.apply();
 
@@ -192,7 +200,7 @@ public class ActMain
 			if( resultCode == Activity.RESULT_OK ){
 				startDownloadService();
 			}else{
-				Utils.showToast( this,true,"resolution request result: %s",resultCode) ;
+				Utils.showToast( this, true, "resolution request result: %s", resultCode );
 			}
 
 		}else if( requestCode == REQUEST_CODE_DOCUMENT ){
@@ -247,7 +255,7 @@ public class ActMain
 						.apply();
 				}catch( Throwable ex ){
 					ex.printStackTrace();
-					Utils.showToast( this,ex, "folder access failed." );
+					Utils.showToast( this, ex, "folder access failed." );
 				}
 			}
 			PageSetting page = pager_adapter.getPage( page_idx_setting );
@@ -283,6 +291,13 @@ public class ActMain
 		super.onCreate( savedInstanceState );
 		setContentView( R.layout.act_main );
 
+//		ActionBar bar = getSupportActionBar();
+//		if( bar != null ){
+//			bar.setDisplayShowHomeEnabled( true );
+//			bar.setLogo( R.drawable.ic_app_logo );
+//			bar.setDisplayUseLogoEnabled( true );
+//		}
+
 		setupIabHelper();
 
 		mAdView = (AdView) findViewById( R.id.adView );
@@ -312,7 +327,7 @@ public class ActMain
 		page_idx_record = pager_adapter.addPage( getString( R.string.download_record ), R.layout.page_record, PageRecord.class );
 		page_idx_other = pager_adapter.addPage( getString( R.string.other ), R.layout.page_other, PageOther.class );
 		pager.setAdapter( pager_adapter );
-		pager.setCurrentItem( Pref.pref(this).getInt(Pref.UI_LAST_PAGE,0) );
+		pager.setCurrentItem( Pref.pref( this ).getInt( Pref.UI_LAST_PAGE, 0 ) );
 
 		mGoogleApiClient = new GoogleApiClient.Builder( this )
 			.addConnectionCallbacks( connection_callback )
@@ -320,8 +335,8 @@ public class ActMain
 			.addApi( LocationServices.API )
 			.build();
 
-		if(savedInstanceState == null){
-			handleIntent(getIntent());
+		if( savedInstanceState == null ){
+			handleIntent( getIntent() );
 		}
 	}
 
@@ -340,16 +355,21 @@ public class ActMain
 
 	@Override protected void onNewIntent( Intent intent ){
 		super.onNewIntent( intent );
-		handleIntent(intent);
+		handleIntent( intent );
 	}
 
-	void handleIntent(Intent intent){
-		if(intent==null) return;
-		String sv = intent.getStringExtra(EXTRA_TAB);
-		if(TAB_RECORD.equals( sv )) pager.setCurrentItem(page_idx_record );
+	void handleIntent( Intent intent ){
+		if( intent == null ) return;
+		String sv = intent.getStringExtra( EXTRA_TAB );
+		if( TAB_RECORD.equals( sv ) ) pager.setCurrentItem( page_idx_record );
 	}
 
-	/////////////////////////////////////////////////////////////////////////
+	@Override public boolean onCreateOptionsMenu( Menu menu ){
+		getMenuInflater().inflate( R.menu.act_main,menu );
+		return true;
+	}
+
+/////////////////////////////////////////////////////////////////////////
 	// アプリ権限の要求
 
 	WeakReference<Dialog> permission_alert;
@@ -420,14 +440,14 @@ public class ActMain
 	// 転送サービスを開始
 	void download_start_button( boolean repeat ){
 
-		SharedPreferences.Editor e = Pref.pref(this).edit();
+		SharedPreferences.Editor e = Pref.pref( this ).edit();
 
 		//repeat引数の値は、LocationSettingの確認が終わるまで覚えておく必要がある
 		e.putBoolean( Pref.UI_REPEAT, repeat );
 
 		// UIフォームの値を設定に保存
 		PageSetting page = pager_adapter.getPage( page_idx_setting );
-		if( page != null ) page.ui_value_save(e);
+		if( page != null ) page.ui_value_save( e );
 
 		e.apply();
 
@@ -437,7 +457,7 @@ public class ActMain
 		}else if( mGoogleApiClient.isConnected() ){
 			startLocationSettingCheck();
 		}else{
-			Utils.showToast( this,false,  R.string.geo_tagging_not_enabled  );
+			Utils.showToast( this, false, R.string.geo_tagging_not_enabled );
 		}
 	}
 
@@ -475,7 +495,7 @@ public class ActMain
 				startDownloadService();
 				break;
 			case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-				if( Build.VERSION.SDK_INT <=17  ){
+				if( Build.VERSION.SDK_INT <= 17 ){
 
 					// SH-02E(4.1.2),F10d(4.2.2)などで
 					// Wi-Fiが無効だと RESOLUTION_REQUIRED を返すが、
@@ -502,10 +522,10 @@ public class ActMain
 
 				break;
 			case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-				Utils.showToast(  ActMain.this, true, R.string.location_setting_change_unavailable );
+				Utils.showToast( ActMain.this, true, R.string.location_setting_change_unavailable );
 				break;
 			default:
-				Utils.showToast(  ActMain.this, true, R.string.location_setting_returns_unknown_status, status_code );
+				Utils.showToast( ActMain.this, true, R.string.location_setting_returns_unknown_status, status_code );
 				break;
 
 			}
@@ -523,13 +543,13 @@ public class ActMain
 
 		int target_type = pref.getInt( Pref.UI_TARGET_TYPE, - 1 );
 		if( target_type < 0 ){
-			Utils.showToast( this,true, getString( R.string.target_type_invalid ) );
+			Utils.showToast( this, true, getString( R.string.target_type_invalid ) );
 			return;
 		}
 
-		String target_url = Pref.loadTargetUrl( pref,target_type );
+		String target_url = Pref.loadTargetUrl( pref, target_type );
 		if( TextUtils.isEmpty( target_url ) ){
-			Utils.showToast( this,true, getString( R.string.target_url_not_ok ) );
+			Utils.showToast( this, true, getString( R.string.target_url_not_ok ) );
 			return;
 		}
 
@@ -548,7 +568,7 @@ public class ActMain
 			}
 		}
 		if( TextUtils.isEmpty( folder_uri ) ){
-			Utils.showToast( this,true, getString( R.string.local_folder_not_ok ) );
+			Utils.showToast( this, true, getString( R.string.local_folder_not_ok ) );
 			return;
 		}
 
@@ -559,20 +579,20 @@ public class ActMain
 			interval = - 1;
 		}
 		if( repeat && interval < 1 ){
-			Utils.showToast( this,true, getString( R.string.repeat_interval_not_ok ) );
+			Utils.showToast( this, true, getString( R.string.repeat_interval_not_ok ) );
 			return;
 		}
 
 		sv = pref.getString( Pref.UI_FILE_TYPE, "" );
 		String file_type = sv.trim();
 		if( TextUtils.isEmpty( file_type ) ){
-			Utils.showToast( this,true, getString( R.string.file_type_empty ) );
+			Utils.showToast( this, true, getString( R.string.file_type_empty ) );
 			return;
 		}
 
 		int location_mode = pref.getInt( Pref.UI_LOCATION_MODE, - 1 );
 		if( location_mode < 0 || location_mode > LocationTracker.LOCATION_HIGH_ACCURACY ){
-			Utils.showToast( this,true, getString( R.string.location_mode_invalid ) );
+			Utils.showToast( this, true, getString( R.string.location_mode_invalid ) );
 			return;
 		}
 
@@ -587,7 +607,7 @@ public class ActMain
 				location_update_interval_desired = - 1L;
 			}
 			if( repeat && location_update_interval_desired < 1000L ){
-				Utils.showToast( this,true, getString( R.string.location_update_interval_not_ok ) );
+				Utils.showToast( this, true, getString( R.string.location_update_interval_not_ok ) );
 				return;
 			}
 
@@ -598,7 +618,7 @@ public class ActMain
 				location_update_interval_min = - 1L;
 			}
 			if( repeat && location_update_interval_min < 1000L ){
-				Utils.showToast( this,true, getString( R.string.location_update_interval_not_ok ) );
+				Utils.showToast( this, true, getString( R.string.location_update_interval_not_ok ) );
 				return;
 			}
 		}
@@ -612,13 +632,12 @@ public class ActMain
 			sv = pref.getString( Pref.UI_SSID, "" );
 			ssid = sv.trim();
 			if( TextUtils.isEmpty( ssid ) ){
-				Utils.showToast( this,true, getString( R.string.ssid_empty ) );
+				Utils.showToast( this, true, getString( R.string.ssid_empty ) );
 				return;
 			}
 		}
 
-		boolean protected_only = pref.getBoolean( Pref.UI_PROTECTED_ONLY,false );
-
+		boolean protected_only = pref.getBoolean( Pref.UI_PROTECTED_ONLY, false );
 
 		// 最後に押したボタンを覚えておく
 		pref.edit()
@@ -701,7 +720,7 @@ public class ActMain
 
 			String msg = Utils.getConnectionResultErrorMessage( connectionResult );
 			msg = getString( R.string.play_service_connection_failed, code, msg );
-			Utils.showToast(  ActMain.this, false, msg );
+			Utils.showToast( ActMain.this, false, msg );
 
 			if( code == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED ){
 				try{
@@ -724,7 +743,7 @@ public class ActMain
 		// Playサービスとの接続が失われた
 		@Override public void onConnectionSuspended( int i ){
 			String msg = Utils.getConnectionSuspendedMessage( i );
-			Utils.showToast( ActMain.this ,false,R.string.play_service_connection_suspended, i, msg );
+			Utils.showToast( ActMain.this, false, R.string.play_service_connection_suspended, i, msg );
 			// 再接続は自動で行われるらしい
 		}
 	};
@@ -802,7 +821,7 @@ public class ActMain
 	public void startRemoveAdPurchase(){
 		try{
 			if( mIabHelper == null ){
-				Utils.showToast( this,false, getString( R.string.play_store_missing ) );
+				Utils.showToast( this, false, getString( R.string.play_store_missing ) );
 			}
 
 			mIabHelper.launchPurchaseFlow(
