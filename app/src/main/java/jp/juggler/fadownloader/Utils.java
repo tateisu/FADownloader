@@ -22,6 +22,7 @@ import java.util.Locale;
 import android.net.wifi.SupplicantState;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.Looper;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
@@ -609,75 +610,64 @@ public class Utils{
 		return defval;
 	}
 
-	public static void showToast( final Activity activity, final boolean bLong, final String fmt, final Object... args ){
-		if( Looper.getMainLooper().getThread() != Thread.currentThread() ){
-			activity.runOnUiThread( new Runnable(){
-				@Override public void run(){
-					showToast(  activity,  bLong,  fmt,  args );
-				}
-			} );
-			return;
-		}
 
-		Toast.makeText(
-			activity
-			,( args.length ==0 ? fmt: String.format(fmt,args))
-			, bLong ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT
-		).show();
+
+	public static void runOnMainThread( @NonNull Runnable proc ){
+		if( Looper.getMainLooper().getThread() == Thread.currentThread() ){
+			proc.run();
+		}else{
+			new Handler( Looper.getMainLooper() ).post( proc );
+		}
 	}
 
-	public static void showToast( final  Activity activity,final Throwable ex,final   String fmt,final Object... args ){
-
-		if( Looper.getMainLooper().getThread() != Thread.currentThread() ){
-			activity.runOnUiThread( new Runnable(){
-				@Override public void run(){
-					showToast(  activity,  ex,  fmt,  args );
-				}
-			} );
-			return;
-		}
-
-		Toast.makeText(
-			activity
-			, LogWriter.formatError( ex,fmt,args)
-			, Toast.LENGTH_LONG
-		).show();
+	public static void showToast( final Context context, final boolean bLong, final String fmt, final Object... args ){
+		runOnMainThread( new Runnable(){
+			@Override public void run(){
+				Toast.makeText(
+					context
+					, ( args.length == 0 ? fmt : String.format( fmt, args ) )
+					, bLong ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT
+				).show();
+			}
+		} );
 	}
 
-	public static void showToast(  final Activity activity,final  boolean bLong,final  int string_id,final Object... args ){
-
-		if( Looper.getMainLooper().getThread() != Thread.currentThread() ){
-			activity.runOnUiThread( new Runnable(){
-				@Override public void run(){
-					showToast(  activity,  bLong,  string_id,  args );
-				}
-			} );
-			return;
-		}
-		Toast.makeText(
-			activity
-			,activity.getString(string_id,args)
-			, bLong ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT
-		).show();
+	public static void showToast( final Context context, final Throwable ex, final String fmt, final Object... args ){
+		runOnMainThread( new Runnable(){
+			@Override public void run(){
+				Toast.makeText(
+					context
+					, LogWriter.formatError( ex, fmt, args )
+					, Toast.LENGTH_LONG
+				).show();
+			}
+		} );
 	}
 
-	public static void showToast(  final Activity activity,final Throwable ex,  final  int string_id,final Object... args ){
+	public static void showToast( final Context context, final boolean bLong, final int string_id, final Object... args ){
+		runOnMainThread( new Runnable(){
+			@Override public void run(){
 
-		if( Looper.getMainLooper().getThread() != Thread.currentThread() ){
-			activity.runOnUiThread( new Runnable(){
-				@Override public void run(){
-					showToast(  activity,  ex,  string_id,  args );
-				}
-			} );
-			return;
-		}
-		Toast.makeText(
-			activity
-			, LogWriter.formatError( ex,activity.getResources(),string_id,args)
-			, Toast.LENGTH_LONG
-		).show();
+				Toast.makeText(
+					context
+					, context.getString( string_id, args )
+					, bLong ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT
+				).show();
+			}
+		} );
 	}
 
+	public static void showToast( final Context context, final Throwable ex, final int string_id, final Object... args ){
+		runOnMainThread( new Runnable(){
+			@Override public void run(){
+				Toast.makeText(
+					context
+					, LogWriter.formatError( ex, context.getResources(), string_id, args )
+					, Toast.LENGTH_LONG
+				).show();
+			}
+		} );
+	}
 
 
 	public static boolean isExternalStorageDocument( Uri uri ){

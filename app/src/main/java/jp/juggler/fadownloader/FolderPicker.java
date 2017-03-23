@@ -19,7 +19,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -60,20 +59,6 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 		}
 	}
 
-	void showToast(boolean bLong,String s){
-		Toast.makeText( this
-			, s
-			, bLong ?Toast.LENGTH_LONG:Toast.LENGTH_SHORT
-		).show();
-	}
-
-	void showToast(Throwable ex,String s){
-		Toast.makeText( this
-			, s+String.format(":%s %s",ex.getClass().getSimpleName(),ex.getMessage())
-			, Toast.LENGTH_LONG
-		).show();
-	}
-
 	TextView tvCurrentFolder;
 	View btnFolderUp;
 	View btnSubFolder;
@@ -104,9 +89,9 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 		if( name != null ){
 			File folder = new File( showing_folder, name );
 			if( ! folder.isDirectory() ){
-				showToast(false,getString( R.string.folder_not_directory ));
+				Utils.showToast( this, false, R.string.folder_not_directory );
 			}else if( ! folder.canWrite() ){
-				showToast(false,getString( R.string.folder_not_writable ));
+				Utils.showToast( this, false, R.string.folder_not_writable );
 			}else{
 				loadFolder( folder );
 			}
@@ -182,12 +167,12 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 	}
 
 	private void openFolderCreateDialog(){
-		View root = getLayoutInflater().inflate(R.layout.folder_create_dialog,null,false);
+		View root = getLayoutInflater().inflate( R.layout.folder_create_dialog, null, false );
 		final View btnCancel = root.findViewById( R.id.btnCancel );
 		final View btnOk = root.findViewById( R.id.btnOk );
 		final EditText etName = (EditText) root.findViewById( R.id.etName );
-		final Dialog d = new Dialog(this);
-		d.setTitle( getString(R.string.create_sub_folder) );
+		final Dialog d = new Dialog( this );
+		d.setTitle( getString( R.string.create_sub_folder ) );
 		d.setContentView( root );
 		//noinspection ConstantConditions
 		d.getWindow().setLayout( WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT );
@@ -211,20 +196,20 @@ public class FolderPicker extends AppCompatActivity implements View.OnClickListe
 				try{
 					String name = etName.getText().toString().trim();
 					if( TextUtils.isEmpty( name ) ){
-						showToast( false, getString( R.string.folder_name_empty ) );
+						Utils.showToast( FolderPicker.this, false, R.string.folder_name_empty );
 					}else{
 						File folder = new File( showing_folder, name );
 						if( folder.exists() ){
-							showToast( false, getString( R.string.folder_already_exist ) );
+							Utils.showToast( FolderPicker.this, false, R.string.folder_already_exist );
 						}else if( ! folder.mkdir() ){
-							showToast( false, getString( R.string.folder_creation_failed ) );
+							Utils.showToast( FolderPicker.this, false, R.string.folder_creation_failed );
 						}else{
 							d.dismiss();
 							loadFolder( folder );
 						}
 					}
-				}catch(Throwable ex){
-					showToast(ex,"folder creation failed.");
+				}catch( Throwable ex ){
+					Utils.showToast( FolderPicker.this, ex, "folder creation failed." );
 				}
 			}
 		} );

@@ -177,7 +177,7 @@ public class PentaxKP{
 								log.e( ex, "can not get file time." );
 							}
 						}
-						String mime_type = Utils.getMimeType( log,file_name );
+						String mime_type = Utils.getMimeType( log, file_name );
 
 						ScanItem item = new ScanItem( file_name, remote_path, local_file, size, time, mime_type );
 
@@ -206,11 +206,11 @@ public class PentaxKP{
 
 	void loadFile( Object network, ScanItem item ){
 		long time_start = SystemClock.elapsedRealtime();
-		final String remote_path = item.remote_path;
-		final LocalFile local_file = item.local_file;
-		final String file_name = local_file.getName();
 
 		try{
+			final String remote_path = item.remote_path;
+			final LocalFile local_file = item.local_file;
+			final String file_name = local_file.getName();
 
 			if( ! local_file.prepareFile( log, true, item.mime_type ) ){
 				log.e( "%s//%s :skip. can not prepare local file.", item.remote_path, file_name );
@@ -263,16 +263,7 @@ public class PentaxKP{
 			thread.afterDownload( time_start, data, item );
 
 		}catch( Throwable ex ){
-			ex.printStackTrace();
-			log.e( ex, "error." );
-
-			local_file.delete();
-
-			thread.file_error = true;
-			thread.record( item, SystemClock.elapsedRealtime() - time_start
-				, DownloadRecord.STATE_DOWNLOAD_ERROR
-				, thread.client.last_error
-			);
+			thread.afterDownload( time_start, ex, item );
 		}
 
 	}
@@ -448,7 +439,7 @@ public class PentaxKP{
 
 				// キューがカラなら、最後にファイル一覧を取得した時刻から一定は待つ
 				remain = mLastFileListed.get() + thread.interval * 1000L - now;
-				if( remain > 0L){
+				if( remain > 0L ){
 					thread.setShortWait( remain );
 					continue;
 				}
@@ -484,11 +475,11 @@ public class PentaxKP{
 			}
 
 			try{
-				if( !thread.job_queue.queue_folder.isEmpty() ){
+				if( ! thread.job_queue.queue_folder.isEmpty() ){
 					final ScanItem head = thread.job_queue.queue_folder.removeFirst();
 					thread.setStatus( false, service.getString( R.string.progress_folder, head.remote_path ) );
 					// ここは通らない
-				}else if( !thread.job_queue.queue_file.isEmpty() ){
+				}else if( ! thread.job_queue.queue_file.isEmpty() ){
 					// キューから除去するまえに残りサイズを計算したい
 					final ScanItem head = thread.job_queue.queue_file.getFirst();
 					thread.setStatus( true, service.getString( R.string.download_file, head.remote_path ) );
@@ -500,7 +491,7 @@ public class PentaxKP{
 					thread.job_queue = null;
 					thread.setStatus( false, service.getString( R.string.file_scan_completed ) );
 					if( ! thread.file_error ){
-						thread.onFileScanComplete(file_count);
+						thread.onFileScanComplete( file_count );
 					}
 				}
 			}catch( Throwable ex ){

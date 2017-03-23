@@ -29,7 +29,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.android.trivialdrivesample.util.IabHelper;
 import com.example.android.trivialdrivesample.util.IabResult;
@@ -193,7 +192,7 @@ public class ActMain
 			if( resultCode == Activity.RESULT_OK ){
 				startDownloadService();
 			}else{
-				showToast( true,String.format("resolution request result: %s",resultCode) );
+				Utils.showToast( this,true,"resolution request result: %s",resultCode) ;
 			}
 
 		}else if( requestCode == REQUEST_CODE_DOCUMENT ){
@@ -209,7 +208,7 @@ public class ActMain
 							.apply();
 					}catch( Throwable ex ){
 						ex.printStackTrace();
-						showToast( ex, "folder access failed." );
+						Utils.showToast( this, ex, "folder access failed." );
 					}
 				}
 			}
@@ -248,7 +247,7 @@ public class ActMain
 						.apply();
 				}catch( Throwable ex ){
 					ex.printStackTrace();
-					showToast( ex, "folder access failed." );
+					Utils.showToast( this,ex, "folder access failed." );
 				}
 			}
 			PageSetting page = pager_adapter.getPage( page_idx_setting );
@@ -351,22 +350,6 @@ public class ActMain
 	}
 
 	/////////////////////////////////////////////////////////////////////////
-
-	void showToast( boolean bLong, String s ){
-		Toast.makeText( this
-			, s
-			, bLong ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT
-		).show();
-	}
-
-	void showToast( Throwable ex, String s ){
-		Toast.makeText( this
-			, s + String.format( ":%s %s", ex.getClass().getSimpleName(), ex.getMessage() )
-			, Toast.LENGTH_LONG
-		).show();
-	}
-
-	/////////////////////////////////////////////////////////////////////////
 	// アプリ権限の要求
 
 	WeakReference<Dialog> permission_alert;
@@ -454,7 +437,7 @@ public class ActMain
 		}else if( mGoogleApiClient.isConnected() ){
 			startLocationSettingCheck();
 		}else{
-			showToast( false, getString( R.string.geo_tagging_not_enabled ) );
+			Utils.showToast( this,false,  R.string.geo_tagging_not_enabled  );
 		}
 	}
 
@@ -512,17 +495,17 @@ public class ActMain
 						status.startResolutionForResult( ActMain.this, REQUEST_RESOLUTION );
 					}catch( IntentSender.SendIntentException ex ){
 						ex.printStackTrace();
-						Toast.makeText( ActMain.this, getString( R.string.resolution_request_failed ), Toast.LENGTH_LONG ).show();
+						Utils.showToast( ActMain.this, true, R.string.resolution_request_failed );
 					}
 
 				}
 
 				break;
 			case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-				Toast.makeText( ActMain.this, getString( R.string.location_setting_change_unavailable ), Toast.LENGTH_LONG ).show();
+				Utils.showToast(  ActMain.this, true, R.string.location_setting_change_unavailable );
 				break;
 			default:
-				Toast.makeText( ActMain.this, getString( R.string.location_setting_returns_unknown_status, status_code ), Toast.LENGTH_LONG ).show();
+				Utils.showToast(  ActMain.this, true, R.string.location_setting_returns_unknown_status, status_code );
 				break;
 
 			}
@@ -540,15 +523,13 @@ public class ActMain
 
 		int target_type = pref.getInt( Pref.UI_TARGET_TYPE, - 1 );
 		if( target_type < 0 ){
-			showToast( true, getString( R.string.target_type_invalid ) );
+			Utils.showToast( this,true, getString( R.string.target_type_invalid ) );
 			return;
 		}
 
 		String target_url = Pref.loadTargetUrl( pref,target_type );
 		if( TextUtils.isEmpty( target_url ) ){
-			//TODO target type に応じたデフォルトを…
-			//TODO いや、target typeごとに設定を覚えて…
-			showToast( true, getString( R.string.target_url_not_ok ) );
+			Utils.showToast( this,true, getString( R.string.target_url_not_ok ) );
 			return;
 		}
 
@@ -567,7 +548,7 @@ public class ActMain
 			}
 		}
 		if( TextUtils.isEmpty( folder_uri ) ){
-			showToast( true, getString( R.string.local_folder_not_ok ) );
+			Utils.showToast( this,true, getString( R.string.local_folder_not_ok ) );
 			return;
 		}
 
@@ -578,20 +559,20 @@ public class ActMain
 			interval = - 1;
 		}
 		if( repeat && interval < 1 ){
-			showToast( true, getString( R.string.repeat_interval_not_ok ) );
+			Utils.showToast( this,true, getString( R.string.repeat_interval_not_ok ) );
 			return;
 		}
 
 		sv = pref.getString( Pref.UI_FILE_TYPE, "" );
 		String file_type = sv.trim();
 		if( TextUtils.isEmpty( file_type ) ){
-			showToast( true, getString( R.string.file_type_empty ) );
+			Utils.showToast( this,true, getString( R.string.file_type_empty ) );
 			return;
 		}
 
 		int location_mode = pref.getInt( Pref.UI_LOCATION_MODE, - 1 );
 		if( location_mode < 0 || location_mode > LocationTracker.LOCATION_HIGH_ACCURACY ){
-			showToast( true, getString( R.string.location_mode_invalid ) );
+			Utils.showToast( this,true, getString( R.string.location_mode_invalid ) );
 			return;
 		}
 
@@ -606,7 +587,7 @@ public class ActMain
 				location_update_interval_desired = - 1L;
 			}
 			if( repeat && location_update_interval_desired < 1000L ){
-				showToast( true, getString( R.string.location_update_interval_not_ok ) );
+				Utils.showToast( this,true, getString( R.string.location_update_interval_not_ok ) );
 				return;
 			}
 
@@ -617,7 +598,7 @@ public class ActMain
 				location_update_interval_min = - 1L;
 			}
 			if( repeat && location_update_interval_min < 1000L ){
-				showToast( true, getString( R.string.location_update_interval_not_ok ) );
+				Utils.showToast( this,true, getString( R.string.location_update_interval_not_ok ) );
 				return;
 			}
 		}
@@ -631,7 +612,7 @@ public class ActMain
 			sv = pref.getString( Pref.UI_SSID, "" );
 			ssid = sv.trim();
 			if( TextUtils.isEmpty( ssid ) ){
-				showToast( true, getString( R.string.ssid_empty ) );
+				Utils.showToast( this,true, getString( R.string.ssid_empty ) );
 				return;
 			}
 		}
@@ -720,7 +701,7 @@ public class ActMain
 
 			String msg = Utils.getConnectionResultErrorMessage( connectionResult );
 			msg = getString( R.string.play_service_connection_failed, code, msg );
-			Toast.makeText( ActMain.this, msg, Toast.LENGTH_SHORT ).show();
+			Utils.showToast(  ActMain.this, false, msg );
 
 			if( code == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED ){
 				try{
@@ -743,10 +724,7 @@ public class ActMain
 		// Playサービスとの接続が失われた
 		@Override public void onConnectionSuspended( int i ){
 			String msg = Utils.getConnectionSuspendedMessage( i );
-			Toast.makeText( ActMain.this
-				, getString( R.string.play_service_connection_suspended
-					, i, msg )
-				, Toast.LENGTH_SHORT ).show();
+			Utils.showToast( ActMain.this ,false,R.string.play_service_connection_suspended, i, msg );
 			// 再接続は自動で行われるらしい
 		}
 	};
@@ -762,12 +740,15 @@ public class ActMain
 
 	// onCreateから呼ばれる
 	void setupIabHelper(){
+
 		//noinspection SimplifiableIfStatement
 		if( BuildVariant.AD_FREE ){
 			bRemoveAdPurchased = true;
 		}else{
 			bRemoveAdPurchased = Pref.pref( this ).getBoolean( Pref.REMOVE_AD_PURCHASED, false );
 		}
+
+		//noinspection ConstantConditions
 		if( ! bRemoveAdPurchased ){
 			try{
 				mIabHelper = new IabHelper( this, APP_PUBLIC_KEY );
@@ -821,7 +802,7 @@ public class ActMain
 	public void startRemoveAdPurchase(){
 		try{
 			if( mIabHelper == null ){
-				showToast( false, getString( R.string.play_store_missing ) );
+				Utils.showToast( this,false, getString( R.string.play_store_missing ) );
 			}
 
 			mIabHelper.launchPurchaseFlow(

@@ -51,7 +51,6 @@ public class NetworkTracker{
 	final Context context;
 	final Callback callback;
 
-	final Handler handler;
 	final WifiManager wifiManager;
 	final ConnectivityManager cm;
 
@@ -61,7 +60,6 @@ public class NetworkTracker{
 		this.log = log;
 		this.context = context;
 		this.callback = callback;
-		this.handler = new Handler();
 		this.wifiManager = (WifiManager) context.getApplicationContext().getSystemService( Context.WIFI_SERVICE );
 		this.cm = (ConnectivityManager) context.getApplicationContext().getSystemService( Context.CONNECTIVITY_SERVICE );
 
@@ -664,7 +662,7 @@ public class NetworkTracker{
 
 				if( result != last_result.get() ){
 					last_result.set( result );
-					handler.post( new Runnable(){
+					Utils.runOnMainThread( new Runnable(){
 						@Override public void run(){
 							if( is_dispose ) return;
 							try{

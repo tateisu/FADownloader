@@ -335,6 +335,21 @@ public class DownloadWorker extends WorkerBase{
 		);
 	}
 
+	public void afterDownload( long time_start, Throwable ex , ScanItem item ){
+		ex.printStackTrace();
+		log.e( ex, "error." );
+
+		file_error = true;
+
+		record( item
+			, SystemClock.elapsedRealtime() - time_start
+			, DownloadRecord.STATE_DOWNLOAD_ERROR
+			, LogWriter.formatError( ex, "?" )
+		);
+
+		item.local_file.delete();
+	}
+
 	public void afterDownload( long time_start, byte[] data, ScanItem item ){
 		long lap_time = SystemClock.elapsedRealtime() - time_start;
 		if( isCancelled() ){

@@ -134,8 +134,8 @@ public class FlashAir{
 					thread.job_queue.addFolder( new ScanItem( file_name, remote_path, local_file ) );
 				}else{
 
-					if(  thread.protected_only ){
-						if( (attr&1) ==0 ){
+					if( thread.protected_only ){
+						if( ( attr & 1 ) == 0 ){
 							// リードオンリー属性がオフ
 							continue;
 						}
@@ -148,7 +148,7 @@ public class FlashAir{
 						// ローカルのファイルサイズを調べて既読スキップ
 						if( local_file.length( log ) >= size ) continue;
 
-						String mime_type = Utils.getMimeType( log,file_name );
+						String mime_type = Utils.getMimeType( log, file_name );
 
 						// ファイルはキューの末尾に追加
 						ScanItem sub_item = new ScanItem( file_name, remote_path, local_file, size, time, mime_type );
@@ -223,18 +223,7 @@ public class FlashAir{
 			thread.afterDownload( time_start, data, item );
 
 		}catch( Throwable ex ){
-			ex.printStackTrace();
-			log.e( ex, "error." );
-
-			thread.file_error = true;
-
-			thread.record( item
-				, SystemClock.elapsedRealtime() - time_start
-				, DownloadRecord.STATE_DOWNLOAD_ERROR
-				, LogWriter.formatError( ex, "?" )
-			);
-
-			item.local_file.delete();
+			thread.afterDownload( time_start, ex, item );
 
 		}
 
@@ -253,7 +242,7 @@ public class FlashAir{
 					if( remain <= 0 ) break;
 
 					if( thread.isTetheringType() || remain < ( 15 * 1000L ) ){
-						thread.setShortWait(remain);
+						thread.setShortWait( remain );
 
 					}else{
 						thread.setAlarm( now, remain );
@@ -329,7 +318,7 @@ public class FlashAir{
 					if( flashair_update_status == old && old != - 1L ){
 						// 前回スキャン開始時と同じ数字なので変更されていない
 						log.d( R.string.flashair_not_updated );
-						thread.onFileScanComplete(0);
+						thread.onFileScanComplete( 0 );
 						continue;
 					}else{
 						log.d( "flashair updated %d %d"
@@ -360,7 +349,7 @@ public class FlashAir{
 					ScanItem item = thread.job_queue.queue_folder.removeFirst();
 					thread.setStatus( false, service.getString( R.string.progress_folder, item.remote_path ) );
 					loadFolder( network, item );
-				}else if( !  thread.job_queue.queue_file.isEmpty() ){
+				}else if( ! thread.job_queue.queue_file.isEmpty() ){
 					// キューから除去するまえに残りサイズを計算したい
 					final ScanItem item = thread.job_queue.queue_file.getFirst();
 					thread.setStatus( true, service.getString( R.string.download_file, item.remote_path ) );
@@ -375,7 +364,7 @@ public class FlashAir{
 						Pref.pref( service ).edit()
 							.putLong( Pref.FLASHAIR_UPDATE_STATUS_OLD, flashair_update_status )
 							.apply();
-						thread.onFileScanComplete(file_count);
+						thread.onFileScanComplete( file_count );
 					}
 				}
 			}catch( Throwable ex ){

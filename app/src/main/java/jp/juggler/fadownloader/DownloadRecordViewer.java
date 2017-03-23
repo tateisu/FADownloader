@@ -451,7 +451,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 			RecordAdapter adapter = (RecordAdapter) parent.getAdapter();
 			final DownloadRecord data = adapter.loadAt( position );
 			if( data == null ){
-				( (ActMain) activity ).showToast( false, "missing record data at clicked position." );
+				Utils.showToast( activity,false, "missing record data at clicked position." );
 				return;
 			}
 			String name = new File( data.air_path ).getName();
@@ -506,7 +506,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 		try{
 
 			if( data.local_file == null ){
-				( (ActMain) activity ).showToast( false, "missing local file uri." );
+				Utils.showToast(activity, false, "missing local file uri." );
 				return null;
 			}
 			Utils.FileInfo tmp_info = new Utils.FileInfo( data.local_file );
@@ -514,14 +514,14 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 			// 端末のダウンロードフォルダ
 			File tmp_dir = Environment.getExternalStoragePublicDirectory( Environment.DIRECTORY_DOWNLOADS );
 			if( tmp_dir == null ){
-				( (ActMain) activity ).showToast( false, "can not find temporary directory." );
+				Utils.showToast(activity,  false, "can not find temporary directory." );
 				return null;
 			}
 
 			// フォルダがなければ作成する
 			if( ! tmp_dir.exists() ){
 				if( ! tmp_dir.mkdir() ){
-					( (ActMain) activity ).showToast( false, "temporary directory not exist." );
+					Utils.showToast(activity,  false, "temporary directory not exist." );
 					return null;
 				}
 			}
@@ -558,7 +558,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 			return tmp_info;
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			( (ActMain) activity ).showToast( false, LogWriter.formatError( ex, "failed to copy to temporary folder." ) );
+			Utils.showToast(activity, ex, "failed to copy to temporary folder." );
 			return null;
 		}
 
@@ -571,7 +571,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 	private Utils.FileInfo fixFileURL( DownloadRecord data ){
 		try{
 			if( data.local_file == null ){
-				( (ActMain) activity ).showToast( false, "missing local file uri." );
+				Utils.showToast(activity,  false, "missing local file uri." );
 				return null;
 			}
 
@@ -631,7 +631,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 			return tmp_info;
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			( (ActMain) activity ).showToast( false, LogWriter.formatError( ex, "failed to fix file URI." ) );
+			Utils.showToast(activity, ex , "failed to fix file URI."  );
 			return null;
 		}
 
@@ -658,7 +658,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 			activity.startActivity( intent );
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			( (ActMain) activity ).showToast( true, LogWriter.formatError( ex, "view failed." ) );
+			Utils.showToast(activity,  ex,  "view failed." );
 		}
 	}
 
@@ -681,7 +681,7 @@ public class DownloadRecordViewer implements LoaderManager.LoaderCallbacks<Curso
 			activity.startActivity( Intent.createChooser( intent, activity.getString( R.string.send ) ) );
 		}catch( Throwable ex ){
 			ex.printStackTrace();
-			( (ActMain) activity ).showToast( true, LogWriter.formatError( ex, "send failed." ) );
+			Utils.showToast(activity,   ex, "send failed."  );
 		}
 	}
 

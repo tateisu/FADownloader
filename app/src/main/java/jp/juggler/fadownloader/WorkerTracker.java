@@ -123,7 +123,7 @@ public class WorkerTracker{
 	final DownloadWorker.Callback worker_callback = new DownloadWorker.Callback(){
 
 		@Override public void onThreadEnd( final boolean complete_and_no_repeat ){
-			handler.post( new Runnable(){
+			Utils.runOnMainThread(  new Runnable(){
 				@Override public void run(){
 					worker_disposed = true;
 					service.onThreadEnd( complete_and_no_repeat );

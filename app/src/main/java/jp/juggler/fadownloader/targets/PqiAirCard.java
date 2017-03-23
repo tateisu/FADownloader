@@ -73,7 +73,7 @@ public class PqiAirCard{
 	void loadFolder( final Object network, final ScanItem item ){
 
 		// フォルダを読む
-		String cgi_url = thread.target_url + "cgi-bin/wifi_filelist?fn=/mnt/sd" + Uri.encode( item.remote_path, "/_-" ) + (item.remote_path.length() > 1 ? "/" : "");
+		String cgi_url = thread.target_url + "cgi-bin/wifi_filelist?fn=/mnt/sd" + Uri.encode( item.remote_path, "/_-" ) + ( item.remote_path.length() > 1 ? "/" : "" );
 		byte[] data = thread.client.getHTTP( log, network, cgi_url );
 		if( thread.isCancelled() ) return;
 
@@ -84,7 +84,7 @@ public class PqiAirCard{
 			return;
 		}
 
-	//	Element root = Utils.parseXml( "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"+ Utils.decodeUTF8( data ) );
+		//	Element root = Utils.parseXml( "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"+ Utils.decodeUTF8( data ) );
 		Element root = Utils.parseXml( data );
 		if( root != null ){
 			if( "filelist".equals( root.getTagName() ) ){
@@ -150,10 +150,10 @@ public class PqiAirCard{
 								// ローカルのファイルサイズを調べて既読スキップ
 								if( local_file.length( log ) >= size ) continue;
 
-								String mime_type = Utils.getMimeType( log,file_name);
+								String mime_type = Utils.getMimeType( log, file_name );
 
 								// ファイルはキューの末尾に追加
-								ScanItem sub_item = new ScanItem( file_name, remote_path, local_file, size, time ,mime_type);
+								ScanItem sub_item = new ScanItem( file_name, remote_path, local_file, size, time, mime_type );
 								thread.job_queue.addFile( sub_item );
 								thread.record( sub_item, 0L, DownloadRecord.STATE_QUEUED, "queued." );
 
@@ -178,7 +178,7 @@ public class PqiAirCard{
 		final LocalFile local_file = item.local_file;
 
 		try{
-			if( ! local_file.prepareFile( log, true,item.mime_type ) ){
+			if( ! local_file.prepareFile( log, true, item.mime_type ) ){
 				log.e( "%s//%s :skip. can not prepare local file.", item.remote_path, file_name );
 				thread.record( item
 					, SystemClock.elapsedRealtime() - time_start
@@ -188,7 +188,7 @@ public class PqiAirCard{
 				return;
 			}
 
-			final String get_url = thread.target_url + "/sd" + Uri.encode( remote_path,"/_-" );
+			final String get_url = thread.target_url + "/sd" + Uri.encode( remote_path, "/_-" );
 			byte[] data = thread.client.getHTTP( log, network, get_url, new HTTPClientReceiver(){
 				final byte[] buf = new byte[ 2048 ];
 
@@ -225,21 +225,10 @@ public class PqiAirCard{
 				}
 			} );
 
-			thread.afterDownload( time_start,data,item );
+			thread.afterDownload( time_start, data, item );
 
 		}catch( Throwable ex ){
-			ex.printStackTrace();
-			log.e( ex, "error." );
-
-			thread.file_error = true;
-
-			thread.record( item
-				, SystemClock.elapsedRealtime() - time_start
-				, DownloadRecord.STATE_DOWNLOAD_ERROR
-				, LogWriter.formatError( ex, "?" )
-			);
-
-			item.local_file.delete();
+			thread.afterDownload( time_start, ex, item );
 
 		}
 
@@ -257,10 +246,10 @@ public class PqiAirCard{
 					long remain = last_file_listing + thread.interval * 1000L - now;
 					if( remain <= 0 ) break;
 
-					if(  thread.isTetheringType() || remain < ( 15 * 1000L ) ){
+					if( thread.isTetheringType() || remain < ( 15 * 1000L ) ){
 						thread.setShortWait( remain );
 					}else{
-						thread.setAlarm(now,remain);
+						thread.setAlarm( now, remain );
 						break;
 					}
 				}
@@ -340,14 +329,13 @@ public class PqiAirCard{
 
 			}
 
-
 			try{
 				if( ! thread.job_queue.queue_folder.isEmpty() ){
 					final ScanItem head = thread.job_queue.queue_folder.getFirst();
 					thread.setStatus( false, service.getString( R.string.progress_folder, head.remote_path ) );
 					thread.job_queue.queue_folder.removeFirst();
 					loadFolder( network, head );
-				}else if(! thread.job_queue.queue_file.isEmpty() ){
+				}else if( ! thread.job_queue.queue_file.isEmpty() ){
 					// キューから除去するまえに残りサイズを計算したい
 					final ScanItem head = thread.job_queue.queue_file.getFirst();
 					thread.setStatus( true, service.getString( R.string.download_file, head.remote_path ) );
@@ -359,7 +347,7 @@ public class PqiAirCard{
 					thread.job_queue = null;
 					thread.setStatus( false, service.getString( R.string.file_scan_completed ) );
 					if( ! thread.file_error ){
-						thread.onFileScanComplete(file_count);
+						thread.onFileScanComplete( file_count );
 					}
 				}
 			}catch( Throwable ex ){
