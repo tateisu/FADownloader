@@ -496,6 +496,8 @@ public class Utils{
 		}
 	}
 
+	public static final String MIME_TYPE_APPLICATION_OCTET_STREAM = "application/octet-stream";
+
 	public static String getMimeType( LogWriter log, String src ){
 		String ext = MimeTypeMap.getFileExtensionFromUrl( src );
 		if( !TextUtils.isEmpty( ext  ) ){
@@ -513,7 +515,7 @@ public class Utils{
 
 			if( mime_type == null && log != null ) log.w("getMimeType(): unknown file extension '%s'",ext);
 		}
-		return "application/octet-stream";
+		return MIME_TYPE_APPLICATION_OCTET_STREAM;
 	}
 
 	static class FileInfo{

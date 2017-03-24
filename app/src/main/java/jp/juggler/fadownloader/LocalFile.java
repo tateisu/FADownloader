@@ -196,6 +196,17 @@ public class LocalFile{
 		return 0L;
 	}
 
+	public boolean isFile( LogWriter log ){
+		if( prepareFile( log, false,null ) ){
+			if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
+				return ( (DocumentFile) local_file ).isFile();
+			}else{
+				return ( (File) local_file ).isFile();
+			}
+		}
+		return false;
+	}
+
 	public OutputStream openOutputStream( Context context ) throws FileNotFoundException{
 		if( Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ){
 			Uri file_uri = ( (DocumentFile) local_file ).getUri();

@@ -57,6 +57,7 @@ public class DownloadService extends Service{
 
 	NotificationManager mNotificationManager;
 	WorkerTracker worker_tracker;
+	MediaScannerTracker media_tracker;
 
 	@Override public void onCreate(){
 		super.onCreate();
@@ -95,6 +96,8 @@ public class DownloadService extends Service{
 			}
 		} );
 
+		media_tracker = new MediaScannerTracker(this,log);
+
 		wifi_tracker = new NetworkTracker( this, log, new NetworkTracker.Callback(){
 			@Override public void onConnectionEvent( boolean is_connected ,String cause){
 				if( is_connected ){
@@ -115,7 +118,11 @@ public class DownloadService extends Service{
 
 		worker_tracker.dispose();
 
+
+		media_tracker.dispose();
+
 		location_tracker.dispose();
+
 		wifi_tracker.dispose();
 
 		if( mGoogleApiClient.isConnected() ){

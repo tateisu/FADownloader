@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
-import android.media.MediaScannerConnection;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
@@ -18,12 +17,15 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
+import org.apache.commons.io.IOUtils;
+
 import it.sephiroth.android.library.exif2.ExifInterface;
 import jp.juggler.fadownloader.targets.FlashAir;
 import jp.juggler.fadownloader.targets.PentaxKP;
 import jp.juggler.fadownloader.targets.PqiAirCard;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -233,18 +235,29 @@ public class DownloadWorker extends WorkerBase{
 
 	@NonNull public ErrorAndMessage updateFileLocation( final Location location, ScanItem item ){
 		ErrorAndMessage em = null;
+		boolean bDeleteTempFile = false;
+		LocalFile local_temp =null;
 		try{
-			LocalFile file = item.local_file;
+			LocalFile local_file = item.local_file;
+			LocalFile local_parent = local_file.getParent();
 
-			LocalFile tmp_path = new LocalFile( file.getParent(), "tmp-" + currentThread().getId() + "-" + android.os.Process.myPid() + "-" + file.getName() );
-			if( ! tmp_path.prepareFile( log, true ,item.mime_type) ){
-				return new ErrorAndMessage( true, "file creation failed." );
+			// MediaScannerが一時ファイルを勝手にスキャンしてしまう
+			// DocumentFile はMIME TYPE に合わせてファイル拡張子を変えてしまう
+			// なので、一時ファイルの拡張子とMIME TYPE は無害なものに設定するしかない
+			String tmp_name = local_file.getName()+ ".tmp-" + currentThread().getId() + "-" + android.os.Process.myPid();
+			local_temp = new LocalFile( local_parent, tmp_name );
+
+			if( ! local_temp.prepareFile( log,true,Utils.MIME_TYPE_APPLICATION_OCTET_STREAM  )){
+				log.e("prepareFile() failed.");
+				return new ErrorAndMessage( false,"prepareFile() failed." );
 			}
 
+			bDeleteTempFile = true;
+
 			try{
-				OutputStream os = tmp_path.openOutputStream( service );
+				OutputStream os = local_temp.openOutputStream( service );
 				try{
-					InputStream is = file.openInputStream( service );
+					InputStream is = item.local_file.openInputStream( service );
 					try{
 						ExifInterface.modifyExifTag( is, ExifInterface.Options.OPTION_ALL
 							, os, new ExifInterface.ModifyExifTagCallback(){
@@ -284,30 +297,60 @@ public class DownloadWorker extends WorkerBase{
 				em = new ErrorAndMessage( true, LogWriter.formatError( ex, "exif mangling failed." ) );
 			}
 
-			if( em != null ){
-				tmp_path.delete();
-				return em;
-			}
+			if( em != null ) return em;
 
 			// 更新後の方がファイルが小さいことがあるのか？
-			if( tmp_path.length( log ) < file.length( log ) ){
+			if( local_temp.length(log) < local_file.length(log) ){
 				log.e( "EXIF付与したファイルの方が小さい!付与前後のファイルを残しておく" );
 				// この場合両方のファイルを残しておく
+				bDeleteTempFile = false;
 				return new ErrorAndMessage( true, "EXIF付与したファイルの方が小さい" );
 			}
 
-			if( ! file.delete() || ! tmp_path.renameTo( file.getName() ) ){
-				log.e( "EXIF追加後のファイル操作に失敗" );
-				return new ErrorAndMessage( true, "EXIF追加後のファイル操作に失敗" );
+			// DocumentFile にはsetMimeType が存在しないから
+			// 一時ファイルをrename してもMIME TYPEを補正できない
+			// 仕方ないので元のファイルを上書きする
+			// 更新後に再度MediaScannerでスキャンし直すのでなんとかなるだろう。。。
+
+			try{
+				InputStream is = local_temp.openInputStream( service );
+				try{
+					OutputStream os = local_file.openOutputStream( service );
+					try{
+						IOUtils.copy( is, os );
+					}finally{
+						try{
+							os.close();
+						}catch( Throwable ignored ){
+						}
+					}
+				}finally{
+					try{
+						is.close();
+					}catch( Throwable ignored ){
+					}
+				}
+			}catch(Throwable ex){
+				ex.printStackTrace();
+				log.e( ex, "file copy failed." );
+				return new ErrorAndMessage( false, "file copy failed." );
 			}
 
-			log.i( "%s に位置情報を付与しました", file.getName() );
+			log.i( "%s に位置情報を付与しました", local_file.getName() );
 			return new ErrorAndMessage( false, "embedded" );
 
 		}catch( Throwable ex ){
 			ex.printStackTrace();
 			log.e( ex, "exif mangling failed." );
 			return new ErrorAndMessage( true, LogWriter.formatError( ex, "exif mangling failed." ) );
+		}finally{
+			if( local_temp != null && bDeleteTempFile ){
+				try{
+					//noinspection ResultOfMethodCallIgnored
+					local_temp.delete();
+				}catch( Throwable ignored ){
+				}
+			}
 		}
 	}
 
@@ -381,6 +424,7 @@ public class DownloadWorker extends WorkerBase{
 
 			Location location = callback.getLocation();
 			if( location != null && DownloadWorker.reJPEG.matcher( item.name ).find() ){
+
 				DownloadWorker.ErrorAndMessage em = updateFileLocation( location, item );
 				if( item.time > 0L ) item.local_file.setFileTime( service, log, item.time );
 
@@ -391,7 +435,8 @@ public class DownloadWorker extends WorkerBase{
 					, "GeoTagging: " + em.message
 				);
 
-				setMediaScanner( item );
+				service.media_tracker.addFile( item.local_file.getFile(service,log),item.mime_type );
+
 			}else{
 				if( item.time > 0L ) item.local_file.setFileTime( service, log, item.time );
 
@@ -401,26 +446,12 @@ public class DownloadWorker extends WorkerBase{
 					, DownloadRecord.STATE_COMPLETED
 					, "OK"
 				);
-				setMediaScanner( item );
 
-			}
-		}
-
-	}
-
-	private void setMediaScanner( ScanItem item  ){
-		if( item.mime_type != null ){
-			File file = item.local_file.getFile(service,log);
-			if( file != null ){
-				MediaScannerConnection.scanFile(
-					service
-					,new String[]{ file.getAbsolutePath() }
-					,new String[]{ item.mime_type}
-					,null
-				);
+				service.media_tracker.addFile( item.local_file.getFile(service,log),item.mime_type );
 			}
 		}
 	}
+
 
 	public void onFileScanStart(){
 		job_queue = new ScanItem.Queue();
