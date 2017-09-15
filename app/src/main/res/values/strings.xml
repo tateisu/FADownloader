@@ -150,7 +150,7 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="force_wifi_help" translatable="false">Wi-Fi強制機能をONにしてWi-Fi AP SSIDを入力すると、Wi-Fi接続がより安定します。\n・Wi-FiがOFFになっていたらONにします\n・指定したSSIDの優先度を上げます\n・指定したSSIDと現在の接続先が異なる場合、Wi-Fi APのスキャンを定期的に行います\n・指定したSSIDがスキャン結果に含まれる場合、そのWi-Fi APに接続先を切り替えます\n</string>
 
     <string name="wifi_ap_ssid">Wi-Fi AP SSID</string>
-    <string name="wifi_ap_ssid_help" translatable="false">Wi-Fi AP SSIDにはターゲットのWi-Fi APのSSIDを指定してください</string>
+    <string name="wifi_ap_ssid_help" translatable="false">「Wi-Fi AP半強制」を有効にすると編集可能になります。Wi-Fi AP SSIDにはターゲットのWi-Fi APのSSIDを指定してください</string>
 
     <string name="ssid_empty">SSID is empty.</string>
     <string name="not_enabled">無効</string>
