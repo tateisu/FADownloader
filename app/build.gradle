@@ -3,14 +3,14 @@ import java.text.SimpleDateFormat
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.2"
+    compileSdkVersion 26
     defaultConfig {
-        applicationId "jp.juggler.fadownloader"
         minSdkVersion 14
-        targetSdkVersion 25
-        versionCode 18
-        versionName "1.12.1"
+        targetSdkVersion 26
+
+        versionCode 19
+        versionName "1.13.0"
+        applicationId "jp.juggler.fadownloader"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -19,52 +19,57 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    flavorDimensions "f1"
 
     productFlavors {
         rc {
+            dimension "f1"
+
         }
         rcAdFree {
+            dimension "f1"
         }
         dev {
+            dimension "f1"
             applicationId "jp.juggler.fadownloader.dev"
         }
     }
 
 
     // Generate Signed APK のファイル名を変更
-    applicationVariants.all { variant ->
+    android.applicationVariants.all { variant ->
         if (variant.buildType.name == "release") {
-            variant.outputs.each { output ->
-                if (output.outputFile != null && output.outputFile.name.endsWith('.apk')) {
-                    // Rename APK
-                    def versionCode = defaultConfig.versionCode
-                    def versionName = defaultConfig.versionName
-                    def flavor = variant.flavorName
-                    def date = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date())
-                    def newName = "FADownloader-${flavor}-${versionCode}-${versionName}-${date}.apk"
-                    output.outputFile = new File((String) output.outputFile.parent, (String) newName)
-                }
+            variant.outputs.all {
+                // Rename APK
+                def versionCode = defaultConfig.versionCode
+                def versionName = defaultConfig.versionName
+                def flavor = variant.flavorName
+                def date = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date())
+                outputFileName = "../../FADownloader-${flavor}-${versionCode}-${versionName}-${date}.apk"
             }
         }
     }
+
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:appcompat-v7:25.3.0'
-    compile 'com.google.android.gms:play-services-location:10.2.0'
-    compile 'com.google.firebase:firebase-ads:10.2.0'
+    testImplementation 'junit:junit:4.12'
 
-    compile project(':exif')
-    compile project(':billing')
+    implementation "com.android.support:appcompat-v7:$asl_version"
+    implementation 'com.google.android.gms:play-services-location:15.0.1'
+    implementation 'com.google.firebase:firebase-ads:15.0.1'
 
-    testCompile 'junit:junit:4.12'
-    compile 'org.apache.commons:commons-lang3:3.3.2'
-    compile 'commons-io:commons-io:2.4'
-    compile 'com.neovisionaries:nv-websocket-client:1.31'
+    implementation project(':exif')
+    implementation project(':billing')
+
+    implementation 'org.apache.commons:commons-lang3:3.3.2'
+    implementation 'commons-io:commons-io:2.6'
+    implementation 'com.neovisionaries:nv-websocket-client:2.5'
 
 }
 
