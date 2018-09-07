@@ -6,6 +6,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -19,13 +20,6 @@ import android.text.TextUtils;
 
 import org.apache.commons.io.IOUtils;
 
-import it.sephiroth.android.library.exif2.ExifInterface;
-import jp.juggler.fadownloader.targets.FlashAir;
-import jp.juggler.fadownloader.targets.PentaxKP;
-import jp.juggler.fadownloader.targets.PqiAirCard;
-
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -33,6 +27,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import it.sephiroth.android.library.exif2.ExifInterface;
+import jp.juggler.fadownloader.targets.FlashAir;
+import jp.juggler.fadownloader.targets.PentaxKP;
+import jp.juggler.fadownloader.targets.PqiAirCard;
 
 public class DownloadWorker extends WorkerBase{
 
@@ -71,6 +70,7 @@ public class DownloadWorker extends WorkerBase{
 	public final int target_type;
 	public final LocationTracker.Setting location_setting;
 	public final boolean protected_only;
+	public final boolean skip_already_download;
 
 	public DownloadWorker( DownloadService service, Intent intent, Callback callback ){
 		this.service = service;
@@ -87,6 +87,7 @@ public class DownloadWorker extends WorkerBase{
 		this.ssid = intent.getStringExtra( DownloadService.EXTRA_SSID );
 		this.target_type = intent.getIntExtra( DownloadService.EXTRA_TARGET_TYPE, 0 );
 		this.protected_only = intent.getBooleanExtra( DownloadService.EXTRA_PROTECTED_ONLY, false );
+		this.skip_already_download = intent.getBooleanExtra( DownloadService.EXTRA_SKIP_ALREADY_DOWNLOAD, false );
 		this.location_setting = new LocationTracker.Setting();
 		location_setting.interval_desired = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_DESIRED, LocationTracker.DEFAULT_INTERVAL_DESIRED );
 		location_setting.interval_min = intent.getLongExtra( DownloadService.EXTRA_LOCATION_INTERVAL_MIN, LocationTracker.DEFAULT_INTERVAL_MIN );
@@ -105,6 +106,7 @@ public class DownloadWorker extends WorkerBase{
 			.putBoolean( Pref.WORKER_FORCE_WIFI, force_wifi )
 			.putString( Pref.WORKER_SSID, ssid )
 			.putBoolean( Pref.WORKER_PROTECTED_ONLY, protected_only )
+			.putBoolean( Pref.WORKER_SKIP_ALREADY_DOWNLOAD, skip_already_download )
 			.apply();
 
 		this.file_type_list = file_type_parse();
@@ -130,6 +132,7 @@ public class DownloadWorker extends WorkerBase{
 		this.ssid = pref.getString( Pref.WORKER_SSID, null );
 		this.target_type = pref.getInt( Pref.WORKER_TARGET_TYPE, 0 );
 		this.protected_only = pref.getBoolean( Pref.WORKER_PROTECTED_ONLY, false );
+		this.skip_already_download = pref.getBoolean( Pref.WORKER_SKIP_ALREADY_DOWNLOAD, false );
 
 		this.location_setting = new LocationTracker.Setting();
 		location_setting.interval_desired = pref.getLong( Pref.WORKER_LOCATION_INTERVAL_DESIRED, LocationTracker.DEFAULT_INTERVAL_DESIRED );
@@ -207,7 +210,9 @@ public class DownloadWorker extends WorkerBase{
 								// レシーバーは受け取れるが端末のIDLE状態は解除されない。アプリが動けるのは10秒。IDLEからの復帰は15分に1度だけ許される
 							}else
 							*/
-			if( Build.VERSION.SDK_INT >= 21 ){
+			if(am == null){
+				throw new IllegalStateException( "missing AlarmManager" );
+			}else if( Build.VERSION.SDK_INT >= 21 ){
 				am.setAlarmClock( new AlarmManager.AlarmClockInfo( now + remain, pi ), pi );
 			}else if( Build.VERSION.SDK_INT >= 19 ){
 				am.setExact( AlarmManager.RTC_WAKEUP, now + remain, pi );
@@ -353,6 +358,40 @@ public class DownloadWorker extends WorkerBase{
 			}
 		}
 	}
+	
+	// ダウンロードをスキップするなら真を返す
+	public boolean checkSkip( LocalFile local_file, LogWriter log, long size ){
+
+		// ローカルにあるファイルのサイズが指定以上ならスキップする
+		if( local_file.length( log ) >= size ) return true;
+
+		if( skip_already_download ){
+			String name = local_file.getName();
+			if( !TextUtils.isEmpty( name )){
+				Cursor cursor = service.getContentResolver().query(
+					DownloadRecord.meta.content_uri,
+					null,
+					DownloadRecord.COL_NAME+"=?",
+					new String[]{ name},
+					null
+				);
+				if( cursor != null){
+					try{
+						if( cursor.moveToFirst()){
+							// ダウンロード履歴に同じ名前のファイルがあるのでスキップする
+							log.i( "skip %s : already found in download record.",name );
+							return true;
+						}
+					}finally{
+						cursor.close();
+					}
+				}
+			}
+		}
+		
+		return false;
+	}
+	
 
 	public void record(
 		ScanItem item
@@ -360,7 +399,7 @@ public class DownloadWorker extends WorkerBase{
 		, int state
 		, String state_message
 	){
-		if( ! DownloadWorker.RECORD_QUEUED_STATE ){
+		if( ! RECORD_QUEUED_STATE ){
 			if( state == DownloadRecord.STATE_QUEUED ) return;
 		}
 		String local_uri = item.local_file.getFileUri( log );
@@ -477,25 +516,31 @@ public class DownloadWorker extends WorkerBase{
 	boolean isForcedSSID(){
 		if( ! force_wifi ) return true;
 		WifiManager wm = (WifiManager) service.getApplicationContext().getSystemService( Context.WIFI_SERVICE );
-		WifiInfo wi = wm.getConnectionInfo();
-		String current_ssid = wi.getSSID().replace( "\"", "" );
-		return ! TextUtils.isEmpty( current_ssid ) && current_ssid.equals( this.ssid );
+		if(wm==null){
+			return false;
+		}else{
+			WifiInfo wi = wm.getConnectionInfo();
+			String current_ssid = wi.getSSID().replace( "\"", "" );
+			return ! TextUtils.isEmpty( current_ssid ) && current_ssid.equals( this.ssid );
+		}
 	}
 
 	@SuppressWarnings( "deprecation" ) public Object getWiFiNetwork(){
 		ConnectivityManager cm = (ConnectivityManager) service.getApplicationContext().getSystemService( Context.CONNECTIVITY_SERVICE );
-		if( Build.VERSION.SDK_INT >= 21 ){
-			for( Network n : cm.getAllNetworks() ){
-				NetworkInfo info = cm.getNetworkInfo( n );
-				if( info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI ){
-					if( isForcedSSID() ) return n;
+		if( cm != null ){
+			if( Build.VERSION.SDK_INT >= 21 ){
+				for( Network n : cm.getAllNetworks() ){
+					NetworkInfo info = cm.getNetworkInfo( n );
+					if( info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI ){
+						if( isForcedSSID() ) return n;
+					}
 				}
-			}
-		}else{
-			for( NetworkInfo info : cm.getAllNetworkInfo() ){
-				if( info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI ){
-					if( isForcedSSID() ) return info;
-					return info;
+			}else{
+				for( NetworkInfo info : cm.getAllNetworkInfo() ){
+					if( info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI ){
+						if( isForcedSSID() ) return info;
+						return info;
+					}
 				}
 			}
 		}

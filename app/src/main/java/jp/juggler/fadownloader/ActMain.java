@@ -300,7 +300,7 @@ public class ActMain
 
 		setupIabHelper();
 
-		mAdView = (AdView) findViewById( R.id.adView );
+		mAdView = findViewById( R.id.adView );
 		if( BuildVariant.AD_FREE ){
 			( (ViewGroup) mAdView.getParent() ).removeView( mAdView );
 			mAdView = null;
@@ -317,9 +317,9 @@ public class ActMain
 		findViewById( R.id.btnRepeat ).setOnClickListener( this );
 		findViewById( R.id.btnModeHelp ).setOnClickListener( this );
 
-		tvStatus = (TextView) findViewById( R.id.tvStatus );
+		tvStatus = findViewById( R.id.tvStatus );
 
-		pager = (ViewPager) findViewById( R.id.pager );
+		pager = findViewById( R.id.pager );
 
 		pager_adapter = new PagerAdapterBase( this );
 		page_idx_setting = pager_adapter.addPage( getString( R.string.setting ), R.layout.page_setting, PageSetting.class );
@@ -638,6 +638,7 @@ public class ActMain
 		}
 
 		boolean protected_only = pref.getBoolean( Pref.UI_PROTECTED_ONLY, false );
+		boolean skip_already_download = pref.getBoolean( Pref.UI_SKIP_ALREADY_DOWNLOAD, false );
 
 		// 最後に押したボタンを覚えておく
 		pref.edit()
@@ -662,7 +663,8 @@ public class ActMain
 		intent.putExtra( DownloadService.EXTRA_FORCE_WIFI, force_wifi );
 		intent.putExtra( DownloadService.EXTRA_SSID, ssid );
 		intent.putExtra( DownloadService.EXTRA_PROTECTED_ONLY, protected_only );
-
+		intent.putExtra( DownloadService.EXTRA_SKIP_ALREADY_DOWNLOAD, skip_already_download );
+		
 		startService( intent );
 	}
 

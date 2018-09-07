@@ -159,4 +159,6 @@
     <string name="new_file">新しいファイル</string>
     <string name="protected_only">読み取り専用属性のついたファイルだけを転送</string>
     <string name="protected_only_help">ONにすると、プロテクト(リードオンリー属性)のついたファイルだけを転送対象にします。 現時点ではFlashAirのみこの機能に対応しています</string>
+    <string name="skip_already_downloaded">ダウンロード履歴に名前があるファイルはスキップ</string>
+    <string name="skip_already_downloaded_help">ダウンロード履歴に名前があるファイルはダウンロードしません。</string>
 </resources>

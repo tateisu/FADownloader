@@ -148,7 +148,7 @@ public class PqiAirCard{
 								// マッチした
 
 								// ローカルのファイルサイズを調べて既読スキップ
-								if( local_file.length( log ) >= size ) continue;
+								if( thread.checkSkip( local_file,log,size )) continue;
 
 								String mime_type = Utils.getMimeType( log, file_name );
 

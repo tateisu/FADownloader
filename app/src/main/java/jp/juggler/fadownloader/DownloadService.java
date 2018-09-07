@@ -42,6 +42,7 @@ public class DownloadService extends Service{
 
 	static final int NOTIFICATION_ID_SERVICE = 1;
 	public static final String EXTRA_PROTECTED_ONLY = "protected_only";
+	public static final String EXTRA_SKIP_ALREADY_DOWNLOAD = "skip_already_download";
 
 	public LogWriter log;
 

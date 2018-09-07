@@ -32,6 +32,8 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 	Switch swThumbnailAutoRotate;
 	Switch swCopyBeforeViewSend;
 	Switch swProtectedOnly;
+	Switch swSkipAlreadyDownload;
+	
 	View btnSSIDPicker;
 	boolean bLoading;
 	int last_target_type;
@@ -44,21 +46,22 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		bLoading = true;
 		last_target_type = - 1;
 
-		spTargetType = (Spinner) root.findViewById( R.id.spTargetType );
-		etTargetUrl = (EditText) root.findViewById( R.id.etTargetUrl );
-		tvLocalFolder = (TextView) root.findViewById( R.id.tvFolder );
-		etInterval = (EditText) root.findViewById( R.id.etRepeatInterval );
-		etFileType = (EditText) root.findViewById( R.id.etFileType );
-		spLocationMode = (Spinner) root.findViewById( R.id.spLocationMode );
-		etLocationIntervalDesired = (EditText) root.findViewById( R.id.etLocationIntervalDesired );
-		etLocationIntervalMin = (EditText) root.findViewById( R.id.etLocationIntervalMin );
-		swForceWifi = (Switch) root.findViewById( R.id.swForceWifi );
-		etSSID = (EditText) root.findViewById( R.id.etSSID );
-		swThumbnailAutoRotate = (Switch) root.findViewById( R.id.swThumbnailAutoRotate );
-		swCopyBeforeViewSend = (Switch) root.findViewById( R.id.swCopyBeforeViewSend );
+		spTargetType = root.findViewById( R.id.spTargetType );
+		etTargetUrl = root.findViewById( R.id.etTargetUrl );
+		tvLocalFolder = root.findViewById( R.id.tvFolder );
+		etInterval = root.findViewById( R.id.etRepeatInterval );
+		etFileType = root.findViewById( R.id.etFileType );
+		spLocationMode = root.findViewById( R.id.spLocationMode );
+		etLocationIntervalDesired = root.findViewById( R.id.etLocationIntervalDesired );
+		etLocationIntervalMin = root.findViewById( R.id.etLocationIntervalMin );
+		swForceWifi = root.findViewById( R.id.swForceWifi );
+		etSSID = root.findViewById( R.id.etSSID );
+		swThumbnailAutoRotate = root.findViewById( R.id.swThumbnailAutoRotate );
+		swCopyBeforeViewSend = root.findViewById( R.id.swCopyBeforeViewSend );
 		btnSSIDPicker = root.findViewById( R.id.btnSSIDPicker );
-		swProtectedOnly = (Switch) root.findViewById( R.id.swProtectedOnly );
-
+		swProtectedOnly = root.findViewById( R.id.swProtectedOnly );
+		swSkipAlreadyDownload = root.findViewById( R.id.swSkipAlreadyDownload );
+		
 		root.findViewById( R.id.btnFolderPicker ).setOnClickListener( this );
 		root.findViewById( R.id.btnHelpFolderPicker ).setOnClickListener( this );
 		root.findViewById( R.id.btnHelpTargetUrl ).setOnClickListener( this );
@@ -74,6 +77,7 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		root.findViewById( R.id.btnCopyBeforeViewSendHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnTargetTypeHelp ).setOnClickListener( this );
 		root.findViewById( R.id.btnHelpProtectedOnly ).setOnClickListener( this );
+		root.findViewById( R.id.btnHelpSkipAlreadyDownload ).setOnClickListener( this );
 
 		ArrayAdapter<CharSequence> location_mode_adapter = new ArrayAdapter<>(
 			activity
@@ -223,6 +227,9 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		case R.id.btnHelpProtectedOnly:
 			( (ActMain) activity ).openHelp( activity.getString( R.string.protected_only_help ) );
 			break;
+		case R.id.btnHelpSkipAlreadyDownload:
+			( (ActMain) activity ).openHelp( activity.getString( R.string.skip_already_downloaded_help ) );
+			break;
 
 		}
 	}
@@ -275,6 +282,8 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 		//
 		swProtectedOnly.setChecked( pref.getBoolean( Pref.UI_PROTECTED_ONLY,false ) );
 		//
+		swSkipAlreadyDownload.setChecked( pref.getBoolean( Pref.UI_SKIP_ALREADY_DOWNLOAD,false ) );
+		//
 		updateFormEnabled();
 		bLoading = false;
 	}
@@ -299,6 +308,7 @@ public class PageSetting extends PagerAdapterBase.PageViewHolder implements View
 			.putBoolean( Pref.UI_FORCE_WIFI, swForceWifi.isChecked() )
 			.putString( Pref.UI_SSID, etSSID.getText().toString() )
 			.putBoolean( Pref.UI_PROTECTED_ONLY, swProtectedOnly.isChecked() )
+			.putBoolean( Pref.UI_SKIP_ALREADY_DOWNLOAD, swSkipAlreadyDownload.isChecked() )
 		;
 		// .apply() は呼び出し側で行う
 	}

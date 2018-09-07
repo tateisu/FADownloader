@@ -110,10 +110,9 @@ public class PentaxKP{
 
 						String remote_path = "/" + sub_dir_name + "/" + file_name;
 						LocalFile local_file = new LocalFile( sub_dir_local, file_name );
-
-						// ローカルにあるファイルのサイズが1以上ならスキップする
-						final long local_size = local_file.length( log );
-						if( local_size >= 1L ) continue;
+						
+						// ローカルのファイルサイズを調べて既読スキップ
+						if( thread.checkSkip(local_file,log,1L ))continue;
 
 						// 進捗表示用のファイルサイズは超適当
 						long size = 1000000L;

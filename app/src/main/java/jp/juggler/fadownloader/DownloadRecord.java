@@ -39,6 +39,9 @@ public class DownloadRecord{
 			db.execSQL(
 				"create unique index if not exists " + table + "_air_path on " + table + "(ap)"
 			);
+			db.execSQL(
+				"create unique index if not exists " + table + "_name on " + table + "(n)"
+			);
 		}
 
 		@Override public void onDBUpgrade( SQLiteDatabase db, int v_old, int v_new ){
@@ -50,6 +53,15 @@ public class DownloadRecord{
 					db.execSQL( "alter table "+table+" add column sz integer not null default 0" );
 				}catch(Throwable ex){
 					// 既にカラムが存在する場合、ここを通る
+					ex.printStackTrace(  );
+				}
+			}
+			if( v_old < 4 && v_new >= 4){
+				try{
+					db.execSQL(
+						"create unique index if not exists " + table + "_name on " + table + "(n)"
+					);
+				}catch(Throwable ex){
 					ex.printStackTrace(  );
 				}
 			}
@@ -110,6 +122,8 @@ public class DownloadRecord{
 		lap_time = cursor.getLong( colIdx.idx_lap_time );
 		size = cursor.getLong( colIdx.idx_size );
 	}
+	
+	
 
 	public static Uri insert(
 		ContentResolver cr

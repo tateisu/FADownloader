@@ -79,6 +79,7 @@ public class Pref{
 	public static final String UI_THUMBNAIL_AUTO_ROTATE = "ui_thumbnail_auto_rotate";
 	public static final String UI_COPY_BEFORE_VIEW_SEND = "ui_copy_before_view_send";
 	public static final String UI_PROTECTED_ONLY = "ui_protected_only";
+	public static final String UI_SKIP_ALREADY_DOWNLOAD = "ui_skip_already_download";
 
 	public static final boolean DEFAULT_THUMBNAIL_AUTO_ROTATE = true;
 
@@ -147,6 +148,7 @@ public class Pref{
 	public static final String WORKER_FORCE_WIFI = "worker_force_wifi";
 	public static final String WORKER_SSID = "worker_ssid";
 	public static final String WORKER_PROTECTED_ONLY = "worker_protected_only";
+	public static final String WORKER_SKIP_ALREADY_DOWNLOAD = "worker_skip_already_download";
 
 	// ファイルスキャンが完了した時刻
 	public static final String LAST_IDLE_START = "last_idle_start";

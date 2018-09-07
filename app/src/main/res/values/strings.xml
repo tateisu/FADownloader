@@ -208,5 +208,7 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="new_file">new file</string>
     <string name="protected_only">skip non-protected file</string>
     <string name="protected_only_help">ONにすると、プロテクト(リードオンリー属性)のついたファイルだけを転送対象にします。 現時点ではFlashAirのみこの機能に対応しています</string>
+    <string name="skip_already_downloaded">Skip file name match in download record</string>
+    <string name="skip_already_downloaded_help">skip download if the file name is matches in download record.</string>
 
 </resources>
