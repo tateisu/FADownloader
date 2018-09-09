@@ -1,4 +1,4 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.tracker
 
 import android.content.Context
 import android.media.MediaScannerConnection

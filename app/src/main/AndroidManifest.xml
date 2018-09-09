@@ -73,14 +73,14 @@
         </activity>
 
         <activity
-            android:name="jp.juggler.fadownloader.FolderPicker"
+            android:name="jp.juggler.fadownloader.picker.FolderPicker"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/folder_picker"
             android:screenOrientation="sensorPortrait"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             />
         <activity
-            android:name="jp.juggler.fadownloader.SSIDPicker"
+            android:name="jp.juggler.fadownloader.picker.SSIDPicker"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/ssid_picker"
             android:screenOrientation="sensorPortrait"

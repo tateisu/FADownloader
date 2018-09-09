@@ -1,4 +1,4 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.util
 
 import android.app.Activity
 import android.support.v4.view.PagerAdapter

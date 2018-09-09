@@ -1,8 +1,9 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.tracker
 
 import android.content.Context
 import android.location.Location
 import com.google.android.gms.location.*
+import jp.juggler.fadownloader.R
 import jp.juggler.fadownloader.util.LogWriter
 import java.text.SimpleDateFormat
 import java.util.*
@@ -23,7 +24,8 @@ class LocationTracker(
 		const val LOCATION_HIGH_ACCURACY = 4
 		
 		// Setting のデフォルト値
-		const val DEFAULT_MODE = NO_LOCATION_UPDATE
+		const val DEFAULT_MODE =
+			NO_LOCATION_UPDATE
 		const val DEFAULT_INTERVAL_DESIRED = 1000L * 3600
 		const val DEFAULT_INTERVAL_MIN = 1000L * 300
 		
@@ -58,11 +60,21 @@ class LocationTracker(
 		
 		internal fun getModeString(context : Context) =
 			when(mode) {
-				NO_LOCATION_UPDATE -> context.getString(R.string.location_mode_0)
-				LOCATION_NO_POWER -> context.getString(R.string.location_mode_1)
-				LOCATION_LOW_POWER -> context.getString(R.string.location_mode_2)
-				LOCATION_BALANCED -> context.getString(R.string.location_mode_3)
-				LOCATION_HIGH_ACCURACY -> context.getString(R.string.location_mode_4)
+				NO_LOCATION_UPDATE -> context.getString(
+					R.string.location_mode_0
+				)
+				LOCATION_NO_POWER -> context.getString(
+					R.string.location_mode_1
+				)
+				LOCATION_LOW_POWER -> context.getString(
+					R.string.location_mode_2
+				)
+				LOCATION_BALANCED -> context.getString(
+					R.string.location_mode_3
+				)
+				LOCATION_HIGH_ACCURACY -> context.getString(
+					R.string.location_mode_4
+				)
 				else -> "?"
 			}
 	}

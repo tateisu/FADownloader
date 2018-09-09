@@ -31,6 +31,10 @@ import com.google.android.gms.location.*
 import com.google.android.gms.tasks.OnCompleteListener
 import config.BuildVariant
 import jp.juggler.fadownloader.model.LocalFile
+import jp.juggler.fadownloader.picker.FolderPicker
+import jp.juggler.fadownloader.picker.SSIDPicker
+import jp.juggler.fadownloader.tracker.LocationTracker
+import jp.juggler.fadownloader.util.PagerAdapterBase
 import jp.juggler.fadownloader.util.PermissionChecker
 import jp.juggler.fadownloader.util.Utils
 import jp.juggler.fadownloader.util.encodeUTF8

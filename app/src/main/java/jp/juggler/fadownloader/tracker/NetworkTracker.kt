@@ -1,4 +1,4 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.tracker
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -13,6 +13,8 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.SystemClock
 import android.text.TextUtils
+import jp.juggler.fadownloader.Pref
+import jp.juggler.fadownloader.R
 import jp.juggler.fadownloader.util.LogWriter
 import jp.juggler.fadownloader.util.Utils
 import jp.juggler.fadownloader.util.WorkerBase
@@ -130,13 +132,15 @@ class NetworkTracker(
 	val otherActive : String
 		get() = last_other_active.get()
 	
-	internal val urlChecker_FlashAir : UrlChecker = object : UrlChecker {
+	internal val urlChecker_FlashAir : UrlChecker = object :
+		UrlChecker {
 		override fun checkUrl(url : String?) : Boolean {
 			return checkUrl_sub(url, url + "command.cgi?op=108")
 		}
 	}
 	
-	internal val urlChecker_PqiAirCard : UrlChecker = object : UrlChecker {
+	internal val urlChecker_PqiAirCard : UrlChecker = object :
+		UrlChecker {
 		override fun checkUrl(url : String?) : Boolean {
 			return checkUrl_sub(url, url + "cgi-bin/get_config.pl")
 		}
@@ -368,7 +372,8 @@ class NetworkTracker(
 			val ip_base = tethering_address.replace("\\d+$".toRegex(), "")
 			
 			// ARPテーブルの読み出し
-			val strArp = readStringFile("/proc/net/arp")
+			val strArp =
+				readStringFile("/proc/net/arp")
 			if(strArp == null) {
 				log.e("can not read ARP table.")
 				return false
@@ -640,7 +645,10 @@ class NetworkTracker(
 				
 				return false
 			} finally {
-				val current_status = buildCurrentStatus(ns_list)
+				val current_status =
+					buildCurrentStatus(
+						ns_list
+					)
 				if(current_status != last_current_status.get()) {
 					last_current_status.set(current_status)
 					log.d(context.getString(R.string.network_status, current_status))

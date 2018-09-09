@@ -3,6 +3,7 @@ package jp.juggler.fadownloader
 import android.app.Activity
 import android.view.View
 import android.widget.ListView
+import jp.juggler.fadownloader.util.PagerAdapterBase
 
 class PageRecord(activity : Activity, ignored : View) :
 	PagerAdapterBase.PageViewHolder(activity, ignored) {

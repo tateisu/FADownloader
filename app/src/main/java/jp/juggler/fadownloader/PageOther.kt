@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.Settings
 import android.view.View
 import jp.juggler.fadownloader.table.DownloadRecord
+import jp.juggler.fadownloader.util.PagerAdapterBase
 import java.util.*
 
 class PageOther(activity : Activity, ignored : View) :

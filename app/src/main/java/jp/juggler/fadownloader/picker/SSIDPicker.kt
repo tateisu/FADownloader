@@ -1,4 +1,4 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.picker
 
 import android.app.Activity
 import android.content.BroadcastReceiver
@@ -14,6 +14,7 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.ListView
+import jp.juggler.fadownloader.R
 import java.util.*
 
 class SSIDPicker : AppCompatActivity(), AdapterView.OnItemClickListener, View.OnClickListener {

@@ -11,6 +11,7 @@ import android.view.View
 import android.widget.ListView
 import config.BuildVariant
 import jp.juggler.fadownloader.table.LogData
+import jp.juggler.fadownloader.util.PagerAdapterBase
 import jp.juggler.fadownloader.util.ProgressDialogEx
 import jp.juggler.fadownloader.util.Utils
 import java.io.File

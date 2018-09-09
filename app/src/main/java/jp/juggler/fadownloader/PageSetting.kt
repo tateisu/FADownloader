@@ -10,6 +10,9 @@ import android.support.v4.provider.DocumentFile
 import android.view.View
 import android.widget.*
 import jp.juggler.fadownloader.model.LocalFile
+import jp.juggler.fadownloader.picker.FolderPicker
+import jp.juggler.fadownloader.picker.SSIDPicker
+import jp.juggler.fadownloader.util.PagerAdapterBase
 
 class PageSetting(activity : Activity, ignored : View) :
 	PagerAdapterBase.PageViewHolder(activity, ignored), View.OnClickListener {

@@ -1,4 +1,4 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.picker
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -13,6 +13,7 @@ import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.*
+import jp.juggler.fadownloader.R
 import jp.juggler.fadownloader.util.Utils
 import java.io.File
 import java.util.*
@@ -54,7 +55,7 @@ class FolderPicker : AppCompatActivity(), View.OnClickListener, AdapterView.OnIt
 		fun open(activity : Activity, request_code : Int, path : String) {
 			try {
 				val intent = Intent(activity, FolderPicker::class.java)
-				intent.putExtra(FolderPicker.EXTRA_FOLDER, path)
+				intent.putExtra(EXTRA_FOLDER, path)
 				activity.startActivityForResult(intent, request_code)
 			} catch(ex : Throwable) {
 				ex.printStackTrace()
@@ -124,9 +125,17 @@ class FolderPicker : AppCompatActivity(), View.OnClickListener, AdapterView.OnIt
 		lvFileList.onItemClickListener = this
 		
 		showing_folder = if(savedInstanceState == null) {
-			parseExistPath(intent.getStringExtra(EXTRA_FOLDER))
+			parseExistPath(
+				intent.getStringExtra(
+					EXTRA_FOLDER
+				)
+			)
 		} else {
-			parseExistPath(savedInstanceState.getString(EXTRA_FOLDER))
+			parseExistPath(
+				savedInstanceState.getString(
+					EXTRA_FOLDER
+				)
+			)
 		}
 		
 		loadFolder(showing_folder)
@@ -147,8 +156,8 @@ class FolderPicker : AppCompatActivity(), View.OnClickListener, AdapterView.OnIt
 					for(sub in folder.listFiles()) {
 						if(! sub.isDirectory) continue
 						val name = sub.name
-						if(".." == name) continue
-						if("." == name) continue
+						if("build/generated/source/rs/rc" == name) continue
+						if("" == name) continue
 						result.add(name)
 					}
 				} catch(ex : Throwable) {
@@ -200,13 +209,19 @@ class FolderPicker : AppCompatActivity(), View.OnClickListener, AdapterView.OnIt
 			try {
 				val name = etName.text.toString().trim { it <= ' ' }
 				if(TextUtils.isEmpty(name)) {
-					Utils.showToast(this@FolderPicker, false, R.string.folder_name_empty)
+					Utils.showToast(this@FolderPicker, false,
+						R.string.folder_name_empty
+					)
 				} else {
 					val folder = File(showing_folder, name)
 					if(folder.exists()) {
-						Utils.showToast(this@FolderPicker, false, R.string.folder_already_exist)
+						Utils.showToast(this@FolderPicker, false,
+							R.string.folder_already_exist
+						)
 					} else if(! folder.mkdir()) {
-						Utils.showToast(this@FolderPicker, false, R.string.folder_creation_failed)
+						Utils.showToast(this@FolderPicker, false,
+							R.string.folder_creation_failed
+						)
 					} else {
 						d.dismiss()
 						loadFolder(folder)

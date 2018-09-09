@@ -14,6 +14,10 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.PowerManager
 import android.support.v4.app.NotificationCompat
+import jp.juggler.fadownloader.tracker.LocationTracker
+import jp.juggler.fadownloader.tracker.MediaScannerTracker
+import jp.juggler.fadownloader.tracker.NetworkTracker
+import jp.juggler.fadownloader.tracker.WorkerTracker
 import jp.juggler.fadownloader.util.LogWriter
 import jp.juggler.fadownloader.util.NotificationHelper
 import jp.juggler.fadownloader.util.Utils
@@ -126,14 +130,15 @@ class DownloadService : Service() {
 		
 		media_tracker = MediaScannerTracker(this, log)
 		
-		wifi_tracker = NetworkTracker(this, log) { is_connected, cause ->
-			if(is_connected) {
-				val last_mode = Pref.lastMode(Pref.pref(this@DownloadService))
-				if(last_mode != Pref.LAST_MODE_STOP) {
-					worker_tracker.wakeup(cause)
+		wifi_tracker =
+			NetworkTracker(this, log) { is_connected, cause ->
+				if(is_connected) {
+					val last_mode = Pref.lastMode(Pref.pref(this@DownloadService))
+					if(last_mode != Pref.LAST_MODE_STOP) {
+						worker_tracker.wakeup(cause)
+					}
 				}
 			}
-		}
 		
 		worker_tracker = WorkerTracker(this, log)
 	}

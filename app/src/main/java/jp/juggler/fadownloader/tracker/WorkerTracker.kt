@@ -1,8 +1,9 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.tracker
 
 import android.content.Intent
 import android.location.Location
 import android.os.Handler
+import jp.juggler.fadownloader.*
 import jp.juggler.fadownloader.util.LogWriter
 import jp.juggler.fadownloader.util.Utils
 
@@ -62,7 +63,11 @@ class WorkerTracker(
 				try {
 					will_restart = false
 					worker_disposed = false
-					worker = DownloadWorker(service, start_param, worker_callback)
+					worker = DownloadWorker(
+						service,
+						start_param,
+						worker_callback
+					)
 					worker !!.start()
 				} catch(ex : Throwable) {
 					ex.printStackTrace()
@@ -97,7 +102,11 @@ class WorkerTracker(
 					will_wakeup = false
 					worker_disposed = false
 					worker =
-						DownloadWorker(service, wakeup_cause ?: "will_wakeup", worker_callback)
+						DownloadWorker(
+							service,
+							wakeup_cause ?: "will_wakeup",
+							worker_callback
+						)
 					this@WorkerTracker.worker = worker
 					worker.start()
 				} catch(ex : Throwable) {
@@ -109,7 +118,8 @@ class WorkerTracker(
 		}
 	}
 	
-	internal val worker_callback : DownloadWorker.Callback = object : DownloadWorker.Callback {
+	internal val worker_callback : DownloadWorker.Callback = object :
+		DownloadWorker.Callback {
 		
 		override val location : Location?
 			get() = if(tracker_disposed) null else service.location_tracker.location

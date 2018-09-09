@@ -25,6 +25,7 @@ import jp.juggler.fadownloader.table.DownloadRecord
 import jp.juggler.fadownloader.targets.FlashAir
 import jp.juggler.fadownloader.targets.PentaxKP
 import jp.juggler.fadownloader.targets.PqiAirCard
+import jp.juggler.fadownloader.tracker.LocationTracker
 import jp.juggler.fadownloader.util.HTTPClient
 import jp.juggler.fadownloader.util.LogWriter
 import jp.juggler.fadownloader.util.Utils
