@@ -9,11 +9,13 @@ import android.graphics.Color
 import android.net.Uri
 import android.provider.BaseColumns
 import jp.juggler.fadownloader.R
+import jp.juggler.fadownloader.util.LogTag
 import jp.juggler.fadownloader.util.getStringOrNull
 
 class DownloadRecord {
 	
 	companion object {
+		private val log = LogTag("DownloadRecord")
 		
 		@Suppress("unused")
 		const val COL_ID = BaseColumns._ID
@@ -65,7 +67,7 @@ class DownloadRecord {
 						db.execSQL("alter table $table add column $COL_SIZE integer not null default 0")
 					} catch(ex : Throwable) {
 						// 既にカラムが存在する場合、ここを通る
-						ex.printStackTrace()
+						log.trace(ex,"add column $COL_SIZE")
 					}
 				}
 				
@@ -76,14 +78,14 @@ class DownloadRecord {
 							"drop index if exists ${table}_name"
 						)
 					} catch(ex : Throwable) {
-						ex.printStackTrace()
+						log.trace(ex,"drop index ${table}_name")
 					}
 					try {
 						db.execSQL(
 							"create index if not exists ${table}_name on $table($COL_NAME)"
 						)
 					} catch(ex : Throwable) {
-						ex.printStackTrace()
+						log.trace(ex,"create index ${table}_name")
 					}
 				}
 				
@@ -115,7 +117,7 @@ class DownloadRecord {
 				return cr.insert(meta.content_uri, cv)
 				
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex,"insert failed.")
 				return null
 			}
 		}

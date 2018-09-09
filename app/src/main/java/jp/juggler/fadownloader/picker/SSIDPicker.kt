@@ -15,11 +15,14 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import jp.juggler.fadownloader.R
+import jp.juggler.fadownloader.util.LogTag
 import java.util.*
 
 class SSIDPicker : AppCompatActivity(), AdapterView.OnItemClickListener, View.OnClickListener {
 	
 	companion object {
+		
+		private val log = LogTag("SSIDPicker")
 		
 		const val EXTRA_SSID = "ssid"
 		
@@ -28,7 +31,7 @@ class SSIDPicker : AppCompatActivity(), AdapterView.OnItemClickListener, View.On
 				val intent = Intent(activity, SSIDPicker::class.java)
 				activity.startActivityForResult(intent, request_code)
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex,"open failed.")
 			}
 			
 		}

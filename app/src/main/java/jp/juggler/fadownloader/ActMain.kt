@@ -18,7 +18,6 @@ import android.support.v4.view.ViewPager
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
-import android.util.Log
 import android.view.*
 import android.widget.TextView
 import com.example.android.trivialdrivesample.util.IabHelper
@@ -34,10 +33,7 @@ import jp.juggler.fadownloader.model.LocalFile
 import jp.juggler.fadownloader.picker.FolderPicker
 import jp.juggler.fadownloader.picker.SSIDPicker
 import jp.juggler.fadownloader.tracker.LocationTracker
-import jp.juggler.fadownloader.util.PagerAdapterBase
-import jp.juggler.fadownloader.util.PermissionChecker
-import jp.juggler.fadownloader.util.Utils
-import jp.juggler.fadownloader.util.encodeUTF8
+import jp.juggler.fadownloader.util.*
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.ref.WeakReference
@@ -45,6 +41,7 @@ import java.lang.ref.WeakReference
 open class ActMain : AppCompatActivity(), View.OnClickListener {
 	
 	companion object {
+		private val log = LogTag("ActMain")
 		
 		internal const val REQUEST_CODE_PERMISSION = 1
 		internal const val REQUEST_CODE_DOCUMENT = 2
@@ -62,7 +59,6 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		internal const val APP_PUBLIC_KEY =
 			"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkTbDT+kbberoRK6QHAKNzuKsFh0zSVJk97trga30ZHHyQHPsHtIJCvIibgHmm5QL6xr9TualN5iYMfNKA4bZM3x25kNiJ0NVuP86sravHdTyVuZyIu2WUI1CNdGRun5GYSGtxXNOuZujRkPtIMGjl750Z18CirrXYkl85KHDLgiOAu+d7HjssQ215+Qfo7iJIl30CYgcBl+szfH42MQK2Jd03LeTMf+5MA/ve/6iL2I1nyZrtWrC6Sw1uqOqjB9jx8cJALOrX+CmDa+si9krAI7gcOV/E8CJvVyC7cPxxooB425S8xHTr/MPjkEmwnu7ppMk5MyO+G1XP927fVg0ywIDAQAB"
 		internal const val REMOVE_AD_PRODUCT_ID = "remove_ad"
-		internal const val TAG = "ActMain"
 	}
 	
 	internal lateinit var tvStatus : TextView
@@ -120,7 +116,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 								apiException.startResolutionForResult( this@ActMain, REQUEST_RESOLUTION)
 							}
 						} catch ( ex: IntentSender.SendIntentException ) {
-							ex.printStackTrace()
+							log.trace(ex,"resolution_request_failed")
 							Utils.showToast(this@ActMain, true, R.string.resolution_request_failed)
 						}
 						
@@ -170,11 +166,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			if(mIabHelper == null) return@QueryInventoryFinishedListener
 			
 			if(result.isFailure) {
-				Log.d(
-					TAG, "onQueryInventoryFinished: "
-						+ result.response
-						+ "," + result.message
-				)
+				log.e("onQueryInventoryFinished: ${result.response},${result.message}")
 				return@QueryInventoryFinishedListener
 			}
 			
@@ -189,11 +181,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			if(mIabHelper == null) return@OnIabPurchaseFinishedListener
 			
 			if(result.isFailure) {
-				Log.d(
-					TAG, "onIabPurchaseFinished: "
-						+ result.response
-						+ "," + result.message
-				)
+				log.e( "onIabPurchaseFinished: ${result.response},${result.message}")
 				return@OnIabPurchaseFinishedListener
 			}
 			
@@ -322,8 +310,9 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 							.put(Pref.uiFolderUri, treeUri.toString())
 							.apply()
 					} catch(ex : Throwable) {
-						ex.printStackTrace()
-						Utils.showToast(this, ex, "folder access failed.")
+						log.trace(ex,"folder access failed.")
+						
+						Utils.showToast(this, true,ex.withCaption("folder access failed."))
 					}
 					
 				}
@@ -357,8 +346,8 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 						.put(Pref.uiFolderUri,path)
 						.apply()
 				} catch(ex : Throwable) {
-					ex.printStackTrace()
-					Utils.showToast(this, ex, "folder access failed.")
+					log.trace(ex,"folder access failed.")
+					Utils.showToast(this,true, ex.withCaption( "folder access failed."))
 				}
 				
 			}
@@ -523,10 +512,10 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		
 		try {
 			val pi = Utils.createAlarmPendingIntent(this)
-			val am = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-			am.cancel(pi)
+			val am = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+			am?.cancel(pi)
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"createAlarmPendingIntent failed.")
 		}
 		
 	}
@@ -752,11 +741,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 				if(mIabHelper == null) return@OnIabSetupFinishedListener
 				
 				if(! result.isSuccess) {
-					Log.d(
-						TAG, "onIabSetupFinished: "
-							+ result.response
-							+ "," + result.message
-					)
+					log.e( "onIabSetupFinished: ${result.response},${result.message}")
 					return@OnIabSetupFinishedListener
 				}
 				
@@ -766,7 +751,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 				mIabHelper?.queryInventoryAsync(mGotInventoryListener)
 			})
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"IabHelper failed.")
 			// 多分Google Playのない端末
 		}
 	}
@@ -774,20 +759,23 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	// 購入開始
 	fun startRemoveAdPurchase() {
 		try {
-			if(mIabHelper == null) {
+			val iabHelper = mIabHelper
+			if(iabHelper == null) {
 				Utils.showToast(this, false, getString(R.string.play_store_missing))
+			}else{
+				iabHelper.launchPurchaseFlow(
+					this,
+					REMOVE_AD_PRODUCT_ID,
+					IabHelper.ITEM_TYPE_INAPP,
+					REQUEST_PURCHASE,
+					mPurchaseFinishedListener,
+					null
+				)
+				
 			}
 			
-			mIabHelper !!.launchPurchaseFlow(
-				this,
-				REMOVE_AD_PRODUCT_ID,
-				IabHelper.ITEM_TYPE_INAPP,
-				REQUEST_PURCHASE,
-				mPurchaseFinishedListener,
-				null
-			)
-		} catch(ex : IllegalStateException) {
-			ex.printStackTrace()
+		} catch(ex : Throwable) {
+			log.trace(ex,"startRemoveAdPurchase failed.")
 		}
 		
 	}

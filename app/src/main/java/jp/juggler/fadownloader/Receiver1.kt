@@ -4,10 +4,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.support.v4.content.ContextCompat
+import jp.juggler.fadownloader.util.LogTag
 
 class Receiver1 : BroadcastReceiver() {
 
 	companion object {
+		private val log = LogTag("Receiver1")
 		const val ACTION_ALARM = "alarm"
 	}
 	
@@ -32,7 +34,7 @@ class Receiver1 : BroadcastReceiver() {
 			service_intent.putExtra(DownloadService.EXTRA_BROADCAST_INTENT, broadcast_intent)
 			ContextCompat.startForegroundService(context, service_intent)
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"onReceive failed.")
 		}
 	}
 }

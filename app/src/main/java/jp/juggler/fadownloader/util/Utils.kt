@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
 import android.database.Cursor
 import android.net.Uri
 import android.os.*
@@ -28,6 +29,8 @@ import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 
 object Utils {
+	
+	internal val log = LogTag("Utils")
 	
 	private var bytes_format = DecimalFormat("#,###")
 	
@@ -379,7 +382,7 @@ object Utils {
 			}
 			
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"getSecondaryStorageVolumesMap")
 		}
 		
 		return result
@@ -400,7 +403,7 @@ object Utils {
 			try {
 				xml_builder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex,"newDocumentBuilder")
 				return null
 			}
 			
@@ -408,7 +411,7 @@ object Utils {
 		return try {
 			xml_builder !!.parse(ByteArrayInputStream(src)).documentElement
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"parseXml")
 			null
 		}
 		
@@ -438,31 +441,12 @@ object Utils {
 		}
 	}
 	
-	fun showToast(context : Context, ex : Throwable, fmt : String, vararg args : Any) {
-		runOnMainThread {
-			Toast.makeText(
-				context, LogWriter.formatError(ex, fmt, *args), Toast.LENGTH_LONG
-			).show()
-		}
-	}
-	
 	fun showToast(context : Context, bLong : Boolean, string_id : Int, vararg args : Any) {
 		runOnMainThread {
 			Toast.makeText(
 				context,
 				context.getString(string_id, *args),
 				if(bLong) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
-			).show()
-		}
-	}
-	
-	@Suppress("unused")
-	fun showToast(context : Context, ex : Throwable, string_id : Int, vararg args : Any) {
-		runOnMainThread {
-			Toast.makeText(
-				context,
-				LogWriter.formatError(ex, context.resources, string_id, *args),
-				Toast.LENGTH_LONG
 			).show()
 		}
 	}
@@ -517,7 +501,7 @@ object Utils {
 							}
 						}
 					} catch(ex2 : Throwable) {
-						ex2.printStackTrace()
+						log.trace(ex2,"getFile")
 					}
 					
 				}
@@ -541,7 +525,7 @@ object Utils {
 					}
 				}
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"getFile")
 		}
 		
 		return null
@@ -589,3 +573,15 @@ fun String.toLower()  = toLowerCase(Locale.US)
 
 @Suppress("unused")
 fun String.toUpper() = toUpperCase(Locale.US)
+
+fun Throwable.withCaption( fmtArg : String, vararg args : Any?) : String {
+	val fmt  = if( args.isEmpty() ) fmtArg else String.format(fmtArg, *args)
+	return "$fmt : ${javaClass.simpleName} $message"
+}
+
+fun Throwable.withCaption(resources : Resources, string_id : Int, vararg args : Any?) : String {
+	val text = resources.getString(string_id, *args)
+	return "$text : ${javaClass.simpleName} $message"
+}
+
+fun Throwable.withCaption() = withCaption("?")

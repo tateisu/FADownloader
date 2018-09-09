@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.regex.Pattern
 
-class PentaxKP(internal val service : DownloadService, internal val thread : DownloadWorker) {
+class PentaxKP(private val service : DownloadService, internal val thread : DownloadWorker) {
 	
 	companion object {
 		
@@ -125,7 +125,7 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 					}
 				}
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex, "WebSocket message handling error.")
 				log.e(ex, "WebSocket message handling error.")
 			}
 			
@@ -262,7 +262,7 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 										val h = Integer.parseInt(matcher.group(4), 10)
 										val min = Integer.parseInt(matcher.group(5), 10)
 										val s = Integer.parseInt(matcher.group(6), 10)
-										log.f("time=%s,%s,%s,%s,%s,%s", y, m, d, h, min, s)
+										// log.d("time=%s,%s,%s,%s,%s,%s", y, m, d, h, min, s)
 										calendar.set(y, m, d, h, min, s)
 										calendar.set(Calendar.MILLISECOND, 500)
 										time = calendar.timeInMillis
@@ -421,12 +421,12 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 					ws.connect()
 					thread.waitEx(2000L)
 				} catch(ex : OpeningHandshakeException) {
-					ex.printStackTrace()
+					log.trace(ex,"WebSocket connection failed(1).")
 					log.e(ex, "WebSocket connection failed(1).")
 					thread.waitEx(5000L)
 					continue
 				} catch(ex : WebSocketException) {
-					ex.printStackTrace()
+					log.trace(ex,"WebSocket connection failed(2).")
 					log.e(ex, "WebSocket connection failed(2).")
 					
 					val active_other = service.wifi_tracker.otherActive
@@ -437,7 +437,7 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 					thread.waitEx(5000L)
 					continue
 				} catch(ex : IOException) {
-					ex.printStackTrace()
+					log.trace(ex,"WebSocket connection failed(3).")
 					log.e(ex, "WebSocket connection failed(3).")
 					thread.waitEx(5000L)
 					continue
@@ -529,18 +529,16 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 					}
 				}
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex, "error.")
 				log.e(ex, "error.")
 			}
 			
 		}
 		
 		// WebSocketの解除
-		if(ws_client != null) {
-			ws_client !!.removeListener(ws_listener)
-			ws_client !!.disconnect()
-			ws_client = null
-		}
+		ws_client ?.removeListener(ws_listener)
+		ws_client ?.disconnect()
+		ws_client = null
 		
 	}
 	

@@ -5,8 +5,11 @@ import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.BaseColumns
+import jp.juggler.fadownloader.util.LogTag
 
 object LogData {
+	
+	private val log = LogTag("LogData")
 	
 	const val COL_ID = BaseColumns._ID
 	const val COL_TIME = "t"
@@ -68,7 +71,7 @@ object LogData {
 			cv.put(COL_MESSAGE, message)
 			cr.insert(meta.content_uri, cv)
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"insert failed")
 			null
 		}
 		

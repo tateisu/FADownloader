@@ -69,7 +69,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 		val mLine = try {
 			reLine.matcher(data.decodeUTF8())
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex, "folder list parse error.")
 			log.e(ex, "folder list parse error.")
 			return
 		}
@@ -160,7 +160,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 					}
 				}
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex, "folder list parse error: $line" )
 				log.e(ex, "folder list parse error: %s", line)
 			}
 			
@@ -383,7 +383,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 					}
 				}
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex, "error.")
 				log.e(ex, "error.")
 			}
 			

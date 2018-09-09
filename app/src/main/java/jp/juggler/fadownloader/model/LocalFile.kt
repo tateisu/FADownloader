@@ -6,6 +6,7 @@ import android.os.Build
 import android.support.v4.provider.DocumentFile
 import android.text.TextUtils
 import jp.juggler.fadownloader.R
+import jp.juggler.fadownloader.util.LogTag
 import jp.juggler.fadownloader.util.LogWriter
 import jp.juggler.fadownloader.util.Utils
 import java.io.*
@@ -91,7 +92,7 @@ class LocalFile(
 					}
 					child_list = result
 				} catch(ex : Throwable) {
-					ex.printStackTrace()
+					log.trace(ex,"listFiles() failed.")
 					log.e(ex, "listFiles() failed.")
 				}
 				
@@ -228,7 +229,7 @@ class LocalFile(
 			val str_uri = getFileUri(log) ?: return null
 			return Utils.getFile(context, str_uri)
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex, "getFile() failed.")
 			log.e(ex, "getFile() failed.")
 		}
 		
@@ -243,8 +244,8 @@ class LocalFile(
 			
 			path.setLastModified(time)
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
-			log.e("setLastModified() failed.")
+			log.trace(ex,"setLastModified() failed.")
+			log.e(ex,"setLastModified() failed.")
 		}
 		
 	}

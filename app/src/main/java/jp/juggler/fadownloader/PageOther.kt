@@ -6,12 +6,16 @@ import android.net.Uri
 import android.provider.Settings
 import android.view.View
 import jp.juggler.fadownloader.table.DownloadRecord
+import jp.juggler.fadownloader.util.LogTag
 import jp.juggler.fadownloader.util.PagerAdapterBase
 import java.util.*
 
 class PageOther(activity : Activity, ignored : View) :
 	PagerAdapterBase.PageViewHolder(activity, ignored), View.OnClickListener {
 	
+	companion object {
+		private val log = LogTag("PageOther")
+	}
 	private lateinit var btnRemoveAd : View
 	
 	@Throws(Throwable::class)
@@ -47,7 +51,7 @@ class PageOther(activity : Activity, ignored : View) :
 			R.id.btnWifiSetting -> try {
 				activity.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex,"btnWifiSetting failed")
 			}
 			
 			R.id.btnOpenMap -> try {
@@ -70,7 +74,7 @@ class PageOther(activity : Activity, ignored : View) :
 					activity.startActivity(intent)
 				}
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex,"btnOpenMap failed")
 			}
 			
 		}

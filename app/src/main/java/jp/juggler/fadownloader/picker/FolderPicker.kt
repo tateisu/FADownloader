@@ -14,7 +14,9 @@ import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.*
 import jp.juggler.fadownloader.R
+import jp.juggler.fadownloader.util.LogTag
 import jp.juggler.fadownloader.util.Utils
+import jp.juggler.fadownloader.util.withCaption
 import java.io.File
 import java.util.*
 
@@ -22,6 +24,7 @@ class FolderPicker : AppCompatActivity(), View.OnClickListener, AdapterView.OnIt
 	
 	
 	companion object {
+		private val log = LogTag("FolderPicker")
 		
 		internal fun parseExistPath(pathArg : String?) : File {
 			var path = pathArg
@@ -58,7 +61,7 @@ class FolderPicker : AppCompatActivity(), View.OnClickListener, AdapterView.OnIt
 				intent.putExtra(EXTRA_FOLDER, path)
 				activity.startActivityForResult(intent, request_code)
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex,"open failed.")
 			}
 			
 		}
@@ -161,7 +164,7 @@ class FolderPicker : AppCompatActivity(), View.OnClickListener, AdapterView.OnIt
 						result.add(name)
 					}
 				} catch(ex : Throwable) {
-					ex.printStackTrace()
+					log.trace(ex,"loadFolder failed.")
 				}
 				
 				Collections.sort(result, String.CASE_INSENSITIVE_ORDER)
@@ -228,7 +231,8 @@ class FolderPicker : AppCompatActivity(), View.OnClickListener, AdapterView.OnIt
 					}
 				}
 			} catch(ex : Throwable) {
-				Utils.showToast(this@FolderPicker, ex, "folder creation failed.")
+				log.trace(ex,"folder creation failed.")
+				Utils.showToast(this@FolderPicker,true, ex.withCaption( "folder creation failed."))
 			}
 		}
 	}

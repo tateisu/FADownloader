@@ -15,10 +15,7 @@ import android.os.SystemClock
 import android.text.TextUtils
 import jp.juggler.fadownloader.Pref
 import jp.juggler.fadownloader.R
-import jp.juggler.fadownloader.util.LogWriter
-import jp.juggler.fadownloader.util.Utils
-import jp.juggler.fadownloader.util.WorkerBase
-import jp.juggler.fadownloader.util.decodeUTF8
+import jp.juggler.fadownloader.util.*
 import org.apache.commons.io.IOUtils
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -37,6 +34,8 @@ class NetworkTracker(
 	
 	companion object {
 		
+		private val logStatic = LogTag("NetworkTracker")
+		
 		const val WIFI_SCAN_INTERVAL = 100000
 		
 		////////////////////////////////////////////////////////////////////////
@@ -49,7 +48,7 @@ class NetworkTracker(
 					return (bao.toByteArray() as ByteArray).decodeUTF8()
 				}
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				logStatic.trace(ex,"readStringFile")
 				return null
 			}
 		}
@@ -236,7 +235,7 @@ class NetworkTracker(
 				
 			}
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"failed: $check_url")
 			log.e(ex, check_url)
 		}
 		
@@ -250,7 +249,7 @@ class NetworkTracker(
 				try {
 					return wifiManager.javaClass.getMethod("isWifiApEnabled").invoke(wifiManager) as Boolean
 				} catch(ex : Throwable) {
-					ex.printStackTrace()
+					log.trace(ex,"isWifiAPEnabled")
 				}
 				
 				return false
@@ -276,12 +275,11 @@ class NetworkTracker(
 								}
 							}
 						} catch(ex : SocketException) {
-							ex.printStackTrace()
+							log.trace(ex,"wiFiAPAddress")
 						}
-						
 					}
 				} catch(ex : SocketException) {
-					ex.printStackTrace()
+					log.trace(ex,"wiFiAPAddress")
 				}
 				
 				return null
@@ -322,20 +320,16 @@ class NetworkTracker(
 						
 						socket.send(packet)
 					} catch(ex : Throwable) {
-						ex.printStackTrace()
+						log.trace(ex,"sprayUDPPacket")
 					}
 					
 				}
 				socket.close()
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex,"sprayUDPPacket")
 			}
 			
-			log.d(
-				"sent UDP packet to '%s*' time=%s",
-				ip_base,
-				Utils.formatTimeDuration(SystemClock.elapsedRealtime() - start)
-			)
+			log.d("sent UDP packet to '$ip_base*' time=${Utils.formatTimeDuration(SystemClock.elapsedRealtime() - start)}")
 		}
 		
 		private fun detectTetheringClient(url_checker : UrlChecker) : Boolean {
@@ -450,8 +444,8 @@ class NetworkTracker(
 						return false
 					}
 				} catch(ex : Throwable) {
-					ex.printStackTrace()
-					error_status = LogWriter.formatError(ex, "setWifiEnabled() failed.")
+					log.trace(ex,"setWifiEnabled() failed.")
+					error_status = ex.withCaption( "setWifiEnabled() failed.")
 					return false
 				}
 				
@@ -467,8 +461,8 @@ class NetworkTracker(
 						current_ssid = sv?.replace("\"", "")
 					}
 				} catch(ex : Throwable) {
-					ex.printStackTrace()
-					error_status = LogWriter.formatError(ex, "getConnectionInfo() failed.")
+					log.trace(ex,"getConnectionInfo() failed.")
+					error_status = ex.withCaption( "getConnectionInfo() failed.")
 					return false
 				}
 				
@@ -525,8 +519,8 @@ class NetworkTracker(
 					}
 					
 				} catch(ex : Throwable) {
-					ex.printStackTrace()
-					error_status = LogWriter.formatError(ex, "getConfiguredNetworks() failed.")
+					log.trace(ex,"getConfiguredNetworks() failed.")
+					error_status = ex.withCaption( "getConfiguredNetworks() failed.")
 					return false
 				}
 
@@ -558,8 +552,8 @@ class NetworkTracker(
 						}
 					}
 				} catch(ex : Throwable) {
-					ex.printStackTrace()
-					error_status = LogWriter.formatError(ex, "getScanResults() failed.")
+					log.trace(ex,"getScanResults() failed.")
+					error_status = ex.withCaption( "getScanResults() failed.")
 					return false
 				}
 				
@@ -577,8 +571,8 @@ class NetworkTracker(
 							log.d(R.string.wifi_scan_start)
 						}
 					} catch(ex : Throwable) {
-						ex.printStackTrace()
-						error_status = LogWriter.formatError(ex, "startScan() failed.")
+						log.trace(ex,"startScan() failed.")
+						error_status = ex.withCaption( "startScan() failed.")
 					}
 					
 					return false
@@ -610,9 +604,9 @@ class NetworkTracker(
 						return false
 						
 					} catch(ex : Throwable) {
-						ex.printStackTrace()
+						log.trace(ex,"disableNetwork() or enableNetwork() failed.")
 						error_status =
-							LogWriter.formatError(ex, "disableNetwork() or enableNetwork() failed.")
+							ex.withCaption( "disableNetwork() or enableNetwork() failed.")
 					}
 					
 				}
@@ -664,8 +658,8 @@ class NetworkTracker(
 					}
 				}
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
-				return LogWriter.formatError(ex, "updateNetwork() or saveConfiguration() failed.")
+				log.trace(ex,"updateNetwork() or saveConfiguration() failed.")
+				return ex.withCaption( "updateNetwork() or saveConfiguration() failed.")
 			}
 			return null
 		}

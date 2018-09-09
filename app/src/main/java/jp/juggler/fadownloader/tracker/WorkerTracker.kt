@@ -70,7 +70,7 @@ class WorkerTracker(
 					)
 					worker !!.start()
 				} catch(ex : Throwable) {
-					ex.printStackTrace()
+					log.trace(ex,"thread start failed.")
 					log.e(ex, "thread start failed.")
 				}
 				
@@ -110,7 +110,7 @@ class WorkerTracker(
 					this@WorkerTracker.worker = worker
 					worker.start()
 				} catch(ex : Throwable) {
-					ex.printStackTrace()
+					log.trace(ex,"thread start failed.")
 					log.e(ex, "thread start failed.")
 				}
 				

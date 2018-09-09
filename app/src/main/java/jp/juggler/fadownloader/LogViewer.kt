@@ -47,7 +47,7 @@ class LogViewer {
 			return rv
 		}
 		
-		override fun onCreateLoader(id : Int, args : Bundle) : Loader<Cursor>? {
+		override fun onCreateLoader(id : Int, args : Bundle?) : Loader<Cursor> {
 			return CursorLoader(
 				activity,
 				LogData.meta.content_uri,

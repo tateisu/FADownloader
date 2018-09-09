@@ -11,6 +11,11 @@ import java.util.ArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 
 class PagerAdapterBase(val activity : Activity) : PagerAdapter() {
+	
+	companion object {
+		private val log = LogTag("PagerAdapterBase")
+	}
+	
 	private val inflater : LayoutInflater = activity.layoutInflater
 	
 	private val title_list = ArrayList<CharSequence>()
@@ -83,7 +88,7 @@ class PagerAdapterBase(val activity : Activity) : PagerAdapter() {
 			holder.onPageCreate(page_idx % countReal, root)
 			//
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"instantiateItem")
 		}
 		
 		return root
@@ -102,7 +107,7 @@ class PagerAdapterBase(val activity : Activity) : PagerAdapter() {
 				holder.onPageDestroy(page_idx % countReal, view)
 			}
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"destroyItem")
 		}
 		
 	}

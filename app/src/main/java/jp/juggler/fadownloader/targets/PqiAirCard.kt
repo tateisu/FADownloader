@@ -118,8 +118,8 @@ class PqiAirCard(
 						try {
 							size = java.lang.Long.parseLong(size_str, 10)
 						} catch(ex : NumberFormatException) {
-							ex.printStackTrace()
-							log.e("incorrect size: %s", size_str)
+							log.trace(ex,"incorrect size: $size_str" )
+							log.e(ex,"incorrect size: $size_str" )
 							++ i
 							continue
 						}
@@ -142,7 +142,7 @@ class PqiAirCard(
 							calendar.set(Calendar.MILLISECOND, 500)
 							time = calendar.timeInMillis
 						} catch(ex : NumberFormatException) {
-							ex.printStackTrace()
+							log.trace(ex,"date parse failed. $date_str")
 							++ i
 							continue
 						}
@@ -397,7 +397,7 @@ class PqiAirCard(
 					}
 				}
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex,"error.")
 				log.e(ex, "error.")
 			}
 			

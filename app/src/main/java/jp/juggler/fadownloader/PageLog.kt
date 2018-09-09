@@ -11,9 +11,7 @@ import android.view.View
 import android.widget.ListView
 import config.BuildVariant
 import jp.juggler.fadownloader.table.LogData
-import jp.juggler.fadownloader.util.PagerAdapterBase
-import jp.juggler.fadownloader.util.ProgressDialogEx
-import jp.juggler.fadownloader.util.Utils
+import jp.juggler.fadownloader.util.*
 import java.io.File
 import java.io.PrintStream
 import java.text.SimpleDateFormat
@@ -23,6 +21,7 @@ class PageLog(activity : Activity, ignored : View) :
 	PagerAdapterBase.PageViewHolder(activity, ignored), View.OnClickListener {
 	
 	companion object {
+		private val log = LogTag("PageLog")
 		internal val filename_date_fmt = SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault())
 	}
 	
@@ -133,8 +132,8 @@ class PageLog(activity : Activity, ignored : View) :
 					return log_file
 					
 				} catch(ex : Throwable) {
-					ex.printStackTrace()
-					Utils.showToast(activity, ex, "log data collection failed.")
+					log.trace(ex,"log data collection failed.")
+					Utils.showToast(activity,true, ex.withCaption("log data collection failed."))
 				}
 				
 				return null
@@ -182,8 +181,8 @@ class PageLog(activity : Activity, ignored : View) :
 					intent.putExtra(Intent.EXTRA_STREAM, uri)
 					activity.startActivityForResult(intent, ActMain.REQUEST_CODE_SEND)
 				} catch(ex : Throwable) {
-					ex.printStackTrace()
-					Utils.showToast(activity, ex, "send failed.")
+					log.trace(ex, "send failed.")
+					Utils.showToast(activity,true,ex.withCaption( "send failed."))
 				}
 				
 			}

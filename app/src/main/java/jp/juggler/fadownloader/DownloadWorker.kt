@@ -26,10 +26,7 @@ import jp.juggler.fadownloader.targets.FlashAir
 import jp.juggler.fadownloader.targets.PentaxKP
 import jp.juggler.fadownloader.targets.PqiAirCard
 import jp.juggler.fadownloader.tracker.LocationTracker
-import jp.juggler.fadownloader.util.HTTPClient
-import jp.juggler.fadownloader.util.LogWriter
-import jp.juggler.fadownloader.util.Utils
-import jp.juggler.fadownloader.util.WorkerBase
+import jp.juggler.fadownloader.util.*
 
 class DownloadWorker : WorkerBase {
 	
@@ -255,7 +252,7 @@ class DownloadWorker : WorkerBase {
 		try {
 			client.cancel(log)
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"cancel failed")
 		}
 		
 		return rv
@@ -270,7 +267,7 @@ class DownloadWorker : WorkerBase {
 					.replace("\\\\\\*".toRegex(), ".*?")
 				list.add(Pattern.compile("$spec\\z", Pattern.CASE_INSENSITIVE))
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex,"file_type_parse failed.")
 				log.e(
 					R.string.file_type_parse_error,
 					m.group(1),
@@ -313,8 +310,8 @@ class DownloadWorker : WorkerBase {
 				else -> am.set(AlarmManager.RTC_WAKEUP, now + remain, pi)
 			}
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
-			log.e("待機の設定に失敗 %s %s", ex.javaClass.simpleName, ex.message)
+			log.trace(ex,"待機の設定に失敗")
+			log.e(ex,"待機の設定に失敗")
 		}
 		
 		cancel(service.getString(R.string.wait_alarm, Utils.formatTimeDuration(remain)))
@@ -388,11 +385,11 @@ class DownloadWorker : WorkerBase {
 				// 既にEXIF情報があった
 				em = ErrorAndMessage(false, "既に位置情報が含まれています")
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex, "exif mangling failed.")
 				log.e(ex, "exif mangling failed.")
 				
 				// 変更失敗
-				em = ErrorAndMessage(true, LogWriter.formatError(ex, "exif mangling failed."))
+				em = ErrorAndMessage(true, ex.withCaption( "exif mangling failed."))
 			}
 			
 			if(em != null) return em
@@ -431,7 +428,7 @@ class DownloadWorker : WorkerBase {
 					
 				}
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex, "file copy failed.")
 				log.e(ex, "file copy failed.")
 				return ErrorAndMessage(false, "file copy failed.")
 			}
@@ -440,9 +437,9 @@ class DownloadWorker : WorkerBase {
 			return ErrorAndMessage(false, "embedded")
 			
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex, "exif mangling failed.")
 			log.e(ex, "exif mangling failed.")
-			return ErrorAndMessage(true, LogWriter.formatError(ex, "exif mangling failed."))
+			return ErrorAndMessage(true, ex.withCaption( "exif mangling failed."))
 		} finally {
 			if(local_temp != null && bDeleteTempFile) {
 				try {
@@ -506,7 +503,7 @@ class DownloadWorker : WorkerBase {
 	}
 	
 	fun afterDownload(time_start : Long, ex : Throwable, item : ScanItem) {
-		ex.printStackTrace()
+		log.trace(ex, "error.")
 		log.e(ex, "error.")
 		
 		file_error = true
@@ -515,7 +512,7 @@ class DownloadWorker : WorkerBase {
 			item,
 			SystemClock.elapsedRealtime() - time_start,
 			DownloadRecord.STATE_DOWNLOAD_ERROR,
-			LogWriter.formatError(ex, "?")
+			ex.withCaption()
 		)
 		
 		item.local_file.delete()
@@ -651,10 +648,10 @@ class DownloadWorker : WorkerBase {
 		// 古いアラームがあれば除去
 		try {
 			val pi = Utils.createAlarmPendingIntent(service)
-			val am = service.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-			am.cancel(pi)
+			val am = service.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+			am?.cancel(pi)
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"alarm cancel failed")
 		}
 		
 		when(target_type) {

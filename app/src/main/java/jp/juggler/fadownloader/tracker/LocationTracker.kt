@@ -24,8 +24,7 @@ class LocationTracker(
 		const val LOCATION_HIGH_ACCURACY = 4
 		
 		// Setting のデフォルト値
-		const val DEFAULT_MODE =
-			NO_LOCATION_UPDATE
+		const val DEFAULT_MODE = NO_LOCATION_UPDATE
 		const val DEFAULT_INTERVAL_DESIRED = 1000L * 3600
 		const val DEFAULT_INTERVAL_MIN = 1000L * 300
 		
@@ -120,9 +119,9 @@ class LocationTracker(
 		
 		try {
 			fusedLocationClient.removeLocationUpdates(this)
-			log.h(R.string.location_update_end)
+			log.d(R.string.location_update_end)
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"removeLocationUpdates() failed.")
 			log.e(ex, "removeLocationUpdates() failed.")
 		} finally {
 			isTracked = false
@@ -154,7 +153,7 @@ class LocationTracker(
 		} catch(ex : SecurityException) {
 			log.e(ex, "getLastLocation() failed.")
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"getLastLocation() failed.")
 			log.e(ex, "getLastLocation() failed.")
 		}
 		
@@ -176,14 +175,14 @@ class LocationTracker(
 					log.e(ex, R.string.location_update_request_result)
 				}
 			
-			if(! isTracked) log.h(R.string.location_update_start)
+			if(! isTracked) log.d(R.string.location_update_start)
 			isTracked = true
 
 		} catch(ex : SecurityException) {
 			log.e(ex, "requestLocationUpdates() failed.")
 
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex,"requestLocationUpdates() failed.")
 			log.e(ex, "requestLocationUpdates() failed.")
 		}
 		

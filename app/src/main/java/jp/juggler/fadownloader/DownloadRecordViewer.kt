@@ -24,7 +24,6 @@ import android.support.v4.content.CursorLoader
 import android.support.v4.content.Loader
 import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -35,7 +34,10 @@ import it.sephiroth.android.library.exif2.Rational
 import jp.juggler.fadownloader.model.LocalFile
 import jp.juggler.fadownloader.table.DownloadRecord
 import jp.juggler.fadownloader.table.LogData
+import jp.juggler.fadownloader.util.LogTag
 import jp.juggler.fadownloader.util.Utils
+import jp.juggler.fadownloader.util.getStringOrNull
+import jp.juggler.fadownloader.util.withCaption
 import org.apache.commons.io.IOUtils
 import java.io.File
 import java.io.FileInputStream
@@ -49,6 +51,7 @@ import java.util.regex.Pattern
 class DownloadRecordViewer {
 	
 	companion object {
+		private val log = LogTag("DownloadRecordViewer")
 		
 		internal val date_fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
 		internal val default_thumbnail : Drawable = ColorDrawable(- 0x7f7f80)
@@ -86,7 +89,7 @@ class DownloadRecordViewer {
 			return rv
 		}
 		
-		override fun onCreateLoader(id : Int, args : Bundle) : Loader<Cursor>? {
+		override fun onCreateLoader(id : Int, args : Bundle?) : Loader<Cursor> {
 			return CursorLoader(
 				activity,
 				DownloadRecord.meta.content_uri,
@@ -317,7 +320,7 @@ class DownloadRecordViewer {
 										}
 									}
 								} catch(ex : Throwable) {
-									ex.printStackTrace()
+									log.trace(ex,"exif check failed.")
 								}
 								
 								return null
@@ -445,7 +448,7 @@ class DownloadRecordViewer {
 				openDetailDialog(data, name)
 				
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex,"onItemClick failed")
 			}
 			
 		}
@@ -526,8 +529,8 @@ class DownloadRecordViewer {
 				tmp_info.uri = Uri.fromFile(tmp_file)
 				return tmp_info
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
-				Utils.showToast(activity, ex, "failed to copy to temporary folder.")
+				log.trace(ex,"failed to copy to temporary folder.")
+				Utils.showToast(activity,true, ex.withCaption( "failed to copy to temporary folder."))
 				return null
 			}
 			
@@ -587,28 +590,23 @@ class DownloadRecordViewer {
 									val type = cursor.getType(i)
 									if(type != Cursor.FIELD_TYPE_STRING) continue
 									val name = cursor.getColumnName(i)
-									val value = if(cursor.isNull(i)) null else cursor.getString(i)
-									Log.d(
-										"DownloadRecordViewer",
-										String.format("%s %s", name, value)
-									)
-									if(! TextUtils.isEmpty(value)) {
-										if("filePath" == name) {
-											tmp_info.uri = Uri.fromFile(File(value !!))
-										}
+									val value = cursor.getStringOrNull(i)
+									// log.d("$name $value")
+									if(name =="filePath" && value?.isNotEmpty() == true) {
+										tmp_info.uri = Uri.fromFile(File(value))
 									}
 								}
 							}
 						} catch(ex : Throwable) {
-							ex.printStackTrace()
+							log.trace(ex,"fixFileURL failed.")
 						}
 					}
 				}
 				
 				return tmp_info
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
-				Utils.showToast(activity, ex, "failed to fix file URI.")
+				log.trace(ex, "failed to fix file URI.")
+				Utils.showToast(activity, true,ex.withCaption( "failed to fix file URI."))
 				return null
 			}
 			
@@ -634,8 +632,8 @@ class DownloadRecordViewer {
 				}
 				activity.startActivity(intent)
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
-				Utils.showToast(activity, ex, "view failed.")
+				log.trace(ex, "view failed.")
+				Utils.showToast(activity,true, ex.withCaption( "view failed."))
 			}
 		}
 		
@@ -663,8 +661,8 @@ class DownloadRecordViewer {
 					)
 				)
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
-				Utils.showToast(activity, ex, "send failed.")
+				log.trace(ex,"send failed.")
+				Utils.showToast(activity, true,ex.withCaption("send failed."))
 			}
 			
 		}

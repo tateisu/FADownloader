@@ -159,10 +159,10 @@ class DownloadService : Service() {
 		if(cancel_alarm_on_destroy) {
 			try {
 				val pi = Utils.createAlarmPendingIntent(this)
-				val am = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-				am.cancel(pi)
+				val am = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+				am?.cancel(pi)
 			} catch(ex : Throwable) {
-				ex.printStackTrace()
+				log.trace(ex,"cancel_alarm_on_destroy failed.")
 			}
 			
 		}
@@ -222,14 +222,14 @@ class DownloadService : Service() {
 		try {
 			wake_lock !!.release()
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex, "WakeLock release failed.")
 			log.e(ex, "WakeLock release failed.")
 		}
 		
 		try {
 			wifi_lock !!.release()
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex, "WifiLock release failed.")
 			log.e(ex, "WifiLock release failed.")
 		}
 		
@@ -241,14 +241,14 @@ class DownloadService : Service() {
 		try {
 			wake_lock?.acquire()
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex, "WakeLock acquire failed.")
 			log.e(ex, "WakeLock acquire failed.")
 		}
 		
 		try {
 			wifi_lock !!.acquire()
 		} catch(ex : Throwable) {
-			ex.printStackTrace()
+			log.trace(ex, "WifiLock acquire failed.")
 			log.e(ex, "WifiLock acquire failed.")
 		}
 		
