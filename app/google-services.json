@@ -1,0 +1,139 @@
+{
+  "project_info": {
+    "project_number": "694255757125",
+    "firebase_url": "https://fadownloader-a5167.firebaseio.com",
+    "project_id": "fadownloader-a5167",
+    "storage_bucket": "fadownloader-a5167.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694255757125:android:c7de29d7c6639aca",
+        "android_client_info": {
+          "package_name": "jp.juggler.fadownloader"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "694255757125-emlsgvh237g3sr13ia92r70m08qkc16i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQYPC9qts5KMMc8_-9d79M9VwJsn1jkjE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      },
+      "admob_app_id": "ca-app-pub-5890454442862024~5185883593"
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694255757125:android:f9517ec2916e849b",
+        "android_client_info": {
+          "package_name": "jp.juggler.fadownloader.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "694255757125-emlsgvh237g3sr13ia92r70m08qkc16i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQYPC9qts5KMMc8_-9d79M9VwJsn1jkjE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      },
+      "admob_app_id": "ca-app-pub-5890454442862024~1534413195"
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694255757125:android:1ac161ce6666e76b",
+        "android_client_info": {
+          "package_name": "jp.juggler.kpdownloader"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "694255757125-emlsgvh237g3sr13ia92r70m08qkc16i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQYPC9qts5KMMc8_-9d79M9VwJsn1jkjE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      },
+      "admob_app_id": "ca-app-pub-5890454442862024~4796787198"
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694255757125:android:9fffc2ff8131ea88",
+        "android_client_info": {
+          "package_name": "jp.juggler.kpdownloader.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "694255757125-emlsgvh237g3sr13ia92r70m08qkc16i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQYPC9qts5KMMc8_-9d79M9VwJsn1jkjE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      },
+      "admob_app_id": "ca-app-pub-5890454442862024~7191850391"
+    }
+  ],
+  "configuration_version": "1"
+}
