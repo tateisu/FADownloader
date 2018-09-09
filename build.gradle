@@ -6,7 +6,8 @@ buildscript {
     ext.kotlinx_coroutines_version = '0.25.3'
     ext.anko_version = '0.10.5'
 
-    // Google API と Firebase が追いつかないと Support Libraryのバージョンを上げられない
+    // Google Api の play-services-location が更新されないとASLのバージョンを上げられない
+    ext.min_sdk_version = 15
     ext.target_sdk_version = 26
     ext.asl_version = '26.1.0'
 
