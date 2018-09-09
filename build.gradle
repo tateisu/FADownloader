@@ -3,8 +3,11 @@
 buildscript {
 
     ext.kotlin_version = '1.2.61'
-    ext.kotlin_coroutines_version = '0.24.0'
+    ext.kotlinx_coroutines_version = '0.25.3'
     ext.anko_version = '0.10.5'
+
+    // Google API と Firebase が追いつかないと Support Libraryのバージョンを上げられない
+    ext.target_sdk_version = 26
     ext.asl_version = '26.1.0'
 
     repositories {
@@ -12,9 +15,10 @@ buildscript {
         google()
         mavenCentral()
     }
+
     dependencies {
         classpath 'com.android.tools.build:gradle:3.1.4'
-        classpath 'com.google.gms:google-services:3.2.1'
+        classpath 'com.google.gms:google-services:4.1.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }

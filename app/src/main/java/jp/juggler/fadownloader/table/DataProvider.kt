@@ -1,5 +1,6 @@
 package jp.juggler.fadownloader.table
 
+import android.annotation.SuppressLint
 import android.content.ContentProvider
 import android.content.ContentValues
 import android.content.Context
@@ -10,52 +11,52 @@ import android.net.Uri
 
 import config.BuildVariant
 
+@SuppressLint("Registered")
 class DataProvider : ContentProvider() {
-	
 	
 	companion object {
 		
-		internal val AUTHORITY = BuildVariant.DATA_PROVIDER_AUTHORITY
+		internal const val AUTHORITY = BuildVariant.DATA_PROVIDER_AUTHORITY
+		internal const val DB_NAME = "data"
+
+		internal const val DB_SCHEMA_VERSION = 5
 		
-		internal val DB_NAME = "data"
-		internal val DB_SCHEMA_VERSION = 4
+		private val metaList = arrayOf(LogData.meta, DownloadRecord.meta)
 		
 		init {
-			LogData.meta.registerUri(AUTHORITY, "log")
-			DownloadRecord.meta.registerUri(AUTHORITY, "dr")
+			for(meta in metaList) {
+				meta.registerUri()
+			}
 		}
 	}
 	
-	
-	private var mDBHelper : DBHelper1? = null
-	
-	internal class DBHelper1(context : Context) :
-		SQLiteOpenHelper(context,
-			DB_NAME, null,
-			DB_SCHEMA_VERSION
-		) {
+	private class DBHelper1(context : Context) :
+		SQLiteOpenHelper(context, DB_NAME, null, DB_SCHEMA_VERSION) {
 		
 		override fun onCreate(db : SQLiteDatabase) {
-			LogData.meta.onDBCreate(db)
-			DownloadRecord.meta.onDBCreate(db)
+			for(meta in metaList) {
+				meta.onDBCreate(db)
+			}
 		}
 		
 		override fun onUpgrade(db : SQLiteDatabase, v_old : Int, v_new : Int) {
-			LogData.meta.onDBUpgrade(db, v_old, v_new)
-			DownloadRecord.meta.onDBUpgrade(db, v_old, v_new)
+			for(meta in metaList) {
+				meta.onDBUpgrade(db, v_old, v_new)
+			}
 		}
 	}
 	
+	private lateinit var mDBHelper : DBHelper1
+	
 	override fun onCreate() : Boolean {
-		mDBHelper = DBHelper1(context)
+		this.mDBHelper = DBHelper1(context)
 		return true
 	}
 	
 	// URIを照合して、mime type 文字列を返す
 	override fun getType(uri : Uri) : String? {
 		val match = TableMeta.matchUri(uri)
-		return match?.meta?.getType(uri, match)
-		
+		return match?.meta?.getType(match)
 	}
 	
 	override fun insert(
@@ -64,7 +65,11 @@ class DataProvider : ContentProvider() {
 		val match = TableMeta.matchUri(uri)
 		
 		return match?.meta?.insert(
-			context !!.contentResolver, mDBHelper !!.writableDatabase, match, uri, values
+			context.contentResolver,
+			mDBHelper.writableDatabase,
+			match,
+			uri,
+			values
 		)
 	}
 	
@@ -74,8 +79,8 @@ class DataProvider : ContentProvider() {
 		val match = TableMeta.matchUri(uri)
 		
 		return match?.meta?.delete(
-			context !!.contentResolver,
-			mDBHelper !!.writableDatabase,
+			context.contentResolver,
+			mDBHelper.writableDatabase,
 			match,
 			uri,
 			selection,
@@ -90,8 +95,8 @@ class DataProvider : ContentProvider() {
 		val match = TableMeta.matchUri(uri)
 		
 		return match?.meta?.update(
-			context !!.contentResolver,
-			mDBHelper !!.writableDatabase,
+			context.contentResolver,
+			mDBHelper.writableDatabase,
 			match,
 			uri,
 			values,
@@ -110,8 +115,8 @@ class DataProvider : ContentProvider() {
 		val match = TableMeta.matchUri(uri)
 		
 		return match?.meta?.query(
-			context !!.contentResolver,
-			mDBHelper !!.writableDatabase,
+			context.contentResolver,
+			mDBHelper.writableDatabase,
 			match,
 			uri,
 			projection,
@@ -120,5 +125,5 @@ class DataProvider : ContentProvider() {
 			sortOrder
 		)
 	}
-
+	
 }

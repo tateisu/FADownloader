@@ -26,7 +26,7 @@ class PageLog(activity : Activity, ignored : View) :
 		internal val filename_date_fmt = SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault())
 	}
 	
-	internal lateinit var lvLog : ListView
+	private lateinit var lvLog : ListView
 	private lateinit var log_viewer : LogViewer
 	
 	override fun onClick(v : View) {

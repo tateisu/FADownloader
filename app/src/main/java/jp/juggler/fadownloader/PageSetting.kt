@@ -17,22 +17,22 @@ import jp.juggler.fadownloader.util.PagerAdapterBase
 class PageSetting(activity : Activity, ignored : View) :
 	PagerAdapterBase.PageViewHolder(activity, ignored), View.OnClickListener {
 	
-	internal lateinit var spTargetType : Spinner
+	private lateinit var spTargetType : Spinner
 	internal lateinit var etTargetUrl : EditText
 	private lateinit var tvLocalFolder : TextView
 	private lateinit var etInterval : EditText
-	internal lateinit var etFileType : EditText
-	internal lateinit var spLocationMode : Spinner
-	internal lateinit var etLocationIntervalDesired : EditText
-	internal lateinit var etLocationIntervalMin : EditText
-	internal lateinit var swForceWifi : Switch
-	internal lateinit var etSSID : EditText
-	internal lateinit var swThumbnailAutoRotate : Switch
-	internal lateinit var swCopyBeforeViewSend : Switch
-	internal lateinit var swProtectedOnly : Switch
-	internal lateinit var swSkipAlreadyDownload : Switch
+	private lateinit var etFileType : EditText
+	private lateinit var spLocationMode : Spinner
+	private lateinit var etLocationIntervalDesired : EditText
+	private lateinit var etLocationIntervalMin : EditText
+	private lateinit var swForceWifi : Switch
+	private lateinit var etSSID : EditText
+	private lateinit var swThumbnailAutoRotate : Switch
+	private lateinit var swCopyBeforeViewSend : Switch
+	private lateinit var swProtectedOnly : Switch
+	private lateinit var swSkipAlreadyDownload : Switch
 	
-	internal lateinit var btnSSIDPicker : View
+	private lateinit var btnSSIDPicker : View
 	internal var bLoading : Boolean = false
 	internal var last_target_type : Int = 0
 	

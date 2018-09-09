@@ -57,10 +57,8 @@ class PqiAirCard(
 	private fun loadFolder(network : Any?, item : ScanItem) {
 		
 		// フォルダを読む
-		val cgi_url = thread.target_url + "cgi-bin/wifi_filelist?fn=/mnt/sd" + Uri.encode(
-			item.remote_path,
-			"/_-"
-		) + if(item.remote_path.length > 1) "/" else ""
+		val lastDelm = if(item.remote_path.length > 1) "/" else ""
+		val cgi_url = "${thread.target_url}cgi-bin/wifi_filelist?fn=/mnt/sd${Uri.encode(item.remote_path,"/_-")}$lastDelm"
 		val data = thread.client.getHTTP(log, network, cgi_url)
 		if(thread.isCancelled) return
 		
@@ -221,7 +219,7 @@ class PqiAirCard(
 				return
 			}
 			
-			val get_url = thread.target_url + "/sd" + Uri.encode(remote_path, "/_-")
+			val get_url = "${thread.target_url}/sd${Uri.encode(remote_path, "/_-")}"
 			val buf = ByteArray(2048)
 			val data = thread.client.getHTTP(
 				log,
@@ -253,7 +251,7 @@ class PqiAirCard(
 						}
 					}
 				} catch(ex : Throwable) {
-					log.e(ex,"HTTP read error.")
+					log.e(ex, "HTTP read error.")
 				}
 				
 				null
@@ -364,10 +362,7 @@ class PqiAirCard(
 					ScanItem(
 						"",
 						"/",
-						LocalFile(
-							service,
-							thread.folder_uri.toString()
-						),
+						LocalFile(service, thread.folder_uri),
 						mime_type = ScanItem.MIME_TYPE_FOLDER
 					)
 				)

@@ -27,7 +27,7 @@ class LogViewer {
 	
 	class Holder(
 		val activity : AppCompatActivity,
-		val listView : ListView
+		private val listView : ListView
 	) : LoaderManager.LoaderCallbacks<Cursor> {
 		
 		private var loader : Loader<Cursor>? = null

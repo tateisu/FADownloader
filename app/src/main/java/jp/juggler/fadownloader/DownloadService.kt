@@ -84,7 +84,7 @@ class DownloadService : Service() {
 	
 	lateinit var log : LogWriter
 	
-	internal var is_alive : Boolean = false
+	private var is_alive : Boolean = false
 	private var cancel_alarm_on_destroy : Boolean = false
 	internal var wake_lock : PowerManager.WakeLock? = null
 	

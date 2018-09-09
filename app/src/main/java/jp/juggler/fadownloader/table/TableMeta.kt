@@ -11,7 +11,10 @@ import android.provider.BaseColumns
 
 import java.util.ArrayList
 
-abstract class TableMeta {
+abstract class TableMeta(
+	private val authority : String,
+	val table : String
+) {
 	
 	companion object {
 		
@@ -24,8 +27,6 @@ abstract class TableMeta {
 			return if(n >= 0 && n < sUriHandlerList.size) sUriHandlerList[n] else null
 		}
 		
-		////////////////////////////////////////////////////////
-		
 		// IDが指定されているかどうかでwhere節の条件を少し変える
 		fun selection_with_id(uri : Uri, selection : String?) : String {
 			val id = java.lang.Long.parseLong(uri.pathSegments[1])
@@ -33,41 +34,18 @@ abstract class TableMeta {
 		}
 	}
 	
+	class MatchResult(val meta : TableMeta, val is_item : Boolean)
 	
 	////////////////////////////////////////////////////////
 	
-	var matcher_idx : Int = 0
-	lateinit var table : String
-	lateinit var authority : String
-	lateinit var content_uri : Uri
-	lateinit var mime_type_dir : String
-	lateinit var mime_type_item : String
+	val content_uri : Uri = Uri.parse("content://$authority/$table")
+	private val mime_type_dir : String = "vnd.android.cursor.dir/$authority.$table"
+	private val mime_type_item : String = "vnd.android.cursor.item/$authority.$table"
 	
-	class MatchResult(val meta : TableMeta, val is_item : Boolean)
-	
-	fun getItemURI(id : Long) : Uri {
-		return Uri.withAppendedPath(content_uri, java.lang.Long.toString(id))
-	}
-	
-	fun getIDFromUri(uri : Uri) : Long {
-		try {
-			val segments = uri.pathSegments
-			return java.lang.Long.parseLong(segments[segments.size - 1], 10)
-		} catch(ex : Throwable) {
-			return - 1
-		}
-		
-	}
-	
-	fun registerUri(authority : String, table : String) {
-		this.authority = authority
+	private var matcher_idx : Int = 0
+
+	fun registerUri() {
 		this.matcher_idx = sUriHandlerList.size
-		this.table = table
-		
-		this.authority = authority
-		this.content_uri = Uri.parse("content://$authority/$table")
-		this.mime_type_dir = "vnd.android.cursor.dir/$authority.$table"
-		this.mime_type_item = "vnd.android.cursor.item/$authority.$table"
 		
 		// uri for group
 		sUriHandlerList.add(
@@ -92,7 +70,20 @@ abstract class TableMeta {
 	
 	abstract fun onDBUpgrade(db : SQLiteDatabase, v_old : Int, v_new : Int)
 	
-	fun getType(uri : Uri, match : MatchResult) : String {
+	//	fun getItemURI(id : Long) : Uri {
+	//		return Uri.withAppendedPath(content_uri, java.lang.Long.toString(id))
+	//	}
+	//
+	//	fun getIDFromUri(uri : Uri) : Long {
+	//		return try {
+	//			val segments = uri.pathSegments
+	//			java.lang.Long.parseLong(segments[segments.size - 1], 10)
+	//		} catch(ex : Throwable) {
+	//			- 1
+	//		}
+	//	}
+	
+	fun getType(match : MatchResult) : String {
 		return if(match.is_item) match.meta.mime_type_item else match.meta.mime_type_dir
 	}
 	
@@ -122,12 +113,10 @@ abstract class TableMeta {
 		selection : String?,
 		selectionArgs : Array<String>?
 	) : Int {
-		val row_count : Int
-		if(match.is_item) {
-			row_count = db.delete(table,
-				selection_with_id(uri, selection), selectionArgs)
+		val row_count = if(match.is_item) {
+			db.delete(table, selection_with_id(uri, selection), selectionArgs)
 		} else {
-			row_count = db.delete(table, selection, selectionArgs)
+			db.delete(table, selection, selectionArgs)
 		}
 		cr.notifyChange(uri, null)
 		return row_count
@@ -142,15 +131,12 @@ abstract class TableMeta {
 		selection : String?,
 		selectionArgs : Array<String>?
 	) : Int {
-		val row_count : Int
-		if(match.is_item) {
-			row_count = db.update(table, values,
-				selection_with_id(uri, selection), selectionArgs)
-			cr.notifyChange(uri, null)
+		val row_count = if(match.is_item) {
+			db.update(table, values, selection_with_id(uri, selection), selectionArgs)
 		} else {
-			row_count = db.update(table, values, selection, selectionArgs)
-			cr.notifyChange(uri, null)
+			db.update(table, values, selection, selectionArgs)
 		}
+		cr.notifyChange(uri, null)
 		return row_count
 	}
 	
@@ -164,13 +150,21 @@ abstract class TableMeta {
 		selectionArgs : Array<String>?,
 		sortOrder : String?
 	) : Cursor {
-		var selection = selection
-		if(match.is_item) selection =
-			selection_with_id(uri, selection)
-		val cursor = db.query(table, projection, selection, selectionArgs, null, null, sortOrder)
+		val cursor = db.query(
+			table,
+			projection,
+			if(match.is_item) {
+				selection_with_id(uri, selection)
+			} else {
+				selection
+			},
+			selectionArgs,
+			null,
+			null,
+			sortOrder
+		)
 		cursor.setNotificationUri(cr, uri)
 		return cursor
 	}
-	
 	
 }

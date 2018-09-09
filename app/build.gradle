@@ -4,22 +4,25 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 26
-    defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 26
 
-        versionCode 19
-        versionName "1.13.0"
+    compileSdkVersion target_sdk_version
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion target_sdk_version
+
+        versionCode 20
+        versionName "1.14.0"
         applicationId "jp.juggler.fadownloader"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
     flavorDimensions "f1"
 
     productFlavors {
@@ -51,31 +54,43 @@ android {
         }
     }
 
+
+//    configurations.all {
+//        // google API や firebase が使う Support Library のバージョンを強制する
+//        // バージョンの衝突の確認方法は cd app && ../gradlew  dependencies  >dep.log
+//        resolutionStrategy.force "com.android.support:support-v4:$asl_version"
+//    }
+}
+
+repositories {
+    mavenCentral()
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
+    //noinspection GradleDependency
     androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     testImplementation 'junit:junit:4.12'
 
-    implementation "com.android.support:appcompat-v7:$asl_version"
-    implementation 'com.google.android.gms:play-services-location:15.0.1'
-    implementation 'com.google.firebase:firebase-ads:15.0.1'
-
     implementation project(':exif')
     implementation project(':billing')
+
+    implementation "com.android.support:appcompat-v7:$asl_version"
+
+    implementation "com.google.android.gms:play-services-location:15.0.1"
+
+    implementation "com.google.firebase:firebase-core:16.0.3"
+    implementation "com.google.firebase:firebase-ads:15.0.1"
 
     implementation 'org.apache.commons:commons-lang3:3.3.2'
     implementation 'commons-io:commons-io:2.6'
     implementation 'com.neovisionaries:nv-websocket-client:2.5'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-
 }
 
 apply plugin: 'com.google.gms.google-services'
-repositories {
-    mavenCentral()
-}
+apply plugin: 'kotlin-kapt'
+

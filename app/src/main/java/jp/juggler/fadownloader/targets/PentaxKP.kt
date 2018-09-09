@@ -39,7 +39,7 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 			Pattern.compile("(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)\\D+(\\d+)")
 	}
 	
-	internal val log= service.log
+	internal val log = service.log
 	
 	internal var mCameraUpdateTime = AtomicLong(0L)
 	internal var mLastBusyTime = AtomicLong(0L)
@@ -132,10 +132,8 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 		}
 	}
 	
-	
-	
-	internal fun loadFolder(network : Any?) : Boolean {
-		val cgi_url = thread.target_url !! + "v1/photos"
+	private fun loadFolder(network : Any?) : Boolean {
+		val cgi_url = "${thread.target_url}v1/photos"
 		var data = thread.client.getHTTP(log, network, cgi_url)
 		if(thread.isCancelled) return false
 		if(data == null) {
@@ -159,7 +157,7 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 				return false
 			}
 			val local_root =
-				LocalFile(service, thread.folder_uri.toString())
+				LocalFile(service, thread.folder_uri)
 			val local_dcim = LocalFile(local_root, "DCIM")
 			var i = 0
 			val ie = root_dir.length()
@@ -214,10 +212,7 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 							// ダウンロード進捗のためにサイズを調べる
 							try {
 								log.d("get file size for %s", remote_path)
-								val get_url = thread.target_url + "v1/photos" + Uri.encode(
-									remote_path,
-									"/_"
-								) + "?size=full"
+								val get_url = "${thread.target_url}v1/photos${Uri.encode(remote_path,"/_")}?size=full"
 								data = thread.client.getHTTP(
 									log,
 									network,
@@ -245,10 +240,7 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 						if(CHECK_FILE_TIME) {
 							try {
 								log.d("get file time for %s", remote_path)
-								val get_url = thread.target_url + "v1/photos" + Uri.encode(
-									remote_path,
-									"/_"
-								) + "/info"
+								val get_url ="${thread.target_url}v1/photos${Uri.encode(remote_path,"/_")}/info"
 								data = thread.client.getHTTP(log, network, get_url)
 								if(thread.isCancelled) return false
 								if(data == null) {
@@ -316,7 +308,7 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 		return false
 	}
 	
-	internal fun loadFile(network : Any?, item : ScanItem) {
+	private fun loadFile(network : Any?, item : ScanItem) {
 		val time_start = SystemClock.elapsedRealtime()
 		
 		try {
@@ -335,43 +327,41 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 				return
 			}
 			
-			val get_url =
-				thread.target_url + "v1/photos" + Uri.encode(remote_path, "/_") + "?size=full"
+			val get_url = "${thread.target_url}v1/photos${Uri.encode(remote_path, "/_")}?size=full"
 			val buf = ByteArray(2048)
-			val data = thread.client.getHTTP(log, network, get_url){ log ,cancel_checker ,inStream,_ ->
-				try {
-					
-					val os = local_file.openOutputStream(service)
-					if(os == null) {
-						log.e("cannot open local output file.")
-					} else {
-						try {
-							while(true) {
-								if(cancel_checker.isCancelled) {
-									return@getHTTP null
-								}
-								val delta = inStream .read(buf)
-								if(delta <= 0) break
-								os.write(buf, 0, delta)
-							}
-							return@getHTTP buf
-						} finally {
+			val data =
+				thread.client.getHTTP(log, network, get_url) { log, cancel_checker, inStream, _ ->
+					try {
+						
+						val os = local_file.openOutputStream(service)
+						if(os == null) {
+							log.e("cannot open local output file.")
+						} else {
 							try {
-								os.close()
-							} catch(ignored : Throwable) {
+								while(true) {
+									if(cancel_checker.isCancelled) {
+										return@getHTTP null
+									}
+									val delta = inStream.read(buf)
+									if(delta <= 0) break
+									os.write(buf, 0, delta)
+								}
+								return@getHTTP buf
+							} finally {
+								try {
+									os.close()
+								} catch(ignored : Throwable) {
+								}
+								
 							}
-							
 						}
+					} catch(ex : Throwable) {
+						log.e("HTTP read error. %s:%s", ex.javaClass.simpleName, ex.message)
 					}
-				} catch(ex : Throwable) {
-					log.e(
-						"HTTP read error. %s:%s", ex.javaClass.getSimpleName(), ex.message
-					)
+					
+					null
+					
 				}
-				
-				null
-				
-			}
 			
 			thread.afterDownload(time_start, data, item)
 			
@@ -425,9 +415,10 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 				thread.setStatus(false, "WebSocket creating")
 				try {
 					val factory = WebSocketFactory()
-					ws_client = factory.createSocket(thread.target_url !! + "v1/changes", 30000)
-					ws_client !!.addListener(ws_listener)
-					ws_client !!.connect()
+					val ws = factory.createSocket( "${thread.target_url}v1/changes", 30000)
+					ws_client = ws
+					ws.addListener(ws_listener)
+					ws.connect()
 					thread.waitEx(2000L)
 				} catch(ex : OpeningHandshakeException) {
 					ex.printStackTrace()
@@ -552,5 +543,5 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 		}
 		
 	}
-
+	
 }

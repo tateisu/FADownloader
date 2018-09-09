@@ -66,9 +66,9 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	}
 	
 	internal lateinit var tvStatus : TextView
-	internal lateinit var pager : ViewPager
 	internal lateinit var handler : Handler
 	
+	private lateinit var pager : ViewPager
 	private lateinit var pager_adapter : PagerAdapterBase
 	private var mAdView : AdView? = null
 	private var permission_alert : WeakReference<Dialog>? = null

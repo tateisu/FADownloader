@@ -118,6 +118,7 @@ class HTTPClient {
 		this.caption = caption
 	}
 	
+	@Suppress("unused")
 	constructor(timeout : Int, max_try : Int, caption : String, _cancel_checker : AtomicBoolean) {
 		this.cancel_checker = object : CancelChecker {
 			override val isCancelled : Boolean
@@ -129,6 +130,7 @@ class HTTPClient {
 		this.caption = caption
 	}
 	
+	@Suppress("unused")
 	fun setCookiePot(enabled : Boolean) {
 		if(enabled == (cookie_pot != null)) return
 		cookie_pot = if(enabled) HashMap() else null
@@ -450,6 +452,7 @@ class HTTPClient {
 	}
 	
 	//! HTTPレスポンスのヘッダを読む
+	@Suppress("unused")
 	fun dump_res_header(log : LogWriter) {
 		log.d("HTTP code %d", rcode)
 		if(response_header != null) {
@@ -461,6 +464,7 @@ class HTTPClient {
 		}
 	}
 	
+	@Suppress("unused")
 	fun get_cache(log : LogWriter, file : File, url : String) : String? {
 		var last_error : String? = null
 		for(nTry in 0 .. 9) {
@@ -554,6 +558,7 @@ class HTTPClient {
 		return last_error
 	}
 	
+	@Suppress("unused")
 	fun getFile(
 		log : LogWriter,
 		cache_dir : File?,
@@ -727,6 +732,7 @@ class HTTPClient {
 	}
 	
 	//! HTTPレスポンスのヘッダを読む
+	@Suppress("unused")
 	fun getHeaderInt(key : String, defval : Int) : Int {
 		val v = getHeaderString(key, null)
 		return try {

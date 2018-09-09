@@ -14,8 +14,6 @@ import android.util.SparseBooleanArray
 import android.util.SparseIntArray
 import android.webkit.MimeTypeMap
 import android.widget.Toast
-import com.google.android.gms.common.ConnectionResult
-import com.google.android.gms.common.api.GoogleApiClient
 import jp.juggler.fadownloader.Receiver1
 import org.w3c.dom.Element
 import org.w3c.dom.NamedNodeMap
@@ -132,6 +130,7 @@ object Utils {
 	}
 	
 	// 文字列と整数の変換
+	@Suppress("unused")
 	fun parse_int(v : String, defVal : Int) : Int {
 		return try {
 			Integer.parseInt(v, 10)
@@ -152,6 +151,7 @@ object Utils {
 		for(c in 'a' .. 'f') put(c.toInt(), (c - 'a') + 10)
 	}
 	
+	@Suppress("unused")
 	fun hex2int(c : Int) : Int {
 		val v : Int? = mapHexInt[c]
 		return v ?: 0
@@ -204,6 +204,7 @@ object Utils {
 	}
 	
 	//! フォントによって全角文字が化けるので、その対策
+	@Suppress("unused")
 	fun font_taisaku(text : String?, lf2br : Boolean) : String? {
 		if(text == null) return null
 		val l = text.length
@@ -255,6 +256,7 @@ object Utils {
 	}
 	
 	@Throws(IOException::class)
+	@Suppress("unused")
 	fun loadFile(file : File) : ByteArray {
 		val size = file.length().toInt()
 		val data = ByteArray(size)
@@ -275,6 +277,7 @@ object Utils {
 		}
 	}
 	
+	@Suppress("unused")
 	fun ellipsize(t : String, max : Int) : String {
 		return if(t.length > max) t.substring(0, max - 1) + "…" else t
 	}
@@ -289,43 +292,7 @@ object Utils {
 	//		log.e("missing resid for %s",name);
 	//		return R.string.Dialog_Cancel;
 	//	}
-	
-	fun getConnectionResultErrorMessage(connectionResult : ConnectionResult) : String {
-		val code = connectionResult.errorCode
-		val msg = connectionResult.errorMessage
-		if(msg?.isNotEmpty() == true) return msg
-		return when(code) {
-			ConnectionResult.SUCCESS -> "SUCCESS"
-			ConnectionResult.SERVICE_MISSING -> "SERVICE_MISSING"
-			ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED -> "SERVICE_VERSION_UPDATE_REQUIRED"
-			ConnectionResult.SERVICE_DISABLED -> "SERVICE_DISABLED"
-			ConnectionResult.SIGN_IN_REQUIRED -> "SIGN_IN_REQUIRED"
-			ConnectionResult.INVALID_ACCOUNT -> "INVALID_ACCOUNT"
-			ConnectionResult.RESOLUTION_REQUIRED -> "RESOLUTION_REQUIRED"
-			ConnectionResult.NETWORK_ERROR -> "NETWORK_ERROR"
-			ConnectionResult.INTERNAL_ERROR -> "INTERNAL_ERROR"
-			ConnectionResult.SERVICE_INVALID -> "SERVICE_INVALID"
-			ConnectionResult.DEVELOPER_ERROR -> "DEVELOPER_ERROR"
-			ConnectionResult.LICENSE_CHECK_FAILED -> "LICENSE_CHECK_FAILED"
-			ConnectionResult.CANCELED -> "CANCELED"
-			ConnectionResult.TIMEOUT -> "TIMEOUT"
-			ConnectionResult.INTERRUPTED -> "INTERRUPTED"
-			ConnectionResult.API_UNAVAILABLE -> "API_UNAVAILABLE"
-			ConnectionResult.SIGN_IN_FAILED -> "SIGN_IN_FAILED"
-			ConnectionResult.SERVICE_UPDATING -> "SERVICE_UPDATING"
-			ConnectionResult.SERVICE_MISSING_PERMISSION -> "SERVICE_MISSING_PERMISSION"
-			ConnectionResult.RESTRICTED_PROFILE -> "RESTRICTED_PROFILE"
-			else -> "Unknwonn($code,$msg)"
-		}
-	}
-	
-	fun getConnectionSuspendedMessage(i : Int) : String {
-		return when(i) {
-			GoogleApiClient.ConnectionCallbacks.CAUSE_NETWORK_LOST -> "NETWORK_LOST"
-			GoogleApiClient.ConnectionCallbacks.CAUSE_SERVICE_DISCONNECTED -> "SERVICE_DISCONNECTED"
-			else -> "?"
-		}
-	}
+
 	
 	private fun findMimeTypeEx(ext : String?) : String? {
 		ext ?: return null
@@ -381,35 +348,36 @@ object Utils {
 		val result = HashMap<String, String>()
 		try {
 			
-			val sm =
-				context.applicationContext.getSystemService(Context.STORAGE_SERVICE) as StorageManager
-			
-			// SDカードスロットのある7.0端末が手元にないから検証できない
-			//			if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ){
-			//				for(StorageVolume volume : sm.getStorageVolumes() ){
-			//					// String path = volume.getPath();
-			//					String state = volume.getState();
-			//
-			//				}
-			//			}
-			
-			val getVolumeList = sm.javaClass.getMethod("getVolumeList")
-			val volumes = getVolumeList.invoke(sm) as Array<Any>
-			//
-			for(volume in volumes) {
-				val volume_clazz = volume.javaClass
+			val storageManager =
+				context.applicationContext.getSystemService(Context.STORAGE_SERVICE) as? StorageManager
+			if( storageManager != null){
+				// SDカードスロットのある7.0端末が手元にないから検証できない
+				//			if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ){
+				//				for(StorageVolume volume : sm.getStorageVolumes() ){
+				//					// String path = volume.getPath();
+				//					String state = volume.getState();
+				//
+				//				}
+				//			}
 				
-				val path = volume_clazz.getMethod("getPath").invoke(volume) as String
-				val state = volume_clazz.getMethod("getState").invoke(volume) as String
-				if(! TextUtils.isEmpty(path) && "mounted" == state) {
-					//
-					val isPrimary = volume_clazz.getMethod("isPrimary").invoke(volume) as Boolean
-					if(isPrimary) result["primary"] = path
-					//
-					val uuid = volume_clazz.getMethod("getUuid").invoke(volume) as String
-					if(! TextUtils.isEmpty(uuid)) result[uuid] = path
+				val volumes = storageManager.javaClass.getMethod("getVolumeList").invoke(storageManager)
+				if(volumes is Array<*>){
+					for(volume in volumes) {
+						val volume_clazz = volume?.javaClass ?: continue
+						val path = volume_clazz.getMethod("getPath").invoke(volume) as? String
+						val state = volume_clazz.getMethod("getState").invoke(volume) as? String
+						if( path?.isNotEmpty() == true && "mounted" == state) {
+							//
+							val isPrimary = volume_clazz.getMethod("isPrimary").invoke(volume) as? Boolean
+							if(isPrimary == true) result["primary"] = path
+							//
+							val uuid = volume_clazz.getMethod("getUuid").invoke(volume) as? String
+							if( uuid?.isNotEmpty() == true ) result[uuid] = path
+						}
+					}
 				}
 			}
+			
 		} catch(ex : Throwable) {
 			ex.printStackTrace()
 		}
@@ -488,6 +456,7 @@ object Utils {
 		}
 	}
 	
+	@Suppress("unused")
 	fun showToast(context : Context, ex : Throwable, string_id : Int, vararg args : Any) {
 		runOnMainThread {
 			Toast.makeText(
@@ -610,10 +579,13 @@ fun ByteArray.digestMD5() : String {
 }
 
 // MD5ハッシュの作成
+@Suppress("unused")
 fun String.digestMD5() = this.encodeUTF8().digestMD5()
 
 fun Cursor.getStringOrNull(idx:Int) = if(isNull(idx)) null else getString(idx)
 
+@Suppress("unused")
 fun String.toLower()  = toLowerCase(Locale.US)
 
+@Suppress("unused")
 fun String.toUpper() = toUpperCase(Locale.US)

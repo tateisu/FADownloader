@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 abstract class WorkerBase : Thread(), CancelChecker {
 	
-	internal val cancel_reason = AtomicReference<String>(null)
+	private val cancel_reason = AtomicReference<String>(null)
 	
 	override val isCancelled : Boolean
 		get() = cancel_reason.get() != null

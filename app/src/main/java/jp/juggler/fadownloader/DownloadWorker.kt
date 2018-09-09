@@ -69,20 +69,18 @@ class DownloadWorker : WorkerBase {
 			else -> false
 		}
 	
-	private val isForcedSSID : Boolean
-		get() {
-			if(! force_wifi) return true
+	// SSID強制が指定されていない、または接続中のWi-FiのSSIDが指定されたものと同じなら真
+	private val isValidSsid : Boolean
+		get() = if(! force_wifi) {
+			true
+		} else {
 			val wm =
-				service.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
-			return if(wm == null) {
-				false
-			} else {
-				val wi = wm.connectionInfo
-				val current_ssid = wi.ssid.replace("\"", "")
-				! TextUtils.isEmpty(current_ssid) && current_ssid == this.ssid
-			}
+				service.applicationContext.getSystemService(Context.WIFI_SERVICE)
+					as? WifiManager
+			this.ssid == wm?.connectionInfo?.ssid?.replace("\"", "")
 		}
 	
+	@Suppress("DEPRECATION")
 	val wifiNetwork : Any?
 		get() {
 			val cm =
@@ -94,12 +92,13 @@ class DownloadWorker : WorkerBase {
 				Build.VERSION.SDK_INT >= 21 -> for(n in cm.allNetworks) {
 					val info = cm.getNetworkInfo(n)
 					if(info.isConnected && info.type == ConnectivityManager.TYPE_WIFI) {
-						if(isForcedSSID) return n
+						if(isValidSsid) return n
 					}
 				}
+				
 				else -> for(info in cm.allNetworkInfo) {
 					if(info.isConnected && info.type == ConnectivityManager.TYPE_WIFI) {
-						return if(isForcedSSID) info else info
+						if(isValidSsid) return info
 					}
 				}
 			}
@@ -219,17 +218,20 @@ class DownloadWorker : WorkerBase {
 		
 		log.i(R.string.thread_ctor_restart, cause)
 		val pref = Pref.pref(service)
-		this.repeat = Pref.workerRepeat (pref)
-		this.target_url = Pref.workerTargetUrl (pref)
-		this.folder_uri = Pref.workerFolderUri (pref)
-		this.intervalSeconds =Pref.workerInterval (pref)
-		this.file_type = Pref.workerFileType (pref)
+		this.repeat = Pref.workerRepeat(pref)
+		this.target_url = Pref.workerTargetUrl(pref)
+		this.folder_uri = Pref.workerFolderUri(pref)
+		this.intervalSeconds = Pref.workerInterval(pref)
+		this.file_type = Pref.workerFileType(pref)
 		
-		this.force_wifi =Pref.workerForceWifi (pref) // pref.getBoolean(Pref.WORKER_FORCE_WIFI, false)
-		this.ssid = Pref.workerSsid (pref) //pref.getString(Pref.WORKER_SSID, null)
-		this.target_type = Pref.workerTargetType (pref) //pref.getInt(Pref.WORKER_TARGET_TYPE, 0)
-		this.protected_only = Pref.workerProtectedOnly (pref) //pref.getBoolean(Pref.WORKER_PROTECTED_ONLY, false)
-		this.skip_already_download = Pref.workerSkipAlreadyDownload (pref) //pref.getBoolean(Pref.WORKER_SKIP_ALREADY_DOWNLOAD, false)
+		this.force_wifi =
+			Pref.workerForceWifi(pref) // pref.getBoolean(Pref.WORKER_FORCE_WIFI, false)
+		this.ssid = Pref.workerSsid(pref) //pref.getString(Pref.WORKER_SSID, null)
+		this.target_type = Pref.workerTargetType(pref) //pref.getInt(Pref.WORKER_TARGET_TYPE, 0)
+		this.protected_only =
+			Pref.workerProtectedOnly(pref) //pref.getBoolean(Pref.WORKER_PROTECTED_ONLY, false)
+		this.skip_already_download =
+			Pref.workerSkipAlreadyDownload(pref) //pref.getBoolean(Pref.WORKER_SKIP_ALREADY_DOWNLOAD, false)
 		
 		this.location_setting = LocationTracker.Setting()
 		location_setting.interval_desired = Pref.workerLocationIntervalDesired(pref)
@@ -601,7 +603,7 @@ class DownloadWorker : WorkerBase {
 			callback.onAllFileCompleted(0)
 			
 			Pref.pref(service).edit()
-				.put(Pref.lastMode,Pref.LAST_MODE_STOP)
+				.put(Pref.lastMode, Pref.LAST_MODE_STOP)
 				.apply()
 			cancel(service.getString(R.string.repeat_off))
 			complete_and_no_repeat = true

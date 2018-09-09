@@ -67,7 +67,7 @@ class FolderPicker : AppCompatActivity(), View.OnClickListener, AdapterView.OnIt
 	internal lateinit var tvCurrentFolder : TextView
 	internal lateinit var btnFolderUp : View
 	internal lateinit var btnSubFolder : View
-	internal lateinit var lvFileList : ListView
+	private lateinit var lvFileList : ListView
 	internal lateinit var btnSelectFolder : Button
 	internal lateinit var list_adapter : ArrayAdapter<String>
 

@@ -61,7 +61,7 @@ class DownloadRecordViewer {
 	
 	class Holder(
 		val activity : AppCompatActivity,
-		val listView : ListView
+		private val listView : ListView
 	) : AdapterView.OnItemClickListener, LoaderManager.LoaderCallbacks<Cursor> {
 		
 		
@@ -69,7 +69,6 @@ class DownloadRecordViewer {
 		
 		init {
 			listView.onItemClickListener = this
-			
 		}
 		
 		internal fun onStart(loader_id : Int) {
@@ -158,9 +157,9 @@ class DownloadRecordViewer {
 		
 		internal inner class ViewHolder(root : View) {
 			
-			val tvName : TextView = root.findViewById<View>(R.id.tvName) as TextView
-			val tvTime : TextView = root.findViewById<View>(R.id.tvTime) as TextView
-			val tvStateCode : TextView = root.findViewById<View>(R.id.tvStateCode) as TextView
+			private val tvName : TextView = root.findViewById<View>(R.id.tvName) as TextView
+			private val tvTime : TextView = root.findViewById<View>(R.id.tvTime) as TextView
+			private val tvStateCode : TextView = root.findViewById<View>(R.id.tvStateCode) as TextView
 			val ivThumbnail : ImageView = root.findViewById<View>(R.id.ivThumbnail) as ImageView
 			
 			var last_image_uri : String? = null

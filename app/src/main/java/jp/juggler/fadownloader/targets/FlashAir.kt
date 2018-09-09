@@ -28,7 +28,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 	private var flashair_update_status = 0L
 	
 	private fun getFlashAirUpdateStatus(network : Any?) : Long {
-		val cgi_url = thread.target_url !! + "command.cgi?op=121"
+		val cgi_url = "${thread.target_url}command.cgi?op=121"
 		val data = thread.client.getHTTP(log, network, cgi_url)
 		if(thread.isCancelled) return ERROR_CONTINUE
 		
@@ -50,7 +50,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 	private fun loadFolder(network : Any?, item : ScanItem) {
 		
 		// フォルダを読む
-		val cgi_url = thread.target_url + "command.cgi?op=100&DIR=" + Uri.encode(item.remote_path)
+		val cgi_url =  "${thread.target_url}command.cgi?op=100&DIR=${Uri.encode(item.remote_path)}"
 		val data = thread.client.getHTTP(log, network, cgi_url)
 		if(thread.isCancelled) return
 		
@@ -186,7 +186,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 				return
 			}
 			
-			val get_url = thread.target_url !! + Uri.encode(remote_path)
+			val get_url = "${thread.target_url}${Uri.encode(remote_path)}"
 			val buf = ByteArray(2048)
 			val data = thread.client.getHTTP(
 				log,

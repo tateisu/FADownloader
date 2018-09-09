@@ -19,23 +19,12 @@ import jp.juggler.fadownloader.util.LogWriter
 import jp.juggler.fadownloader.util.Utils
 import jp.juggler.fadownloader.util.WorkerBase
 import jp.juggler.fadownloader.util.decodeUTF8
-
 import org.apache.commons.io.IOUtils
-
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
-import java.net.DatagramPacket
-import java.net.DatagramSocket
-import java.net.HttpURLConnection
-import java.net.InetAddress
-import java.net.NetworkInterface
-import java.net.SocketException
-import java.net.URL
-import java.util.ArrayList
-import java.util.Collections
-import java.util.Comparator
-import java.util.LinkedList
+import java.net.*
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern
@@ -499,8 +488,10 @@ class NetworkTracker(
 						for(wc in wc_list) {
 							val ssid = wc.SSID.replace("\"", "")
 							
-							if(wc.priority > priority_max) {
-								priority_max = wc.priority
+							val p = getPriority(wc)
+							
+							if(p > priority_max) {
+								priority_max = p
 							}
 							
 							// 目的のAPを覚えておく
@@ -540,25 +531,8 @@ class NetworkTracker(
 				}
 
 				if( Build.VERSION.SDK_INT < 26){
-					try {
-						// priority の変更
-						val p = target_config.priority
-						if(p != priority_max) {
-							priority_list.add(p)
-							if(priority_list.size > 5) priority_list.removeFirst()
-							if(priority_list.size < 5 || priority_list.first.toInt() != priority_list.last.toInt()) {
-								// まだ上がるか試してみる
-								target_config.priority = priority_max + 1
-								wifiManager.updateNetwork(target_config)
-								wifiManager.saveConfiguration()
-								////頻出するのでログ出さない log.d( R.string.wifi_ap_priority_changed );
-							}
-						}
-					} catch(ex : Throwable) {
-						ex.printStackTrace()
-						error_status =
-							LogWriter.formatError(ex, "updateNetwork() or saveConfiguration() failed.")
-					}
+					val error = updatePriority(target_config,priority_max)
+					if(error != null) error_status = error
 				}
 				
 				// 目的のAPが選択されていた場合
@@ -664,6 +638,36 @@ class NetworkTracker(
 					log.w(force_status)
 				}
 			}
+		}
+		
+		// API 26以降でpriorityは使えなくなった
+		@Suppress("DEPRECATION")
+		private fun getPriority(wc:WifiConfiguration):Int{
+			return wc.priority
+		}
+
+		// API 26以降でpriorityは使えなくなった
+		@Suppress("DEPRECATION")
+		private fun updatePriority(target_config:WifiConfiguration,priority_max:Int) :String? {
+			try {
+				// priority の変更
+				val p = target_config.priority
+				if(p != priority_max) {
+					priority_list.add(p)
+					if(priority_list.size > 5) priority_list.removeFirst()
+					if(priority_list.size < 5 || priority_list.first.toInt() != priority_list.last.toInt()) {
+						// まだ上がるか試してみる
+						target_config.priority = priority_max + 1
+						wifiManager.updateNetwork(target_config)
+						wifiManager.saveConfiguration()
+						////頻出するのでログ出さない log.d( R.string.wifi_ap_priority_changed );
+					}
+				}
+			} catch(ex : Throwable) {
+				ex.printStackTrace()
+				return LogWriter.formatError(ex, "updateNetwork() or saveConfiguration() failed.")
+			}
+			return null
 		}
 		
 		override fun run() {

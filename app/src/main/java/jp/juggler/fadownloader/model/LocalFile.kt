@@ -28,9 +28,14 @@ import java.util.*
 
 class LocalFile(
 	val parent : LocalFile? = null,
-	val name : String? =null,
-	var local_file : Any? = null // 未探索の間はnull
-){
+	val name : String? = null,
+	private var local_file : Any? = null // 未探索の間はnull
+) {
+	
+	companion object {
+		const val DOCUMENT_FILE_VERSION = 21
+	}
+	
 	// local_fileで表現されたフォルダ中に含まれるエントリの一覧
 	// 適当にキャッシュする
 	private var child_list : ArrayList<Any>? = null
@@ -52,17 +57,15 @@ class LocalFile(
 				val mid = start + end shr 1
 				val x = child_list !![mid]
 				val i : Int
-				if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
-					i = target_name.compareTo((x as DocumentFile).name)
+				i = if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
+					target_name.compareTo((x as DocumentFile).name)
 				} else {
-					i = target_name.compareTo((x as File).name)
+					target_name.compareTo((x as File).name)
 				}
-				if(i < 0) {
-					end = mid
-				} else if(i > 0) {
-					start = mid + 1
-				} else {
-					return x
+				when {
+					i < 0 -> end = mid
+					i > 0 -> start = mid + 1
+					else -> return x
 				}
 			}
 		}
@@ -125,10 +128,10 @@ class LocalFile(
 		return local_file != null
 	}
 	
-	fun prepareFile(log : LogWriter, bCreate : Boolean, mime_type : String?) : Boolean {
-		var mime_type = mime_type
+	fun prepareFile(log : LogWriter, bCreate : Boolean, mimeTypeArg : String?) : Boolean {
+		var mime_type = mimeTypeArg
 		try {
-			if(local_file == null && parent != null && name != null ) {
+			if(local_file == null && parent != null && name != null) {
 				if(parent.prepareDirectory(log, bCreate)) {
 					local_file = parent.findChild(log, bCreate, name)
 					if(local_file == null && bCreate) {
@@ -163,33 +166,33 @@ class LocalFile(
 		} else 0L
 	}
 	
-	fun isFile(log : LogWriter) : Boolean {
-		return if(prepareFile(log, false, null)) {
-			if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
-				(local_file as DocumentFile).isFile
-			} else {
-				(local_file as File).isFile
-			}
-		} else false
-	}
+	//	fun isFile(log : LogWriter) : Boolean {
+	//		return if(prepareFile(log, false, null)) {
+	//			if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
+	//				(local_file as DocumentFile).isFile
+	//			} else {
+	//				(local_file as File).isFile
+	//			}
+	//		} else false
+	//	}
 	
 	@Throws(FileNotFoundException::class)
 	fun openOutputStream(context : Context) : OutputStream? {
-		if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
+		return if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
 			val file_uri = (local_file as DocumentFile).uri
-			return context.contentResolver.openOutputStream(file_uri)
+			context.contentResolver.openOutputStream(file_uri)
 		} else {
-			return FileOutputStream(local_file as File?)
+			FileOutputStream(local_file as File?)
 		}
 	}
 	
 	@Throws(FileNotFoundException::class)
 	fun openInputStream(context : Context) : InputStream? {
-		if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
+		return if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
 			val file_uri = (local_file as DocumentFile).uri
-			return context.contentResolver.openInputStream(file_uri)
+			context.contentResolver.openInputStream(file_uri)
 		} else {
-			return FileInputStream(local_file as File?)
+			FileInputStream(local_file as File?)
 		}
 	}
 	
@@ -201,15 +204,15 @@ class LocalFile(
 		}
 	}
 	
-	fun renameTo(name : String) : Boolean {
-		return if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
-			(local_file as DocumentFile).renameTo(name)
-		} else {
-			(local_file as File).renameTo(
-				File((local_file as File).parentFile, name)
-			)
-		}
-	}
+	//	fun renameTo(name : String) : Boolean {
+	//		return if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
+	//			(local_file as DocumentFile).renameTo(name)
+	//		} else {
+	//			(local_file as File).renameTo(
+	//				File((local_file as File).parentFile, name)
+	//			)
+	//		}
+	//	}
 	
 	fun getFileUri(log : LogWriter) : String? {
 		if(! prepareFile(log, false, null)) return null
@@ -244,11 +247,6 @@ class LocalFile(
 			log.e("setLastModified() failed.")
 		}
 		
-	}
-	
-	companion object {
-		
-		val DOCUMENT_FILE_VERSION = 21
 	}
 	
 }

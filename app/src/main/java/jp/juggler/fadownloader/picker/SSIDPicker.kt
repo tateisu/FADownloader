@@ -40,7 +40,7 @@ class SSIDPicker : AppCompatActivity(), AdapterView.OnItemClickListener, View.On
 		}
 	}
 	
-	internal lateinit var listView : ListView
+	private lateinit var listView : ListView
 	private lateinit var list_adapter : ArrayAdapter<String>
 	private lateinit var wifi_manager : WifiManager
 	

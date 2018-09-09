@@ -8,7 +8,7 @@ import jp.juggler.fadownloader.util.PagerAdapterBase
 class PageRecord(activity : Activity, ignored : View) :
 	PagerAdapterBase.PageViewHolder(activity, ignored) {
 	
-	internal lateinit var listView : ListView
+	private lateinit var listView : ListView
 	internal lateinit var viewer : DownloadRecordViewer
 	
 	@Throws(Throwable::class)
@@ -30,7 +30,7 @@ class PageRecord(activity : Activity, ignored : View) :
 		viewer.onStart(activity as ActMain, listView, ActMain.LOADER_ID_RECORD)
 	}
 	
-	internal fun onStop() {
+	private fun onStop() {
 		viewer.onStop()
 	}
 }

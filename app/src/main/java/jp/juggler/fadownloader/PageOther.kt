@@ -12,7 +12,7 @@ import java.util.*
 class PageOther(activity : Activity, ignored : View) :
 	PagerAdapterBase.PageViewHolder(activity, ignored), View.OnClickListener {
 	
-	internal lateinit var btnRemoveAd : View
+	private lateinit var btnRemoveAd : View
 	
 	@Throws(Throwable::class)
 	override fun onPageCreate(page_idx : Int, root : View) {
