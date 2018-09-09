@@ -1,9 +1,10 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.util
 
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.content.res.Resources
+import jp.juggler.fadownloader.table.LogData
 
 class LogWriter(c : Context) {
 	

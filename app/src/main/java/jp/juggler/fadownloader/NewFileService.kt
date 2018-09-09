@@ -1,53 +1,70 @@
 package jp.juggler.fadownloader
 
 import android.app.IntentService
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
+import jp.juggler.fadownloader.util.LogWriter
+import jp.juggler.fadownloader.util.NotificationHelper
 
 class NewFileService : IntentService("DownloadCountService") {
 	
 	companion object {
 		
 		internal const val NOTIFICATION_ID_DOWNLOAD_COMPLETE = 2
-		
 		internal const val ACTION_TAP = "tap"
 		private const val ACTION_DELETE = "delete"
 		
 		fun hasHiddenDownloadCount(context : Context) : Boolean {
-			val previous_count = Pref.pref(context).getLong(Pref.DOWNLOAD_COMPLETE_COUNT_HIDDEN, 0L)
+			val previous_count = Pref.downloadCompleteCountHidden(Pref.pref(context))
 			return previous_count > 0L
 		}
 		
-		fun addHiddenDownloadCount(context : Context, delta : Long) {
+		fun addHiddenDownloadCount(context : Context, delta : Long,log:LogWriter) {
 			val pref = Pref.pref(context)
-			var hidden_count = pref.getLong(Pref.DOWNLOAD_COMPLETE_COUNT_HIDDEN, 0L)
+			var hidden_count =Pref.downloadCompleteCountHidden(pref)
 			if(hidden_count < 0L) hidden_count = 0L
 			
 			if(delta > 0L) {
 				hidden_count += delta
-				pref.edit().putLong(Pref.DOWNLOAD_COMPLETE_COUNT_HIDDEN, hidden_count).apply()
+				pref.edit().put(Pref.downloadCompleteCountHidden, hidden_count).apply()
 				return
 			} else if(hidden_count > 0) {
-				var count = pref.getLong(Pref.DOWNLOAD_COMPLETE_COUNT, 0L)
+				var count = Pref.downloadCompleteCount(pref)
 				if(count < 0L) count = 0L
 				count += hidden_count
 				hidden_count = 0L
 				pref.edit()
-					.putLong(Pref.DOWNLOAD_COMPLETE_COUNT_HIDDEN, hidden_count)
-					.putLong(Pref.DOWNLOAD_COMPLETE_COUNT, count)
+					.put(Pref.downloadCompleteCountHidden, hidden_count)
+					.put(Pref.downloadCompleteCount, count)
 					.apply()
 				
-				showCount(context, count)
+				showCount(context, count,log)
 			}
 		}
 		
-		private fun showCount(context : Context, count : Long) {
+		private fun showCount(context : Context, count : Long,log:LogWriter) {
 			if(count <= 0L) return
 			
-			val builder = NotificationCompat.Builder(context)
+			val builder = if(Build.VERSION.SDK_INT >= 26) {
+				// Android 8 から、通知のスタイルはユーザが管理することになった
+				// NotificationChannel を端末に登録しておけば、チャネルごとに管理画面が作られる
+				val channel = NotificationHelper.createNotificationChannel(
+					context,
+					"NewFileDownloaded",
+					"New file downloaded",
+					"this notification is shown when new file was downloaded.",
+					NotificationManager.IMPORTANCE_DEFAULT,
+					log
+				)
+				NotificationCompat.Builder(context, channel.id)
+			} else {
+				NotificationCompat.Builder(context, "not_used")
+			}
 			builder.setSmallIcon(R.drawable.ic_service)
 			builder.setContentTitle(context.getString(R.string.app_name))
 			builder.setContentText(
@@ -98,7 +115,7 @@ class NewFileService : IntentService("DownloadCountService") {
 			startActivity(intent)
 		}
 		NotificationManagerCompat.from(this).cancel(NOTIFICATION_ID_DOWNLOAD_COMPLETE)
-		Pref.pref(this).edit().putLong(Pref.DOWNLOAD_COMPLETE_COUNT, 0).apply()
+		Pref.pref(this).edit().put(Pref.downloadCompleteCount, 0).apply()
 		NewFileWidget.update(this)
 	}
 	

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.view.View
+import jp.juggler.fadownloader.table.DownloadRecord
 import java.util.*
 
 class PageOther(activity : Activity, ignored : View) :

@@ -5,6 +5,8 @@ import android.net.Uri
 import android.os.Build
 import android.support.v4.provider.DocumentFile
 import android.text.TextUtils
+import jp.juggler.fadownloader.util.LogWriter
+import jp.juggler.fadownloader.util.Utils
 import java.io.*
 import java.util.*
 

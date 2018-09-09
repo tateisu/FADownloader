@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.CursorAdapter
 import android.widget.ListView
 import android.widget.TextView
+import jp.juggler.fadownloader.table.LogData
 
 import java.text.SimpleDateFormat
 import java.util.Locale

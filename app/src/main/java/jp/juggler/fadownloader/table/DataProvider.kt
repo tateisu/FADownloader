@@ -1,4 +1,4 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.table
 
 import android.content.ContentProvider
 import android.content.ContentValues
@@ -30,7 +30,10 @@ class DataProvider : ContentProvider() {
 	private var mDBHelper : DBHelper1? = null
 	
 	internal class DBHelper1(context : Context) :
-		SQLiteOpenHelper(context, DB_NAME, null, DB_SCHEMA_VERSION) {
+		SQLiteOpenHelper(context,
+			DB_NAME, null,
+			DB_SCHEMA_VERSION
+		) {
 		
 		override fun onCreate(db : SQLiteDatabase) {
 			LogData.meta.onDBCreate(db)

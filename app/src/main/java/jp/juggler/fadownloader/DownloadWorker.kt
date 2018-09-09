@@ -19,10 +19,14 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern
 
 import it.sephiroth.android.library.exif2.ExifInterface
+import jp.juggler.fadownloader.model.ScanItem
+import jp.juggler.fadownloader.table.DownloadRecord
 import jp.juggler.fadownloader.targets.FlashAir
 import jp.juggler.fadownloader.targets.PentaxKP
 import jp.juggler.fadownloader.targets.PqiAirCard
 import jp.juggler.fadownloader.util.HTTPClient
+import jp.juggler.fadownloader.util.LogWriter
+import jp.juggler.fadownloader.util.Utils
 import jp.juggler.fadownloader.util.WorkerBase
 
 class DownloadWorker : WorkerBase {
@@ -42,10 +46,10 @@ class DownloadWorker : WorkerBase {
 	val callback : Callback
 	
 	val repeat : Boolean
-	var target_url : String? = null
-	val folder_uri : String?
-	val interval : Int
-	val file_type : String?
+	var target_url : String = ""
+	val folder_uri : String
+	val intervalSeconds : Int
+	val file_type : String
 	val log : LogWriter
 	val file_type_list : ArrayList<Pattern>
 	private val force_wifi : Boolean
@@ -77,7 +81,7 @@ class DownloadWorker : WorkerBase {
 			}
 		}
 	
-	val wiFiNetwork : Any?
+	val wifiNetwork : Any?
 		get() {
 			val cm =
 				service.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
@@ -164,7 +168,7 @@ class DownloadWorker : WorkerBase {
 		this.repeat = intent.getBooleanExtra(DownloadService.EXTRA_REPEAT, false)
 		this.target_url = intent.getStringExtra(DownloadService.EXTRA_TARGET_URL)
 		this.folder_uri = intent.getStringExtra(DownloadService.EXTRA_LOCAL_FOLDER)
-		this.interval = intent.getIntExtra(DownloadService.EXTRA_INTERVAL, 86400)
+		this.intervalSeconds = intent.getIntExtra(DownloadService.EXTRA_INTERVAL, 86400)
 		this.file_type = intent.getStringExtra(DownloadService.EXTRA_FILE_TYPE)
 		this.force_wifi = intent.getBooleanExtra(DownloadService.EXTRA_FORCE_WIFI, false)
 		this.ssid = intent.getStringExtra(DownloadService.EXTRA_SSID)
@@ -185,19 +189,19 @@ class DownloadWorker : WorkerBase {
 			intent.getIntExtra(DownloadService.EXTRA_LOCATION_MODE, LocationTracker.DEFAULT_MODE)
 		
 		Pref.pref(service).edit()
-			.putBoolean(Pref.WORKER_REPEAT, repeat)
-			.putInt(Pref.WORKER_TARGET_TYPE, target_type)
-			.putString(Pref.WORKER_FLASHAIR_URL, target_url)
-			.putString(Pref.WORKER_FOLDER_URI, folder_uri)
-			.putInt(Pref.WORKER_INTERVAL, interval)
-			.putString(Pref.WORKER_FILE_TYPE, file_type)
-			.putLong(Pref.WORKER_LOCATION_INTERVAL_DESIRED, location_setting.interval_desired)
-			.putLong(Pref.WORKER_LOCATION_INTERVAL_MIN, location_setting.interval_min)
-			.putInt(Pref.WORKER_LOCATION_MODE, location_setting.mode)
-			.putBoolean(Pref.WORKER_FORCE_WIFI, force_wifi)
-			.putString(Pref.WORKER_SSID, ssid)
-			.putBoolean(Pref.WORKER_PROTECTED_ONLY, protected_only)
-			.putBoolean(Pref.WORKER_SKIP_ALREADY_DOWNLOAD, skip_already_download)
+			.put(Pref.workerRepeat, repeat)
+			.put(Pref.workerTargetType, target_type)
+			.put(Pref.workerTargetUrl, target_url)
+			.put(Pref.workerFolderUri, folder_uri)
+			.put(Pref.workerInterval, intervalSeconds)
+			.put(Pref.workerFileType, file_type)
+			.put(Pref.workerLocationIntervalDesired, location_setting.interval_desired)
+			.put(Pref.workerLocationIntervalMin, location_setting.interval_min)
+			.put(Pref.workerLocationMode, location_setting.mode)
+			.put(Pref.workerForceWifi, force_wifi)
+			.put(Pref.workerSsid, ssid)
+			.put(Pref.workerProtectedOnly, protected_only)
+			.put(Pref.workerSkipAlreadyDownload, skip_already_download)
 			.apply()
 		
 		this.file_type_list = file_type_parse()
@@ -213,26 +217,22 @@ class DownloadWorker : WorkerBase {
 		
 		log.i(R.string.thread_ctor_restart, cause)
 		val pref = Pref.pref(service)
-		this.repeat = pref.getBoolean(Pref.WORKER_REPEAT, false)
-		this.target_url = pref.getString(Pref.WORKER_FLASHAIR_URL, null)
-		this.folder_uri = pref.getString(Pref.WORKER_FOLDER_URI, null)
-		this.interval = pref.getInt(Pref.WORKER_INTERVAL, 86400)
-		this.file_type = pref.getString(Pref.WORKER_FILE_TYPE, null)
+		this.repeat = Pref.workerRepeat (pref)
+		this.target_url = Pref.workerTargetUrl (pref)
+		this.folder_uri = Pref.workerFolderUri (pref)
+		this.intervalSeconds =Pref.workerInterval (pref)
+		this.file_type = Pref.workerFileType (pref)
 		
-		this.force_wifi = pref.getBoolean(Pref.WORKER_FORCE_WIFI, false)
-		this.ssid = pref.getString(Pref.WORKER_SSID, null)
-		this.target_type = pref.getInt(Pref.WORKER_TARGET_TYPE, 0)
-		this.protected_only = pref.getBoolean(Pref.WORKER_PROTECTED_ONLY, false)
-		this.skip_already_download = pref.getBoolean(Pref.WORKER_SKIP_ALREADY_DOWNLOAD, false)
+		this.force_wifi =Pref.workerForceWifi (pref) // pref.getBoolean(Pref.WORKER_FORCE_WIFI, false)
+		this.ssid = Pref.workerSsid (pref) //pref.getString(Pref.WORKER_SSID, null)
+		this.target_type = Pref.workerTargetType (pref) //pref.getInt(Pref.WORKER_TARGET_TYPE, 0)
+		this.protected_only = Pref.workerProtectedOnly (pref) //pref.getBoolean(Pref.WORKER_PROTECTED_ONLY, false)
+		this.skip_already_download = Pref.workerSkipAlreadyDownload (pref) //pref.getBoolean(Pref.WORKER_SKIP_ALREADY_DOWNLOAD, false)
 		
 		this.location_setting = LocationTracker.Setting()
-		location_setting.interval_desired = pref.getLong(
-			Pref.WORKER_LOCATION_INTERVAL_DESIRED,
-			LocationTracker.DEFAULT_INTERVAL_DESIRED
-		)
-		location_setting.interval_min =
-			pref.getLong(Pref.WORKER_LOCATION_INTERVAL_MIN, LocationTracker.DEFAULT_INTERVAL_MIN)
-		location_setting.mode = pref.getInt(Pref.WORKER_LOCATION_MODE, LocationTracker.DEFAULT_MODE)
+		location_setting.interval_desired = Pref.workerLocationIntervalDesired(pref)
+		location_setting.interval_min = Pref.workerLocationIntervalMin(pref)
+		location_setting.mode = Pref.workerLocationMode(pref)
 		
 		this.file_type_list = file_type_parse()
 		
@@ -259,7 +259,7 @@ class DownloadWorker : WorkerBase {
 	
 	private fun file_type_parse() : ArrayList<Pattern> {
 		val list = ArrayList<Pattern>()
-		val m = reFileType.matcher(file_type !!)
+		val m = reFileType.matcher(file_type)
 		while(m.find()) {
 			try {
 				val spec = m.group(1).replace("(\\W)".toRegex(), "\\\\$1")
@@ -598,7 +598,9 @@ class DownloadWorker : WorkerBase {
 		if(! repeat) {
 			callback.onAllFileCompleted(0)
 			
-			Pref.pref(service).edit().putInt(Pref.LAST_MODE, Pref.LAST_MODE_STOP).apply()
+			Pref.pref(service).edit()
+				.put(Pref.lastMode,Pref.LAST_MODE_STOP)
+				.apply()
 			cancel(service.getString(R.string.repeat_off))
 			complete_and_no_repeat = true
 		}

@@ -3,6 +3,10 @@ package jp.juggler.fadownloader.targets
 import android.net.Uri
 import android.os.SystemClock
 import jp.juggler.fadownloader.*
+import jp.juggler.fadownloader.model.ScanItem
+import jp.juggler.fadownloader.table.DownloadRecord
+import jp.juggler.fadownloader.util.Utils
+import jp.juggler.fadownloader.util.decodeUTF8
 import java.io.File
 import java.util.*
 import java.util.regex.Pattern
@@ -235,8 +239,8 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 				// 指定時刻まで待機する
 				while(! thread.isCancelled) {
 					val now = System.currentTimeMillis()
-					val last_file_listing = Pref.pref(service).getLong(Pref.LAST_IDLE_START, 0L)
-					val remain = last_file_listing + thread.interval * 1000L - now
+					val last_file_listing = Pref.lastIdleStart(Pref.pref(service))
+					val remain = last_file_listing + thread.intervalSeconds * 1000L - now
 					if(remain <= 0) break
 					
 					if(thread.isTetheringType || remain < 15 * 1000L) {
@@ -283,7 +287,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 			} else {
 				
 				while(! thread.isCancelled) {
-					network = thread.wiFiNetwork
+					network = thread.wifiNetwork
 					if(network != null) break
 					
 					// 一定時間待機してもダメならスレッドを停止する
@@ -304,7 +308,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 			
 			// ファイルスキャンの開始
 			if(thread.job_queue == null) {
-				Pref.pref(service).edit().putLong(Pref.LAST_IDLE_START, System.currentTimeMillis())
+				Pref.pref(service).edit().put(Pref.lastIdleStart, System.currentTimeMillis())
 					.apply()
 				
 				// FlashAir アップデートステータスを確認
@@ -313,7 +317,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 				if(flashair_update_status == ERROR_CONTINUE) {
 					continue
 				} else {
-					val old = Pref.pref(service).getLong(Pref.FLASHAIR_UPDATE_STATUS_OLD, - 1L)
+					val old = Pref.flashAirUpdateStatusOld(Pref.pref(service))
 					if(flashair_update_status == old && old != - 1L) {
 						// 前回スキャン開始時と同じ数字なので変更されていない
 						log.d(R.string.flashair_not_updated)
@@ -342,7 +346,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 					ScanItem(
 						"",
 						"/",
-						LocalFile(service, thread.folder_uri.toString()),
+						LocalFile(service, thread.folder_uri),
 						mime_type = ScanItem.MIME_TYPE_FOLDER
 					)
 				)
@@ -372,7 +376,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 					thread.setStatus(false, service.getString(R.string.file_scan_completed))
 					if(! thread.file_error) {
 						Pref.pref(service).edit()
-							.putLong(Pref.FLASHAIR_UPDATE_STATUS_OLD, flashair_update_status)
+							.put(Pref.flashAirUpdateStatusOld, flashair_update_status)
 							.apply()
 						thread.onFileScanComplete(file_count)
 					}

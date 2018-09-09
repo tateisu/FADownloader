@@ -2,168 +2,197 @@ package jp.juggler.fadownloader
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.text.TextUtils
+
+open class BasePref(val key : String)
+
+fun SharedPreferences.Editor.remove(bp : BasePref) : SharedPreferences.Editor =
+	this.remove(bp.key)
+
+class BooleanPref(
+	key : String,
+	private val defVal : Boolean
+) : BasePref(key) {
+	
+	operator fun invoke(pref : SharedPreferences) = pref.getBoolean(key, defVal)
+}
+
+fun SharedPreferences.Editor.put(bp : BooleanPref, v : Boolean) : SharedPreferences.Editor =
+	this.putBoolean(bp.key, v)
+
+class IntPref(
+	key : String,
+	val defVal : Int
+) : BasePref(key) {
+	
+	operator fun invoke(pref : SharedPreferences) = pref.getInt(key, defVal)
+}
+
+fun SharedPreferences.Editor.put(bp : IntPref, v : Int) : SharedPreferences.Editor =
+	this.putInt(bp.key, v)
+
+class LongPref(
+	key : String,
+	val defVal : Long
+) : BasePref(key) {
+	
+	operator fun invoke(pref : SharedPreferences) = pref.getLong(key, defVal)
+}
+
+fun SharedPreferences.Editor.put(bp : LongPref, v : Long) : SharedPreferences.Editor =
+	this.putLong(bp.key, v)
+
+class StringPref(
+	key : String,
+	val defVal : String
+) : BasePref(key) {
+	
+	operator fun invoke(pref : SharedPreferences) : String = pref.getString(key, defVal) ?: defVal
+	
+	fun getInt(pref : SharedPreferences) = try {
+		invoke(pref).trim().toInt()
+	} catch(ex : Throwable) {
+		defVal.toInt()
+	}
+	
+	fun getIntOrNull(pref : SharedPreferences) = try {
+		invoke(pref).trim().toInt()
+	} catch(ex : Throwable) {
+		null
+	}
+}
+
+fun SharedPreferences.Editor.put(bp : StringPref, v : String) : SharedPreferences.Editor =
+	this.putString(bp.key, v)
 
 object Pref {
-	
-	val TARGET_TYPE_FLASHAIR_AP = 0
-	val TARGET_TYPE_FLASHAIR_STA = 1
-	val TARGET_TYPE_PENTAX_KP = 2
-	val TARGET_TYPE_PQI_AIR_CARD = 3
-	val TARGET_TYPE_PQI_AIR_CARD_TETHER = 4
-	
-	// UI画面に表示されている情報の永続化
-	val UI_REPEAT = "ui_repeat"
-	val UI_LAST_PAGE = "ui_last_page"
-	val UI_TARGET_TYPE = "ui_target_type"
-	val UI_TARGET_URL_FLASHAIR_AP = "ui_flashair_url" // 歴史的な理由でキー名が特別
-	val UI_TARGET_URL_FLASHAIR_STA = "ui_target_url_1"
-	val UI_TARGET_URL_PENTAX_KP = "ui_target_url_2"
-	val UI_TARGET_URL_PQI_AIR_CARD = "ui_target_url_pqi_air_card"
-	val UI_TARGET_URL_PQI_AIR_CARD_TETHER = "ui_target_url_pqi_air_card_tether"
-	
-	val UI_FOLDER_URI = "ui_folder_uri"
-	val UI_INTERVAL = "ui_interval"
-	val UI_FILE_TYPE = "ui_file_type"
-	val UI_LOCATION_MODE = "ui_location_mode"
-	val UI_LOCATION_INTERVAL_DESIRED = "ui_location_interval_desired"
-	val UI_LOCATION_INTERVAL_MIN = "ui_location_interval_min"
-	val UI_FORCE_WIFI = "ui_force_wifi"
-	val UI_SSID = "ui_ssid"
-	val UI_THUMBNAIL_AUTO_ROTATE = "ui_thumbnail_auto_rotate"
-	val UI_COPY_BEFORE_VIEW_SEND = "ui_copy_before_view_send"
-	val UI_PROTECTED_ONLY = "ui_protected_only"
-	val UI_SKIP_ALREADY_DOWNLOAD = "ui_skip_already_download"
-	
-	val DEFAULT_THUMBNAIL_AUTO_ROTATE = true
-	
-	// 最後に押したボタン
-	val LAST_MODE_UPDATE = "last_mode_update"
-	val LAST_MODE = "last_mode"
-	val LAST_MODE_STOP = 0
-	val LAST_MODE_ONCE = 1
-	val LAST_MODE_REPEAT = 2
-	
-	// 最後にWorkerを手動開始した時の設定
-	val WORKER_REPEAT = "worker_repeat"
-	val WORKER_TARGET_TYPE = "worker_target_type"
-	val WORKER_FLASHAIR_URL = "worker_flashair_url"
-	val WORKER_FOLDER_URI = "worker_folder_uri"
-	val WORKER_INTERVAL = "worker_interval"
-	val WORKER_FILE_TYPE = "worker_file_type"
-	val WORKER_LOCATION_INTERVAL_DESIRED = "worker_location_interval_desired"
-	val WORKER_LOCATION_INTERVAL_MIN = "worker_location_interval_min"
-	val WORKER_LOCATION_MODE = "worker_location_mode"
-	val WORKER_FORCE_WIFI = "worker_force_wifi"
-	val WORKER_SSID = "worker_ssid"
-	val WORKER_PROTECTED_ONLY = "worker_protected_only"
-	val WORKER_SKIP_ALREADY_DOWNLOAD = "worker_skip_already_download"
-	
-	// ファイルスキャンが完了した時刻
-	val LAST_IDLE_START = "last_idle_start"
-	val FLASHAIR_UPDATE_STATUS_OLD = "flashair_update_status_old"
-	
-	val REMOVE_AD_PURCHASED = "remove_ad_purchased"
-	
-	// ダウンロード完了通知に表示する数字
-	val DOWNLOAD_COMPLETE_COUNT = "download_complete_count"
-	val DOWNLOAD_COMPLETE_COUNT_HIDDEN = "download_complete_count_hidden"
-	
 	fun pref(context : Context) : SharedPreferences {
 		return context.getSharedPreferences("app_pref", Context.MODE_PRIVATE)
 	}
 	
-	fun loadTargetUrl(pref : SharedPreferences, target_type : Int) : String {
-		when(target_type) {
-			TARGET_TYPE_FLASHAIR_AP -> return pref.getString(
-				Pref.UI_TARGET_URL_FLASHAIR_AP,
-				"http://flashair/"
-			)
-			
-			TARGET_TYPE_FLASHAIR_STA -> return pref.getString(
-				Pref.UI_TARGET_URL_FLASHAIR_STA,
-				"http://flashair/"
-			)
-			
-			TARGET_TYPE_PENTAX_KP -> return pref.getString(
-				Pref.UI_TARGET_URL_PENTAX_KP,
-				"http://192.168.0.1/"
-			)
-			
-			TARGET_TYPE_PQI_AIR_CARD -> return pref.getString(
-				Pref.UI_TARGET_URL_PQI_AIR_CARD,
-				"http://192.168.1.1/"
-			)
-			
-			TARGET_TYPE_PQI_AIR_CARD_TETHER -> return pref.getString(
-				Pref.UI_TARGET_URL_PQI_AIR_CARD_TETHER,
-				"http://AutoDetect/"
-			)
-			else -> return pref.getString(Pref.UI_TARGET_URL_FLASHAIR_AP, "http://flashair/")
-		}
+	const val TARGET_TYPE_FLASHAIR_AP = 0
+	const val TARGET_TYPE_FLASHAIR_STA = 1
+	const val TARGET_TYPE_PENTAX_KP = 2
+	const val TARGET_TYPE_PQI_AIR_CARD = 3
+	const val TARGET_TYPE_PQI_AIR_CARD_TETHER = 4
+	
+	const val LAST_MODE_STOP = 0
+	const val LAST_MODE_ONCE = 1
+	const val LAST_MODE_REPEAT = 2
+	
+	// UI画面に表示されている情報の永続化
+	val uiRepeat = BooleanPref("ui_repeat", false)
+	val uiLastPage = IntPref("ui_last_page", 0)
+	val uiTargetType = IntPref("ui_target_type", - 1)
+	val uiTargetUrlFlashAirAp = StringPref("ui_flashair_url", "http://flashair/") // 歴史的な理由でキー名が特別
+	val uiTargetUrlFlashAirSta = StringPref("ui_target_url_1", "http://flashair/")
+	val uiTargetUrlPentaxKp = StringPref("ui_target_url_2", "http://192.168.0.1/")
+	val uiTargetUrlPentaxPqiAirCard =
+		StringPref("ui_target_url_pqi_air_card", "http://192.168.1.1/")
+	val uiTargetUrlPentaxPqiAirCardThether =
+		StringPref("ui_target_url_pqi_air_card_tether", "http://AutoDetect/")
+	
+	val uiFolderUri = StringPref("ui_folder_uri", "")
+	
+	val uiInterval = StringPref("ui_interval", "30")
+	val uiFileType = StringPref("ui_file_type", ".jp*")
+	val uiLocationMode = IntPref("ui_location_mode", LocationTracker.DEFAULT_MODE)
+	val uiLocationIntervalDesired = StringPref(
+		"ui_location_interval_desired",
+		(LocationTracker.DEFAULT_INTERVAL_DESIRED / 1000L).toString()
+	)
+	val uiLocationIntervalMin = StringPref(
+		"ui_location_interval_min",
+		(LocationTracker.DEFAULT_INTERVAL_MIN / 1000L).toString()
+	)
+	val uiForceWifi = BooleanPref("ui_force_wifi", false)
+	val uiSsid = StringPref("ui_ssid", "")
+	
+	val uiAutoRotateThumbnail = BooleanPref("ui_thumbnail_auto_rotate", true)
+	// const val DEFAULT_THUMBNAIL_AUTO_ROTATE = true
+	
+	val uiCopyBeforeSend = BooleanPref("ui_copy_before_view_send", false)
+	val uiProtectedOnly = BooleanPref("ui_protected_only", false)
+	val uiSkipAlreadyDownload = BooleanPref("ui_skip_already_download", false)
+	
+	// 最後にWorkerを手動開始した時の設定
+	
+	val workerRepeat = BooleanPref("worker_repeat", false)
+	val workerTargetType = IntPref("worker_target_type", - 1)
+	val workerTargetUrl = StringPref("worker_flashair_url", "")
+	val workerFolderUri = StringPref("worker_folder_uri", "")
+	val workerInterval = IntPref("worker_interval", 86400)
+	val workerFileType = StringPref("worker_file_type", ".jp*")
+	val workerLocationMode = IntPref("worker_location_mode", LocationTracker.DEFAULT_MODE)
+	val workerLocationIntervalDesired = LongPref(
+		"worker_location_interval_desired",
+		LocationTracker.DEFAULT_INTERVAL_DESIRED
+	)
+	val workerLocationIntervalMin = LongPref(
+		"worker_location_interval_min",
+		LocationTracker.DEFAULT_INTERVAL_MIN
+	)
+	val workerForceWifi = BooleanPref("worker_force_wifi", false)
+	val workerSsid = StringPref("worker_ssid", "")
+	val workerProtectedOnly = BooleanPref("worker_protected_only", false)
+	val workerSkipAlreadyDownload = BooleanPref("worker_skip_already_download", false)
+	
+	//////////////////////////////////////////////////////////////////////
+	
+	// 最後に押した動作ボタンとその時刻
+	val lastMode = IntPref("last_mode", LAST_MODE_STOP)
+	val lastModeUpdate = LongPref("last_mode_update", 0L)
+	
+	// ファイルスキャンが完了した時刻
+	val lastIdleStart = LongPref("last_idle_start", 0L)
+	val flashAirUpdateStatusOld = LongPref("flashair_update_status_old", -1L)
+	
+	// ダウンロード完了通知に表示する数字
+	val downloadCompleteCount = LongPref("download_complete_count", 0L)
+	val downloadCompleteCountHidden = LongPref("download_complete_count_hidden", 0L)
+	
+	val purchasedRemoveAd = BooleanPref("remove_ad_purchased", false)
+	
+	private fun uiTargetUrl(target_type : Int) = when(target_type) {
+		TARGET_TYPE_FLASHAIR_AP -> uiTargetUrlFlashAirAp
+		TARGET_TYPE_FLASHAIR_STA -> uiTargetUrlFlashAirSta
+		TARGET_TYPE_PENTAX_KP -> uiTargetUrlPentaxKp
+		TARGET_TYPE_PQI_AIR_CARD -> uiTargetUrlPentaxPqiAirCard
+		TARGET_TYPE_PQI_AIR_CARD_TETHER -> uiTargetUrlPentaxPqiAirCardThether
+		else -> uiTargetUrlFlashAirAp
 	}
 	
-	fun saveTargetUrl(edit : SharedPreferences.Editor, target_type : Int, value : String) {
-		when(target_type) {
-			TARGET_TYPE_FLASHAIR_AP -> edit.putString(Pref.UI_TARGET_URL_FLASHAIR_AP, value)
-			
-			TARGET_TYPE_FLASHAIR_STA -> edit.putString(Pref.UI_TARGET_URL_FLASHAIR_STA, value)
-			
-			TARGET_TYPE_PENTAX_KP -> edit.putString(Pref.UI_TARGET_URL_PENTAX_KP, value)
-			TARGET_TYPE_PQI_AIR_CARD -> edit.putString(Pref.UI_TARGET_URL_PQI_AIR_CARD, value)
-			TARGET_TYPE_PQI_AIR_CARD_TETHER -> edit.putString(
-				Pref.UI_TARGET_URL_PQI_AIR_CARD_TETHER,
-				value
-			)
-		}
-	}
+	fun loadTargetUrl(pref : SharedPreferences, target_type : Int) =
+		uiTargetUrl(target_type)(pref)
+	
+	fun saveTargetUrl(edit : SharedPreferences.Editor, target_type : Int, value : String) =
+		edit.put(uiTargetUrl(target_type), value)
 	
 	fun initialize(context : Context) {
 		val pref = pref(context)
 		
-		val e = pref.edit()
 		var bChanged = false
-		var sv : String?
-		val iv : Int
 		
-		//
-		sv = pref.getString(Pref.UI_INTERVAL, null)
-		if(TextUtils.isEmpty(sv)) {
-			bChanged = true
-			e.putString(Pref.UI_INTERVAL, "30")
+		val e = pref.edit()
+		
+		for(sp in arrayOf(
+			uiInterval,
+			uiFileType,
+			uiLocationIntervalDesired,
+			uiLocationIntervalMin
+		)) {
+			if(sp(pref).trim().isEmpty()) {
+				bChanged = true
+				e.put(sp, sp.defVal)
+			}
 		}
-		//
-		sv = pref.getString(Pref.UI_FILE_TYPE, null)
-		if(TextUtils.isEmpty(sv)) {
+		
+		if(uiLocationMode(pref) !in 0 .. LocationTracker.LOCATION_HIGH_ACCURACY) {
 			bChanged = true
-			e.putString(Pref.UI_FILE_TYPE, ".jp*")
+			e.put(uiLocationMode, uiLocationMode.defVal)
 		}
-		//
-		iv = pref.getInt(Pref.UI_LOCATION_MODE, - 1)
-		if(iv < 0 || iv > LocationTracker.LOCATION_HIGH_ACCURACY) {
-			bChanged = true
-			e.putInt(Pref.UI_LOCATION_MODE, LocationTracker.DEFAULT_MODE)
-		}
-		//
-		sv = pref.getString(Pref.UI_LOCATION_INTERVAL_DESIRED, null)
-		if(TextUtils.isEmpty(sv)) {
-			bChanged = true
-			e.putString(
-				Pref.UI_LOCATION_INTERVAL_DESIRED,
-				java.lang.Long.toString(LocationTracker.DEFAULT_INTERVAL_DESIRED / 1000L)
-			)
-		}
-		//
-		sv = pref.getString(Pref.UI_LOCATION_INTERVAL_MIN, null)
-		if(TextUtils.isEmpty(sv)) {
-			bChanged = true
-			e.putString(
-				Pref.UI_LOCATION_INTERVAL_MIN,
-				java.lang.Long.toString(LocationTracker.DEFAULT_INTERVAL_MIN / 1000L)
-			)
-		}
-		//
+		
 		if(bChanged) e.apply()
 	}
 	
 }
+

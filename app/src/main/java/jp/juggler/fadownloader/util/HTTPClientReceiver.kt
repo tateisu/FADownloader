@@ -1,7 +1,6 @@
 package jp.juggler.fadownloader.util
 
 import jp.juggler.fadownloader.CancelChecker
-import jp.juggler.fadownloader.LogWriter
 import java.io.InputStream
 
 //! HTTPClientのバッファ管理を独自に行いたい場合に使用する.

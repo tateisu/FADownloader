@@ -3,6 +3,8 @@ package jp.juggler.fadownloader
 import android.content.Intent
 import android.location.Location
 import android.os.Handler
+import jp.juggler.fadownloader.util.LogWriter
+import jp.juggler.fadownloader.util.Utils
 
 /*
 	DownloadWorkerのスレッド終了を待ってから次のスレッドを作る
@@ -53,8 +55,8 @@ class WorkerTracker(
 				}
 				
 				Pref.pref(service).edit()
-					.remove(Pref.LAST_IDLE_START)
-					.remove(Pref.FLASHAIR_UPDATE_STATUS_OLD)
+					.remove(Pref.lastIdleStart)
+					.remove(Pref.flashAirUpdateStatusOld)
 					.apply()
 				
 				try {
@@ -134,7 +136,7 @@ class WorkerTracker(
 		}
 		
 		override fun onAllFileCompleted(count : Long) {
-			service.addHiddenDownloadCount(count)
+			service.addHiddenDownloadCount(count,log)
 		}
 		
 		override fun hasHiddenDownloadCount() : Boolean {

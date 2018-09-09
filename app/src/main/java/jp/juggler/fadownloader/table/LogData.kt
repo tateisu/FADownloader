@@ -1,4 +1,4 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.table
 
 import android.content.ContentResolver
 import android.content.ContentValues
@@ -61,17 +61,17 @@ object LogData {
 	}
 	
 	fun getLogLevelString(level : Int) : String {
-		return if(level >= LogData.LEVEL_FLOOD) {
+		return if(level >= LEVEL_FLOOD) {
 			"Flood"
-		} else if(level >= LogData.LEVEL_HEARTBEAT) {
+		} else if(level >= LEVEL_HEARTBEAT) {
 			"HeartBeat"
-		} else if(level >= LogData.LEVEL_DEBUG) {
+		} else if(level >= LEVEL_DEBUG) {
 			"Debug"
-		} else if(level >= LogData.LEVEL_VERBOSE) {
+		} else if(level >= LEVEL_VERBOSE) {
 			"Verbose"
-		} else if(level >= LogData.LEVEL_INFO) {
+		} else if(level >= LEVEL_INFO) {
 			"Info"
-		} else if(level >= LogData.LEVEL_WARNING) {
+		} else if(level >= LEVEL_WARNING) {
 			"Warning"
 		} else {
 			"Error"

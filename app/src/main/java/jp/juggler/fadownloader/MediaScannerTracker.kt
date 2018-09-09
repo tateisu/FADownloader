@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.SystemClock
 import android.text.TextUtils
+import jp.juggler.fadownloader.util.LogWriter
 
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue

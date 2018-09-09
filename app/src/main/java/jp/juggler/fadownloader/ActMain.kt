@@ -26,10 +26,14 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.GoogleApiClient
-import com.google.android.gms.common.api.ResultCallback
+import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
+import com.google.android.gms.tasks.OnCompleteListener
 import config.BuildVariant
+import jp.juggler.fadownloader.util.Utils
+import jp.juggler.fadownloader.util.encodeUTF8
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.ref.WeakReference
@@ -82,51 +86,67 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	/////////////////////////////////////////////////////////////////////////
 	// アプリ権限の要求
 	
-	
-	private val location_setting_callback : ResultCallback<LocationSettingsResult> =
-		ResultCallback { locationSettingsResult ->
-			val status = locationSettingsResult.status ?: return@ResultCallback
-			val status_code = status.statusCode
-			
-			when(status_code) {
-				LocationSettingsStatusCodes.SUCCESS -> startDownloadService()
-				LocationSettingsStatusCodes.RESOLUTION_REQUIRED -> if(Build.VERSION.SDK_INT <= 17) {
+	private val location_setting_callback2 :OnCompleteListener<LocationSettingsResponse> = OnCompleteListener{ task->
+		try {
+			task.getResult(ApiException::class.java)
+			// All location settings are satisfied.
+			// The client can initialize location requests here.
+			startDownloadService()
+		} catch (apiException: ApiException) {
+			when(apiException.statusCode) {
+				LocationSettingsStatusCodes.RESOLUTION_REQUIRED->{
 					
-					// SH-02E(4.1.2),F10d(4.2.2)などで
-					// Wi-Fiが無効だと RESOLUTION_REQUIRED を返すが、
-					// STAモード前提だとWi-FiはOFFで正しい
-					// startResolutionForResult で表示されるダイアログで
-					// OKしてもキャンセルしても戻るボタンを押してもresultCodeが0を返す
-					// ていうかGeoTagging modeをOFF以外のどれにしてもWi-FiをONにしろと警告が出る
-					// これなら何もチェックせずにサービスを開始した方がマシ
-					// なお、4.3のGalaxy Nexus ではこの問題は起きなかった
-					
-					startDownloadService()
-					
-				} else {
-					try {
-						// Show the dialog by calling startResolutionForResult(), and check the result
-						// in onActivityResult().
-						status.startResolutionForResult(this@ActMain, REQUEST_RESOLUTION)
-					} catch(ex : IntentSender.SendIntentException) {
-						ex.printStackTrace()
-						Utils.showToast(this@ActMain, true, R.string.resolution_request_failed)
+					if(Build.VERSION.SDK_INT <= 17) {
+						
+						// SH-02E(4.1.2),F10d(4.2.2)などで
+						// Wi-Fiが無効だと RESOLUTION_REQUIRED を返すが、
+						// STAモード前提だとWi-FiはOFFで正しい
+						// startResolutionForResult で表示されるダイアログで
+						// OKしてもキャンセルしても戻るボタンを押してもresultCodeが0を返す
+						// ていうかGeoTagging modeをOFF以外のどれにしてもWi-FiをONにしろと警告が出る
+						// これなら何もチェックせずにサービスを開始した方がマシ
+						// なお、4.3のGalaxy Nexus ではこの問題は起きなかった
+						
+						startDownloadService()
+						
+					} else {
+						// Location settings are not satisfied.
+						// But could be fixed by showing the user a dialog.
+						try {
+							if( apiException !is ResolvableApiException){
+								// should not happen
+							}else{
+								// Show the dialog by calling startResolutionForResult(),
+								// and check the result in onActivityResult().
+								apiException.startResolutionForResult( this@ActMain, REQUEST_RESOLUTION)
+							}
+						} catch ( ex: IntentSender.SendIntentException ) {
+							ex.printStackTrace()
+							Utils.showToast(this@ActMain, true, R.string.resolution_request_failed)
+						}
+						
 					}
-					
 				}
-				LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE -> Utils.showToast(
-					this@ActMain,
-					true,
-					R.string.location_setting_change_unavailable
-				)
-				else -> Utils.showToast(
-					this@ActMain,
-					true,
-					R.string.location_setting_returns_unknown_status,
-					status_code
-				)
+				LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE ->{
+					// Location settings are not satisfied.
+					// However, we have no way to fix the settings so we won't show the dialog.
+					Utils.showToast(
+						this@ActMain,
+						true,
+						R.string.location_setting_change_unavailable
+					)
+				}
+				else->{
+					Utils.showToast(
+						this@ActMain,
+						true,
+						R.string.location_setting_returns_unknown_status,
+						apiException.statusCode
+					)
+				}
 			}
 		}
+	}
 	
 	private val proc_status : Runnable = object : Runnable {
 		override fun run() {
@@ -266,7 +286,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		}
 		
 		val e = Pref.pref(this).edit()
-		e.putInt(Pref.UI_LAST_PAGE, pager.currentItem)
+		e.put(Pref.uiLastPage, pager.currentItem)
 		
 		val page = pager_adapter.getPage<PageSetting>(page_idx_setting)
 		page?.ui_value_save(e)
@@ -348,7 +368,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 						)
 						// 覚えておく
 						Pref.pref(this).edit()
-							.putString(Pref.UI_FOLDER_URI, treeUri.toString())
+							.put(Pref.uiFolderUri, treeUri.toString())
 							.apply()
 					} catch(ex : Throwable) {
 						ex.printStackTrace()
@@ -383,7 +403,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 					}
 					// 覚えておく
 					Pref.pref(this).edit()
-						.putString(Pref.UI_FOLDER_URI, path)
+						.put(Pref.uiFolderUri,path)
 						.apply()
 				} catch(ex : Throwable) {
 					ex.printStackTrace()
@@ -399,7 +419,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 				val sv = resultData.getStringExtra(SSIDPicker.EXTRA_SSID)
 				if(! TextUtils.isEmpty(sv)) {
 					Pref.pref(this).edit()
-						.putString(Pref.UI_SSID, sv)
+						.put(Pref.uiSsid,sv)
 						.apply()
 				}
 			}
@@ -468,7 +488,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			PageOther::class.java
 		)
 		pager.adapter = pager_adapter
-		pager.currentItem = Pref.pref(this).getInt(Pref.UI_LAST_PAGE, 0)
+		pager.currentItem = Pref.uiLastPage( Pref.pref(this) )
 		
 		mGoogleApiClient = GoogleApiClient.Builder(this)
 			.addConnectionCallbacks(connection_callback)
@@ -549,8 +569,8 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	// 転送サービスを停止
 	private fun download_stop_button() {
 		Pref.pref(this).edit()
-			.putInt(Pref.LAST_MODE, Pref.LAST_MODE_STOP)
-			.putLong(Pref.LAST_MODE_UPDATE, System.currentTimeMillis())
+			.put(Pref.lastMode, Pref.LAST_MODE_STOP)
+			.put(Pref.lastModeUpdate, System.currentTimeMillis())
 			.apply()
 		val intent = Intent(this, DownloadService::class.java)
 		stopService(intent)
@@ -571,7 +591,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		val e = Pref.pref(this).edit()
 		
 		//repeat引数の値は、LocationSettingの確認が終わるまで覚えておく必要がある
-		e.putBoolean(Pref.UI_REPEAT, repeat)
+		e.put(Pref.uiRepeat,repeat)
 		
 		// UIフォームの値を設定に保存
 		val page = pager_adapter.getPage<PageSetting>(page_idx_setting)
@@ -581,8 +601,8 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		
 		when {
 			// 位置情報を使わないオプションの時はLocationSettingをチェックしない
-			Pref.pref(this).getInt(Pref.UI_LOCATION_MODE,- 1)
-				== LocationTracker.NO_LOCATION_UPDATE -> startDownloadService()
+			Pref.uiLocationMode(Pref.pref(this)) == LocationTracker.NO_LOCATION_UPDATE ->
+				startDownloadService()
 
 			mGoogleApiClient.isConnected -> startLocationSettingCheck()
 
@@ -599,41 +619,38 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		mLocationRequest.fastestInterval = FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS
 		mLocationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
 		
-		val builder = LocationSettingsRequest.Builder()
-		builder.addLocationRequest(mLocationRequest)
-		mLocationSettingsRequest = builder.build()
+		mLocationSettingsRequest = LocationSettingsRequest.Builder()
+			.addLocationRequest(mLocationRequest)
+			.build()
 		
-		val result = LocationServices.SettingsApi.checkLocationSettings(
-			mGoogleApiClient,
-			mLocationSettingsRequest
-		)
-		result.setResultCallback(location_setting_callback)
+		LocationServices.getSettingsClient(this)
+			.checkLocationSettings(mLocationSettingsRequest)
+			.addOnCompleteListener(location_setting_callback2)
 	}
 	
 	private fun startDownloadService() {
 		val pref = Pref.pref(this)
-		var sv : String?
 		
 		// LocationSettingを確認する前のrepeat引数の値を思い出す
-		val repeat = pref.getBoolean(Pref.UI_REPEAT, false)
+		val repeat = Pref.uiRepeat(pref)
 		
 		// 設定から値を読んでバリデーション
 		
-		val target_type = pref.getInt(Pref.UI_TARGET_TYPE, - 1)
+		val target_type = Pref.uiTargetType(pref)
 		if(target_type < 0) {
 			Utils.showToast(this, true, getString(R.string.target_type_invalid))
 			return
 		}
 		
 		val target_url = Pref.loadTargetUrl(pref, target_type)
-		if(TextUtils.isEmpty(target_url)) {
+		if(target_url.isEmpty()) {
 			Utils.showToast(this, true, getString(R.string.target_url_not_ok))
 			return
 		}
 		
-		var folder_uri : String? = null
-		sv = pref.getString(Pref.UI_FOLDER_URI, null)
-		if(! TextUtils.isEmpty(sv)) {
+		var folder_uri = ""
+		val sv = Pref.uiFolderUri(pref)
+		if(sv.isNotEmpty()) {
 			if(Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION) {
 				val folder = DocumentFile.fromTreeUri(this, Uri.parse(sv))
 				if(folder != null) {
@@ -645,29 +662,24 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 				folder_uri = sv
 			}
 		}
-		if(TextUtils.isEmpty(folder_uri)) {
+		if(folder_uri.isEmpty()) {
 			Utils.showToast(this, true, getString(R.string.local_folder_not_ok))
 			return
 		}
 		
-		val interval = try {
-			Integer.parseInt(pref.getString(Pref.UI_INTERVAL, "") !!.trim { it <= ' ' }, 10)
-		} catch(ex : Throwable) {
-			- 1
-		}
-		
+		val interval = Pref.uiInterval.getIntOrNull(pref) ?: -1
 		if(repeat && interval < 1) {
 			Utils.showToast(this, true, getString(R.string.repeat_interval_not_ok))
 			return
 		}
 		
-		val file_type = pref.getString(Pref.UI_FILE_TYPE, "").trim { it <= ' ' }
+		val file_type = Pref.uiFileType(pref).trim()
 		if(TextUtils.isEmpty(file_type)) {
 			Utils.showToast(this, true, getString(R.string.file_type_empty))
 			return
 		}
 		
-		val location_mode = pref.getInt(Pref.UI_LOCATION_MODE, - 1)
+		val location_mode = Pref.uiLocationMode(pref)
 		if(location_mode < 0 || location_mode > LocationTracker.LOCATION_HIGH_ACCURACY) {
 			Utils.showToast(this, true, getString(R.string.location_mode_invalid))
 			return
@@ -677,54 +689,49 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		var location_update_interval_min = LocationTracker.DEFAULT_INTERVAL_MIN
 		
 		if(location_mode != LocationTracker.NO_LOCATION_UPDATE) {
-			location_update_interval_desired = try {
-				1000L * java.lang.Long.parseLong(
-					pref.getString(Pref.UI_LOCATION_INTERVAL_DESIRED, "") !!.trim { it <= ' ' }, 10
-				)
-			} catch(ex : Throwable) {
-				- 1L
+			
+			fun x1000(v:Int?) =if(v!=null ){
+				v.toLong() * 1000L
+			}else{
+				-1L
 			}
 			
-			if(repeat && location_update_interval_desired < 1000L) {
-				Utils.showToast(this, true, getString(R.string.location_update_interval_not_ok))
-				return
-			}
+			location_update_interval_desired = x1000(Pref.uiLocationIntervalDesired.getIntOrNull(pref))
+			location_update_interval_min = x1000(Pref.uiLocationIntervalMin.getIntOrNull(pref))
 			
-			location_update_interval_min = try {
-				1000L * java.lang.Long.parseLong(
-					pref.getString(Pref.UI_LOCATION_INTERVAL_MIN, "") !!.trim { it <= ' ' }, 10
-				)
-			} catch(ex : Throwable) {
-				- 1L
-			}
-			
-			if(repeat && location_update_interval_min < 1000L) {
-				Utils.showToast(this, true, getString(R.string.location_update_interval_not_ok))
-				return
+			when{
+				!repeat ->{}
+				location_update_interval_desired < 1000L ->{
+					Utils.showToast(this, true, getString(R.string.location_update_interval_not_ok))
+					return
+				}
+				location_update_interval_min < 1000L ->{
+					Utils.showToast(this, true, getString(R.string.location_update_interval_not_ok))
+					return
+				}
 			}
 		}
 		
-		val force_wifi = pref.getBoolean(Pref.UI_FORCE_WIFI, false)
+		val force_wifi = Pref.uiForceWifi(pref)
 		
-		val ssid : String
+		val ssid:String
 		if(! force_wifi) {
 			ssid = ""
 		} else {
-			sv = pref.getString(Pref.UI_SSID, "")
-			ssid = sv !!.trim { it <= ' ' }
-			if(TextUtils.isEmpty(ssid)) {
+			ssid = Pref.uiSsid(pref).trim()
+			if(ssid.isEmpty()) {
 				Utils.showToast(this, true, getString(R.string.ssid_empty))
 				return
 			}
 		}
 		
-		val protected_only = pref.getBoolean(Pref.UI_PROTECTED_ONLY, false)
-		val skip_already_download = pref.getBoolean(Pref.UI_SKIP_ALREADY_DOWNLOAD, false)
+		val protected_only = Pref.uiProtectedOnly(pref)
+		val skip_already_download = Pref.uiSkipAlreadyDownload(pref)
 		
 		// 最後に押したボタンを覚えておく
 		pref.edit()
-			.putInt(Pref.LAST_MODE, if(repeat) Pref.LAST_MODE_REPEAT else Pref.LAST_MODE_ONCE)
-			.putLong(Pref.LAST_MODE_UPDATE, System.currentTimeMillis())
+			.put( Pref.lastMode,if(repeat) Pref.LAST_MODE_REPEAT else Pref.LAST_MODE_ONCE)
+			.put( Pref.lastModeUpdate,System.currentTimeMillis())
 			.apply()
 		
 		// 転送サービスを開始
@@ -788,7 +795,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		bRemoveAdPurchased = if(BuildVariant.AD_FREE) {
 			true
 		} else {
-			Pref.pref(this).getBoolean(Pref.REMOVE_AD_PURCHASED, false)
+			Pref.purchasedRemoveAd(Pref.pref(this))
 		}
 		
 		

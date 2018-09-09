@@ -1,4 +1,4 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.util
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
@@ -16,6 +16,7 @@ import android.webkit.MimeTypeMap
 import android.widget.Toast
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
+import jp.juggler.fadownloader.Receiver1
 import org.w3c.dom.Element
 import org.w3c.dom.NamedNodeMap
 import java.io.ByteArrayInputStream
@@ -536,7 +537,10 @@ object Utils {
 							if("primary".equals(uuid, ignoreCase = true)) {
 								return File(Environment.getExternalStorageDirectory().toString() + "/" + split[1])
 							} else {
-								val volume_map = Utils.getSecondaryStorageVolumesMap(context)
+								val volume_map =
+									getSecondaryStorageVolumesMap(
+										context
+									)
 								val volume_path = volume_map[uuid]
 								if(volume_path != null) {
 									return File(volume_path + "/" + split[1])

@@ -12,13 +12,14 @@ import com.neovisionaries.ws.client.WebSocketFactory
 import com.neovisionaries.ws.client.WebSocketFrame
 import com.neovisionaries.ws.client.WebSocketState
 import jp.juggler.fadownloader.*
+import jp.juggler.fadownloader.model.ScanItem
+import jp.juggler.fadownloader.table.DownloadRecord
+import jp.juggler.fadownloader.util.Utils
+import jp.juggler.fadownloader.util.decodeUTF8
 
 import org.json.JSONObject
 
-import jp.juggler.fadownloader.util.HTTPClientReceiver
-
 import java.io.IOException
-import java.io.InputStream
 import java.util.Calendar
 import java.util.GregorianCalendar
 import java.util.TimeZone
@@ -279,7 +280,14 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 						val mime_type = Utils.getMimeType(log, file_name)
 						
 						val item =
-							ScanItem(file_name, remote_path, local_file, size, time, mime_type)
+							ScanItem(
+								file_name,
+								remote_path,
+								local_file,
+								size,
+								time,
+								mime_type
+							)
 						
 						// ファイルはキューの末尾に追加
 						thread.job_queue !!.addFile(item)
@@ -381,7 +389,7 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 			val network_check_start = SystemClock.elapsedRealtime()
 			var network : Any? = null
 			while(! thread.isCancelled) {
-				network = thread.wiFiNetwork
+				network = thread.wifiNetwork
 				if(network != null) break
 				
 				// 一定時間待機してもダメならスレッドを停止する
@@ -464,7 +472,7 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 			} else {
 				
 				// キューがカラなら、最後にファイル一覧を取得した時刻から一定は待つ
-				remain = mLastFileListed.get() + thread.interval * 1000L - now
+				remain = mLastFileListed.get() + thread.intervalSeconds * 1000L - now
 				if(remain > 0L) {
 					thread.setShortWait(remain)
 					continue
@@ -477,7 +485,7 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 			
 			// ファイルスキャンの開始
 			if(thread.job_queue == null) {
-				Pref.pref(service).edit().putLong(Pref.LAST_IDLE_START, System.currentTimeMillis())
+				Pref.pref(service).edit().put(Pref.lastIdleStart, System.currentTimeMillis())
 					.apply()
 				
 				// 未取得状態のファイルを履歴から消す

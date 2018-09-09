@@ -13,6 +13,7 @@ import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.*
+import jp.juggler.fadownloader.util.Utils
 import java.io.File
 import java.util.*
 

@@ -6,6 +6,7 @@ import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.LocationListener
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
+import jp.juggler.fadownloader.util.LogWriter
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -63,14 +64,14 @@ class LocationTracker(
 		
 		internal var mode : Int = 0
 		
-		// Sets the desired interval for active location updates. This interval is
+		// Sets the desired intervalSeconds for active location updates. This intervalSeconds is
 		// inexact. You may not receive updates at all if no location sources are available, or
 		// you may receive them slower than requested. You may also receive updates faster than
-		// requested if other applications are requesting location at a faster interval.
+		// requested if other applications are requesting location at a faster intervalSeconds.
 		var interval_desired : Long = 0
 		
 		// Sets the fastest rate for active location updates.
-		// This interval is exact, and your application will never receive updates faster than this value.
+		// This intervalSeconds is exact, and your application will never receive updates faster than this value.
 		var interval_min : Long = 0
 		
 		internal val isUpdateRequired : Boolean

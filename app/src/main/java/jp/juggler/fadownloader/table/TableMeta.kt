@@ -1,4 +1,4 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.table
 
 import android.content.ContentResolver
 import android.content.ContentUris
@@ -70,11 +70,21 @@ abstract class TableMeta {
 		this.mime_type_item = "vnd.android.cursor.item/$authority.$table"
 		
 		// uri for group
-		sUriHandlerList.add(MatchResult(this, false))
+		sUriHandlerList.add(
+			MatchResult(
+				this,
+				false
+			)
+		)
 		sUriMatcher.addURI(authority, table, matcher_idx)
 		
 		// uri for element
-		sUriHandlerList.add(MatchResult(this, true))
+		sUriHandlerList.add(
+			MatchResult(
+				this,
+				true
+			)
+		)
 		sUriMatcher.addURI(authority, "$table/#", matcher_idx + 1)
 	}
 	
@@ -114,7 +124,8 @@ abstract class TableMeta {
 	) : Int {
 		val row_count : Int
 		if(match.is_item) {
-			row_count = db.delete(table, selection_with_id(uri, selection), selectionArgs)
+			row_count = db.delete(table,
+				selection_with_id(uri, selection), selectionArgs)
 		} else {
 			row_count = db.delete(table, selection, selectionArgs)
 		}
@@ -133,7 +144,8 @@ abstract class TableMeta {
 	) : Int {
 		val row_count : Int
 		if(match.is_item) {
-			row_count = db.update(table, values, selection_with_id(uri, selection), selectionArgs)
+			row_count = db.update(table, values,
+				selection_with_id(uri, selection), selectionArgs)
 			cr.notifyChange(uri, null)
 		} else {
 			row_count = db.update(table, values, selection, selectionArgs)
@@ -153,7 +165,8 @@ abstract class TableMeta {
 		sortOrder : String?
 	) : Cursor {
 		var selection = selection
-		if(match.is_item) selection = selection_with_id(uri, selection)
+		if(match.is_item) selection =
+			selection_with_id(uri, selection)
 		val cursor = db.query(table, projection, selection, selectionArgs, null, null, sortOrder)
 		cursor.setNotificationUri(cr, uri)
 		return cursor

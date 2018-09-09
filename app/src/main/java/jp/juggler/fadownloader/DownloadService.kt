@@ -9,14 +9,14 @@ import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.net.wifi.WifiManager
-import android.os.Bundle
-import android.os.Handler
-import android.os.IBinder
-import android.os.PowerManager
+import android.os.*
 import android.support.v4.app.NotificationCompat
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.LocationServices
+import jp.juggler.fadownloader.util.LogWriter
+import jp.juggler.fadownloader.util.NotificationHelper
+import jp.juggler.fadownloader.util.Utils
 
 class DownloadService : Service() {
 	
@@ -31,7 +31,7 @@ class DownloadService : Service() {
 		internal const val EXTRA_REPEAT = "repeat"
 		internal const val EXTRA_TARGET_URL = "uri"
 		internal const val EXTRA_LOCAL_FOLDER = "folder_uri"
-		internal const val EXTRA_INTERVAL = "interval"
+		internal const val EXTRA_INTERVAL = "intervalSeconds"
 		internal const val EXTRA_FILE_TYPE = "file_type"
 		internal const val EXTRA_LOCATION_INTERVAL_DESIRED = "location_interval_desired"
 		internal const val EXTRA_LOCATION_INTERVAL_MIN = "location_interval_min"
@@ -53,19 +53,19 @@ class DownloadService : Service() {
 			val sb = StringBuilder()
 			sb.append(context.getString(R.string.service_running))
 			sb.append("WakeLock=")
-				.append(if(service .wake_lock !!.isHeld) "ON" else "OFF")
+				.append(if(service.wake_lock !!.isHeld) "ON" else "OFF")
 				.append(", ")
 				.append("WiFiLock=")
-				.append(if(service .wifi_lock !!.isHeld) "ON" else "OFF")
+				.append(if(service.wifi_lock !!.isHeld) "ON" else "OFF")
 				.append(", ")
 				.append("Location=")
-				.append(service .location_tracker.status)
+				.append(service.location_tracker.status)
 				.append(", ")
 				.append("Network=")
-			service .wifi_tracker.getStatus(sb)
+			service.wifi_tracker.getStatus(sb)
 			sb.append('\n')
 			
-			val worker = service .worker_tracker.worker
+			val worker = service.worker_tracker.worker
 			if(worker == null || ! worker.isAlive) {
 				sb.append(context.getString(R.string.thread_not_running_status))
 			} else {
@@ -78,7 +78,6 @@ class DownloadService : Service() {
 		var location : Location? = null
 			internal set
 	}
-	
 	
 	lateinit var log : LogWriter
 	
@@ -170,16 +169,15 @@ class DownloadService : Service() {
 			this,
 			log,
 			mGoogleApiClient
-		){ location ->
+		) { location ->
 			DownloadService.location = location
 		}
 		
 		media_tracker = MediaScannerTracker(this, log)
 		
-		wifi_tracker = NetworkTracker(this, log ){ is_connected, cause ->
+		wifi_tracker = NetworkTracker(this, log) { is_connected, cause ->
 			if(is_connected) {
-				val last_mode =
-					Pref.pref(this@DownloadService).getInt(Pref.LAST_MODE, Pref.LAST_MODE_STOP)
+				val last_mode = Pref.lastMode(Pref.pref(this@DownloadService))
 				if(last_mode != Pref.LAST_MODE_STOP) {
 					worker_tracker.wakeup(cause)
 				}
@@ -218,10 +216,10 @@ class DownloadService : Service() {
 			
 		}
 		
-		wake_lock ?.release()
+		wake_lock?.release()
 		wake_lock = null
 		
-		wifi_lock ?.release()
+		wifi_lock?.release()
 		wifi_lock = null
 		
 		stopForeground(true)
@@ -237,8 +235,8 @@ class DownloadService : Service() {
 	override fun onStartCommand(intent : Intent?, flags : Int, startId : Int) : Int {
 		if(intent != null) {
 			var action = intent.action
-			when (action){
-				ACTION_BROADCAST_RECEIVED ->  {
+			when(action) {
+				ACTION_BROADCAST_RECEIVED -> {
 					val broadcast_intent = intent.getParcelableExtra<Intent>(EXTRA_BROADCAST_INTENT)
 					if(broadcast_intent != null) {
 						action = broadcast_intent.action
@@ -246,14 +244,16 @@ class DownloadService : Service() {
 						when(action) {
 							Receiver1.ACTION_ALARM -> worker_tracker.wakeup("Alarm")
 							Intent.ACTION_BOOT_COMPLETED -> worker_tracker.wakeup("Boot completed")
-							else -> log .d(getString(R.string.broadcast_received, action))
+							else -> log.d(getString(R.string.broadcast_received, action))
 						}
 					}
 				}
-				ACTION_START ->{
+				
+				ACTION_START -> {
 					worker_tracker.start(intent)
 				}
-				else -> log .d(getString(R.string.unsupported_intent_received, action))
+				
+				else -> log.d(getString(R.string.unsupported_intent_received, action))
 			}
 		}
 		
@@ -288,7 +288,7 @@ class DownloadService : Service() {
 	internal fun acquireWakeLock() {
 		if(! is_alive) return
 		try {
-			wake_lock ?.acquire()
+			wake_lock?.acquire()
 		} catch(ex : Throwable) {
 			ex.printStackTrace()
 			log.e(ex, "WakeLock acquire failed.")
@@ -319,8 +319,8 @@ class DownloadService : Service() {
 		}
 	}
 	
-	internal fun addHiddenDownloadCount(count : Long) {
-		NewFileService.addHiddenDownloadCount(this, count)
+	internal fun addHiddenDownloadCount(count : Long,log:LogWriter) {
+		NewFileService.addHiddenDownloadCount(this, count,log)
 	}
 	
 	fun hasHiddenDownloadCount() : Boolean {
@@ -329,8 +329,23 @@ class DownloadService : Service() {
 	
 	private fun setServiceNotification(status : String) {
 		if(! is_alive) return
-		
-		val builder = NotificationCompat.Builder(this)
+
+		val builder = if(Build.VERSION.SDK_INT >= 26) {
+			// Android 8 から、通知のスタイルはユーザが管理することになった
+			// NotificationChannel を端末に登録しておけば、チャネルごとに管理画面が作られる
+			val channel = NotificationHelper.createNotificationChannel(
+				this,
+				"ServiceRunning",
+				"FA Downloader service",
+				"this notification is shown while FA Downloader service is active.",
+				NotificationManager.IMPORTANCE_DEFAULT,
+				log
+			)
+			NotificationCompat.Builder(this, channel.id)
+		} else {
+			NotificationCompat.Builder(this, "not_used")
+		}
+
 		builder.setSmallIcon(R.drawable.ic_service)
 		builder.setContentTitle(getString(R.string.app_name))
 		builder.setContentText(status)

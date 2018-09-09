@@ -22,8 +22,6 @@ import android.net.Network
 import android.os.Build
 import android.os.SystemClock
 import jp.juggler.fadownloader.CancelChecker
-import jp.juggler.fadownloader.LogWriter
-import jp.juggler.fadownloader.Utils
 
 //! リトライつきHTTPクライアント
 class HTTPClient {

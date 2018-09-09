@@ -19,7 +19,7 @@ class NewFileWidget : AppWidgetProvider() {
 		if(appWidgetIds.isEmpty()) return
 		val c_name = ComponentName(context, NewFileWidget::class.java)
 		
-		val count = Pref.pref(context).getLong(Pref.DOWNLOAD_COMPLETE_COUNT, 0L)
+		val count = Pref.downloadCompleteCount(Pref.pref(context))
 		
 		appWidgetManager.updateAppWidget(c_name, createRemoteViews(context, count))
 	}
@@ -32,7 +32,7 @@ class NewFileWidget : AppWidgetProvider() {
 			val appWidgetIds = appWidgetManager.getAppWidgetIds(c_name)
 			if(appWidgetIds == null || appWidgetIds.isEmpty()) return
 			
-			val count = Pref.pref(context).getLong(Pref.DOWNLOAD_COMPLETE_COUNT, 0L)
+			val count = Pref.downloadCompleteCount( Pref.pref(context) )
 			
 			appWidgetManager.updateAppWidget(c_name, createRemoteViews(context, count))
 		}

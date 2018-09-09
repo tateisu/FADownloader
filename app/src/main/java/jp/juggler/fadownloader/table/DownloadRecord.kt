@@ -1,4 +1,4 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.table
 
 import android.content.ContentResolver
 import android.content.ContentValues
@@ -8,6 +8,8 @@ import android.database.sqlite.SQLiteDatabase
 import android.graphics.Color
 import android.net.Uri
 import android.provider.BaseColumns
+import jp.juggler.fadownloader.R
+import jp.juggler.fadownloader.util.getStringOrNull
 
 class DownloadRecord {
 	
@@ -31,14 +33,14 @@ class DownloadRecord {
 		internal var idx_size : Int = 0
 		
 		internal fun setup(c : Cursor) {
-			idx_time = c.getColumnIndex(DownloadRecord.COL_TIME)
-			idx_name = c.getColumnIndex(DownloadRecord.COL_NAME)
-			idx_air_path = c.getColumnIndex(DownloadRecord.COL_AIR_PATH)
-			idx_local_file = c.getColumnIndex(DownloadRecord.COL_LOCAL_FILE)
-			idx_state_code = c.getColumnIndex(DownloadRecord.COL_STATE_CODE)
-			idx_state_message = c.getColumnIndex(DownloadRecord.COL_STATE_MESSAGE)
-			idx_lap_time = c.getColumnIndex(DownloadRecord.COL_LAP_TIME)
-			idx_size = c.getColumnIndex(DownloadRecord.COL_SIZE)
+			idx_time = c.getColumnIndex(COL_TIME)
+			idx_name = c.getColumnIndex(COL_NAME)
+			idx_air_path = c.getColumnIndex(COL_AIR_PATH)
+			idx_local_file = c.getColumnIndex(COL_LOCAL_FILE)
+			idx_state_code = c.getColumnIndex(COL_STATE_CODE)
+			idx_state_message = c.getColumnIndex(COL_STATE_MESSAGE)
+			idx_lap_time = c.getColumnIndex(COL_LAP_TIME)
+			idx_size = c.getColumnIndex(COL_SIZE)
 		}
 	}
 	
@@ -166,9 +168,15 @@ class DownloadRecord {
 		
 		fun formatStateText(context : Context, state_code : Int, state_message : String?) : String {
 			return when(state_code) {
-				STATE_COMPLETED -> context.getString(R.string.download_completed)
-				STATE_CANCELLED -> context.getString(R.string.download_cancelled)
-				STATE_QUEUED -> context.getString(R.string.queued)
+				STATE_COMPLETED -> context.getString(
+					R.string.download_completed
+				)
+				STATE_CANCELLED -> context.getString(
+					R.string.download_cancelled
+				)
+				STATE_QUEUED -> context.getString(
+					R.string.queued
+				)
 				
 				STATE_LOCAL_FILE_PREPARE_ERROR, STATE_DOWNLOAD_ERROR, STATE_EXIF_MANGLING_ERROR -> String.format(
 					"error: %s",
@@ -180,15 +188,15 @@ class DownloadRecord {
 		
 		fun getStateCodeColor(code : Int) : Int {
 			return when(code) {
-				DownloadRecord.STATE_CANCELLED -> Color.BLACK
+				STATE_CANCELLED -> Color.BLACK
 				
-				DownloadRecord.STATE_COMPLETED -> - 0xff8000
+				STATE_COMPLETED -> - 0xff8000
 				
 				STATE_QUEUED -> - 0x7fff34
 				
-				DownloadRecord.STATE_EXIF_MANGLING_ERROR -> - 0x7fff80
+				STATE_EXIF_MANGLING_ERROR -> - 0x7fff80
 				
-				DownloadRecord.STATE_LOCAL_FILE_PREPARE_ERROR, DownloadRecord.STATE_DOWNLOAD_ERROR -> - 0x400000
+				STATE_LOCAL_FILE_PREPARE_ERROR, STATE_DOWNLOAD_ERROR -> - 0x400000
 				else -> Color.BLACK
 			}
 		}

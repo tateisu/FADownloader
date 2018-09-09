@@ -32,6 +32,9 @@ import android.view.WindowManager
 import android.widget.*
 import it.sephiroth.android.library.exif2.ExifInterface
 import it.sephiroth.android.library.exif2.Rational
+import jp.juggler.fadownloader.table.DownloadRecord
+import jp.juggler.fadownloader.table.LogData
+import jp.juggler.fadownloader.util.Utils
 import org.apache.commons.io.IOUtils
 import java.io.File
 import java.io.FileInputStream
@@ -109,16 +112,18 @@ class DownloadRecordViewer {
 		
 		fun reload() = (listView.adapter as? RecordAdapter)?.reload()
 		
-		internal inner class RecordAdapter(context : Context, c : Cursor) :
+		internal inner class RecordAdapter(val context : Context, c : Cursor) :
 			CursorAdapter(context, c, false) {
 			
 			private val colIdx = DownloadRecord.ColIdx()
 			private val inflater : LayoutInflater = activity.layoutInflater
 			private val thumbnail_size : Int =
 				(0.5f + 64f * context.resources.displayMetrics.density).toInt()
-			private var bThumbnailAutoRotate : Boolean = false
 			
 			val data = DownloadRecord()
+			
+			private var bThumbnailAutoRotate =
+				Pref.uiAutoRotateThumbnail(Pref.pref(context))
 			
 			fun loadAt(position : Int) : DownloadRecord? {
 				val cursor = cursor
@@ -130,15 +135,8 @@ class DownloadRecordViewer {
 				return null
 			}
 			
-			init {
-				
-				this.bThumbnailAutoRotate = Pref.pref(activity)
-					.getBoolean(Pref.UI_THUMBNAIL_AUTO_ROTATE, Pref.DEFAULT_THUMBNAIL_AUTO_ROTATE)
-			}
-			
 			fun reload() {
-				this.bThumbnailAutoRotate = Pref.pref(activity)
-					.getBoolean(Pref.UI_THUMBNAIL_AUTO_ROTATE, Pref.DEFAULT_THUMBNAIL_AUTO_ROTATE)
+				this.bThumbnailAutoRotate = Pref.uiAutoRotateThumbnail(Pref.pref(context))
 				notifyDataSetChanged()
 			}
 			
@@ -151,10 +149,8 @@ class DownloadRecordViewer {
 			override fun bindView(view : View, context : Context, cursor : Cursor) {
 				data.loadFrom(cursor, colIdx)
 				
-				val holder = view.tag as ViewHolder
-				
-				holder.bind(data, thumbnail_size, bThumbnailAutoRotate)
-				
+				(view.tag as? ViewHolder)
+					?.bind(data, thumbnail_size, bThumbnailAutoRotate)
 			}
 			
 		}
@@ -577,13 +573,13 @@ class DownloadRecordViewer {
 						}
 					}
 					
-					activity .contentResolver.query(
+					activity.contentResolver.query(
 						tmp_info.uri,
 						null,
 						null,
 						null,
 						null
-					)?.use{ cursor->
+					)?.use { cursor ->
 						try {
 							if(cursor.moveToFirst()) {
 								val col_count = cursor.columnCount
@@ -622,12 +618,12 @@ class DownloadRecordViewer {
 			
 			try {
 				val tmp_info =
-					if(Pref.pref(activity ).getBoolean(Pref.UI_COPY_BEFORE_VIEW_SEND, false)) {
+					if(Pref.uiCopyBeforeSend(Pref.pref(activity)) ) {
 						copyToLocal(data)
 					} else {
 						fixFileURL(data)
 					} ?: return
-
+				
 				registerMediaURI(tmp_info)
 				
 				val intent = Intent(Intent.ACTION_VIEW)
@@ -636,24 +632,23 @@ class DownloadRecordViewer {
 				} else {
 					intent.data = tmp_info.uri
 				}
-				activity .startActivity(intent)
+				activity.startActivity(intent)
 			} catch(ex : Throwable) {
 				ex.printStackTrace()
 				Utils.showToast(activity, ex, "view failed.")
 			}
-			
 		}
 		
 		private fun action_send(data : DownloadRecord) {
 			try {
 				val tmp_info : Utils.FileInfo =
-					if(Pref.pref(activity ).getBoolean(Pref.UI_COPY_BEFORE_VIEW_SEND, false)) {
+					if(Pref.uiCopyBeforeSend(Pref.pref(activity)) ) {
 						copyToLocal(data)
 					} else {
 						fixFileURL(data)
 					}
-						 ?: return
-
+						?: return
+				
 				registerMediaURI(tmp_info)
 				
 				val intent = Intent(Intent.ACTION_SEND)
@@ -661,10 +656,10 @@ class DownloadRecordViewer {
 					intent.type = tmp_info.mime_type
 				}
 				intent.putExtra(Intent.EXTRA_STREAM, tmp_info.uri)
-				activity .startActivity(
+				activity.startActivity(
 					Intent.createChooser(
 						intent,
-						activity .getString(R.string.send)
+						activity.getString(R.string.send)
 					)
 				)
 			} catch(ex : Throwable) {

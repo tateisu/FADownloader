@@ -4,6 +4,10 @@ import android.net.Uri
 import android.os.SystemClock
 import android.text.TextUtils
 import jp.juggler.fadownloader.*
+import jp.juggler.fadownloader.model.ScanItem
+import jp.juggler.fadownloader.table.DownloadRecord
+import jp.juggler.fadownloader.util.LogWriter
+import jp.juggler.fadownloader.util.Utils
 import java.io.File
 import java.util.*
 import java.util.regex.Pattern
@@ -271,8 +275,8 @@ class PqiAirCard(
 				// 指定時刻まで待機する
 				while(! thread.isCancelled) {
 					val now = System.currentTimeMillis()
-					val last_file_listing = Pref.pref(service).getLong(Pref.LAST_IDLE_START, 0L)
-					val remain = last_file_listing + thread.interval * 1000L - now
+					val last_file_listing = Pref.lastIdleStart(Pref.pref(service))
+					val remain = last_file_listing + thread.intervalSeconds * 1000L - now
 					if(remain <= 0) break
 					
 					if(thread.isTetheringType || remain < 15 * 1000L) {
@@ -318,7 +322,7 @@ class PqiAirCard(
 			} else {
 				
 				while(! thread.isCancelled) {
-					network = thread.wiFiNetwork
+					network = thread.wifiNetwork
 					if(network != null) break
 					
 					// 一定時間待機してもダメならスレッドを停止する
@@ -339,7 +343,7 @@ class PqiAirCard(
 			
 			// ファイルスキャンの開始
 			if(thread.job_queue == null) {
-				Pref.pref(service).edit().putLong(Pref.LAST_IDLE_START, System.currentTimeMillis())
+				Pref.pref(service).edit().put(Pref.lastIdleStart, System.currentTimeMillis())
 					.apply()
 				
 				// 未取得状態のファイルを履歴から消す

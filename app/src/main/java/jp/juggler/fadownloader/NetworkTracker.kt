@@ -13,7 +13,10 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.SystemClock
 import android.text.TextUtils
+import jp.juggler.fadownloader.util.LogWriter
+import jp.juggler.fadownloader.util.Utils
 import jp.juggler.fadownloader.util.WorkerBase
+import jp.juggler.fadownloader.util.decodeUTF8
 
 import org.apache.commons.io.IOUtils
 

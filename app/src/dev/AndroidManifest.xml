@@ -3,7 +3,7 @@
 
     <application android:name="jp.juggler.fadownloader.App1">
         <provider
-            android:name="jp.juggler.fadownloader.DataProvider"
+            android:name="jp.juggler.fadownloader.table.DataProvider"
             android:authorities="jp.juggler.fadownloader.data.dev"
             android:exported="false"
             />

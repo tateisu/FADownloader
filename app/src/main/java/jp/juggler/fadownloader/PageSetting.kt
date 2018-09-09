@@ -151,13 +151,13 @@ class PageSetting(activity : Activity, ignored : View) :
 		
 		swThumbnailAutoRotate.setOnCheckedChangeListener(CompoundButton.OnCheckedChangeListener { _, isChecked ->
 			if(bLoading) return@OnCheckedChangeListener
-			Pref.pref(activity).edit().putBoolean(Pref.UI_THUMBNAIL_AUTO_ROTATE, isChecked).apply()
+			Pref.pref(activity).edit().put(Pref.uiAutoRotateThumbnail, isChecked).apply()
 			(activity as ActMain).reloadDownloadRecord()
 			updateFormEnabled()
 		})
 
 		swCopyBeforeViewSend.setOnCheckedChangeListener { _, isChecked ->
-			Pref.pref(activity).edit().putBoolean(Pref.UI_COPY_BEFORE_VIEW_SEND, isChecked).apply()
+			Pref.pref(activity).edit().put(Pref.uiCopyBeforeSend, isChecked).apply()
 			updateFormEnabled()
 		}
 
@@ -207,49 +207,34 @@ class PageSetting(activity : Activity, ignored : View) :
 		bLoading = true
 		
 		val pref = Pref.pref(activity)
-		var sv : String?
-		var iv : Int
-		//
-		last_target_type = - 1
-		iv = pref.getInt(Pref.UI_TARGET_TYPE, - 1)
-		if(iv >= 0 && iv < spTargetType.count) {
-			spTargetType.setSelection(iv)
-			
-			// targetTypeごとに異なるURLをロードする
-			sv = Pref.loadTargetUrl(pref, iv)
-			etTargetUrl.setText(sv)
-			last_target_type = iv
+		
+		// boolean
+		swForceWifi.isChecked = Pref.uiForceWifi(pref)
+		swThumbnailAutoRotate.isChecked = Pref.uiAutoRotateThumbnail(pref)
+		swCopyBeforeViewSend.isChecked = Pref.uiCopyBeforeSend(pref)
+		swProtectedOnly.isChecked = Pref.uiProtectedOnly(pref)
+		swSkipAlreadyDownload.isChecked = Pref.uiSkipAlreadyDownload(pref)
+		
+		// string
+		etInterval.setText(Pref.uiInterval(pref))
+		etFileType.setText(Pref.uiFileType(pref))
+		etLocationIntervalDesired.setText(Pref.uiLocationIntervalDesired(pref))
+		etLocationIntervalMin.setText( Pref.uiLocationIntervalMin( pref))
+		etSSID.setText(Pref.uiSsid(pref))
+		
+		// integer
+		var iv = Pref.uiTargetType(pref)
+		if( iv !in 0 until spTargetType.count ){
+			iv = 0
 		}
+		last_target_type = iv
+		spTargetType.setSelection(iv)
+		etTargetUrl.setText(Pref.loadTargetUrl(pref, iv))
 		
 		//
-		sv = pref.getString(Pref.UI_INTERVAL, null)
-		if(sv != null) etInterval.setText(sv)
-		//
-		sv = pref.getString(Pref.UI_FILE_TYPE, null)
-		if(sv != null) etFileType.setText(sv)
-		//
-		iv = pref.getInt(Pref.UI_LOCATION_MODE, - 1)
+		iv = Pref.uiLocationMode(pref)
 		if(iv >= 0 && iv < spLocationMode.count) spLocationMode.setSelection(iv)
-		//
-		sv = pref.getString(Pref.UI_LOCATION_INTERVAL_DESIRED, null)
-		if(sv != null) etLocationIntervalDesired.setText(sv)
-		//
-		sv = pref.getString(Pref.UI_LOCATION_INTERVAL_MIN, null)
-		if(sv != null) etLocationIntervalMin.setText(sv)
-		//
-		val bv = pref.getBoolean(Pref.UI_FORCE_WIFI, false)
-		swForceWifi.isChecked = bv
-		//
-		etSSID.setText(pref.getString(Pref.UI_SSID, ""))
-		//
-		swThumbnailAutoRotate.isChecked =
-			pref.getBoolean(Pref.UI_THUMBNAIL_AUTO_ROTATE, Pref.DEFAULT_THUMBNAIL_AUTO_ROTATE)
-		//
-		swCopyBeforeViewSend.isChecked = pref.getBoolean(Pref.UI_COPY_BEFORE_VIEW_SEND, false)
-		//
-		swProtectedOnly.isChecked = pref.getBoolean(Pref.UI_PROTECTED_ONLY, false)
-		//
-		swSkipAlreadyDownload.isChecked = pref.getBoolean(Pref.UI_SKIP_ALREADY_DOWNLOAD, false)
+		
 		//
 		updateFormEnabled()
 		bLoading = false
@@ -264,16 +249,16 @@ class PageSetting(activity : Activity, ignored : View) :
 		}
 		
 		e
-			.putInt(Pref.UI_TARGET_TYPE, spTargetType.selectedItemPosition)
-			.putString(Pref.UI_INTERVAL, etInterval.text.toString())
-			.putString(Pref.UI_FILE_TYPE, etFileType.text.toString())
-			.putInt(Pref.UI_LOCATION_MODE, spLocationMode.selectedItemPosition)
-			.putString(Pref.UI_LOCATION_INTERVAL_DESIRED, etLocationIntervalDesired.text.toString())
-			.putString(Pref.UI_LOCATION_INTERVAL_MIN, etLocationIntervalMin.text.toString())
-			.putBoolean(Pref.UI_FORCE_WIFI, swForceWifi.isChecked)
-			.putString(Pref.UI_SSID, etSSID.text.toString())
-			.putBoolean(Pref.UI_PROTECTED_ONLY, swProtectedOnly.isChecked)
-			.putBoolean(Pref.UI_SKIP_ALREADY_DOWNLOAD, swSkipAlreadyDownload.isChecked)
+			.put(Pref.uiTargetType, spTargetType.selectedItemPosition)
+			.put(Pref.uiInterval, etInterval.text.toString())
+			.put(Pref.uiFileType, etFileType.text.toString())
+			.put(Pref.uiLocationMode, spLocationMode.selectedItemPosition)
+			.put(Pref.uiLocationIntervalDesired, etLocationIntervalDesired.text.toString())
+			.put(Pref.uiLocationIntervalMin, etLocationIntervalMin.text.toString())
+			.put(Pref.uiForceWifi, swForceWifi.isChecked)
+			.put(Pref.uiSsid, etSSID.text.toString())
+			.put(Pref.uiProtectedOnly, swProtectedOnly.isChecked)
+			.put(Pref.uiSkipAlreadyDownload, swSkipAlreadyDownload.isChecked)
 		// .apply() は呼び出し側で行う
 	}
 	
@@ -319,9 +304,9 @@ class PageSetting(activity : Activity, ignored : View) :
 	
 	// フォルダの表示を更新
 	internal fun folder_view_update() {
-		val sv = Pref.pref(activity).getString(Pref.UI_FOLDER_URI, null)
+		val sv = Pref.uiFolderUri(Pref.pref(activity))
 		val name = when {
-			sv?.isEmpty() != false -> null
+			sv.isEmpty() -> null
 			Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION -> {
 				val folder = DocumentFile.fromTreeUri(activity, Uri.parse(sv))
 				if(folder != null && folder.exists() && folder.canWrite()) {
@@ -346,6 +331,6 @@ class PageSetting(activity : Activity, ignored : View) :
 	
 	fun ssid_view_update() {
 		val pref = Pref.pref(activity)
-		etSSID.setText(pref.getString(Pref.UI_SSID, ""))
+		etSSID.setText(Pref.uiSsid(pref))
 	}
 }
