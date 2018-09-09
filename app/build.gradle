@@ -30,13 +30,13 @@ android {
             dimension "f1"
 
         }
-        rcAdFree {
-            dimension "f1"
-        }
-        dev {
-            dimension "f1"
-            applicationId "jp.juggler.fadownloader.dev"
-        }
+//        rcAdFree {
+//            dimension "f1"
+//        }
+//        dev {
+//            dimension "f1"
+//            applicationId "jp.juggler.fadownloader.dev"
+//        }
     }
 
 
@@ -81,6 +81,7 @@ dependencies {
     //noinspection GradleDependency
     implementation "com.android.support:appcompat-v7:$asl_version"
 
+    implementation 'com.google.android.gms:play-services-ads:15.0.1'
     implementation "com.google.android.gms:play-services-location:15.0.1"
 
     implementation "com.google.firebase:firebase-core:16.0.3"

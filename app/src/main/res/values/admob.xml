@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="admob_app_id" tools:ignore="MissingTranslation">ca-app-pub-5890454442862024~5185883593</string>
+    <string name="banner_ad_unit_id" translatable="false" tools:ignore="MissingTranslation">ca-app-pub-5890454442862024/8133162507</string>
+</resources>

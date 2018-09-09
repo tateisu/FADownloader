@@ -20,6 +20,7 @@
         android:name="jp.juggler.fadownloader.App1"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
@@ -64,6 +65,8 @@
             android:launchMode="singleTask"
             android:screenOrientation="sensorPortrait"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
+            android:theme="@style/AppThemeNoTitle"
+            android:label="@string/app_name"
             >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -79,6 +82,7 @@
             android:screenOrientation="sensorPortrait"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             />
+
         <activity
             android:name="jp.juggler.fadownloader.picker.SSIDPicker"
             android:icon="@mipmap/ic_launcher"
@@ -86,6 +90,27 @@
             android:screenOrientation="sensorPortrait"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             />
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="@string/admob_app_id"/>
+
+        <provider
+            android:name="jp.juggler.fadownloader.table.DataProvider"
+            android:authorities="jp.juggler.fadownloader.data"
+            android:exported="false"
+            />
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="jp.juggler.fadownloader.FileProvider"
+            android:grantUriPermissions="true"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_path" />
+        </provider>
+
     </application>
 
 </manifest>
