@@ -3,6 +3,7 @@ package jp.juggler.fadownloader.targets
 import android.net.Uri
 import android.os.SystemClock
 import jp.juggler.fadownloader.*
+import jp.juggler.fadownloader.model.LocalFile
 import jp.juggler.fadownloader.model.ScanItem
 import jp.juggler.fadownloader.table.DownloadRecord
 import jp.juggler.fadownloader.util.Utils

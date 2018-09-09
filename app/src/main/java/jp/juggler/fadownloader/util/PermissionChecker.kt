@@ -1,4 +1,4 @@
-package jp.juggler.fadownloader
+package jp.juggler.fadownloader.util
 
 import android.Manifest
 import android.content.Context

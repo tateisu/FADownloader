@@ -121,7 +121,7 @@
     <string name="folder_not_writable">フォルダへの書き込み権限がありません</string>
     <string name="wifi_setting">Wi-Fiの設定</string>
     <string name="loading">(読み込み中…)</string>
-    <string name="location_update_request_result">location update request failed. (%1$d)%2$s</string>
+    <string name="location_update_request_result">location update request failed.</string>
     <string name="open_map">地図アプリを開く</string>
     <string name="create_sub_folder">サブフォルダを作成</string>
     <string name="play_store_missing">Playストアがありません</string>

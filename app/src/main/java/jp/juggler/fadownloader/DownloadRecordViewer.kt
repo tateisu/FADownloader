@@ -32,6 +32,7 @@ import android.view.WindowManager
 import android.widget.*
 import it.sephiroth.android.library.exif2.ExifInterface
 import it.sephiroth.android.library.exif2.Rational
+import jp.juggler.fadownloader.model.LocalFile
 import jp.juggler.fadownloader.table.DownloadRecord
 import jp.juggler.fadownloader.table.LogData
 import jp.juggler.fadownloader.util.Utils

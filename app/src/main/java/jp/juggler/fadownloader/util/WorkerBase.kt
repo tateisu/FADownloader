@@ -1,6 +1,5 @@
 package jp.juggler.fadownloader.util
 
-import jp.juggler.fadownloader.CancelChecker
 import java.util.concurrent.atomic.AtomicReference
 
 abstract class WorkerBase : Thread(), CancelChecker {

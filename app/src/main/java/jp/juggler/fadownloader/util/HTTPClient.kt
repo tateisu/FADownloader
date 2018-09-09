@@ -21,7 +21,6 @@ import javax.net.ssl.SSLHandshakeException
 import android.net.Network
 import android.os.Build
 import android.os.SystemClock
-import jp.juggler.fadownloader.CancelChecker
 
 //! リトライつきHTTPクライアント
 class HTTPClient {

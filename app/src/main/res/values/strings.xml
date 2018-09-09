@@ -128,7 +128,7 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
 
     <string name="location_setting_change_unavailable">location setting change unavailable</string>
     <string name="location_setting_returns_unknown_status">location setting returns unknown status %1$d</string>
-    <string name="location_update_request_result">location update request failed. (%1$d)%2$s</string>
+    <string name="location_update_request_result">location update request failed.</string>
 
     <string name="location_mode_0">OFF</string>
     <string name="location_mode_1">電力消費最低</string>

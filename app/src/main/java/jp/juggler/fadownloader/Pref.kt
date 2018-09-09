@@ -32,7 +32,7 @@ fun SharedPreferences.Editor.put(bp : IntPref, v : Int) : SharedPreferences.Edit
 
 class LongPref(
 	key : String,
-	val defVal : Long
+	private val defVal : Long
 ) : BasePref(key) {
 	
 	operator fun invoke(pref : SharedPreferences) = pref.getLong(key, defVal)
@@ -48,11 +48,11 @@ class StringPref(
 	
 	operator fun invoke(pref : SharedPreferences) : String = pref.getString(key, defVal) ?: defVal
 	
-	fun getInt(pref : SharedPreferences) = try {
-		invoke(pref).trim().toInt()
-	} catch(ex : Throwable) {
-		defVal.toInt()
-	}
+//	fun getInt(pref : SharedPreferences) = try {
+//		invoke(pref).trim().toInt()
+//	} catch(ex : Throwable) {
+//		defVal.toInt()
+//	}
 	
 	fun getIntOrNull(pref : SharedPreferences) = try {
 		invoke(pref).trim().toInt()
@@ -83,12 +83,12 @@ object Pref {
 	val uiRepeat = BooleanPref("ui_repeat", false)
 	val uiLastPage = IntPref("ui_last_page", 0)
 	val uiTargetType = IntPref("ui_target_type", - 1)
-	val uiTargetUrlFlashAirAp = StringPref("ui_flashair_url", "http://flashair/") // 歴史的な理由でキー名が特別
-	val uiTargetUrlFlashAirSta = StringPref("ui_target_url_1", "http://flashair/")
-	val uiTargetUrlPentaxKp = StringPref("ui_target_url_2", "http://192.168.0.1/")
-	val uiTargetUrlPentaxPqiAirCard =
+	private val uiTargetUrlFlashAirAp = StringPref("ui_flashair_url", "http://flashair/") // 歴史的な理由でキー名が特別
+	private val uiTargetUrlFlashAirSta = StringPref("ui_target_url_1", "http://flashair/")
+	private val uiTargetUrlPentaxKp = StringPref("ui_target_url_2", "http://192.168.0.1/")
+	private val uiTargetUrlPentaxPqiAirCard =
 		StringPref("ui_target_url_pqi_air_card", "http://192.168.1.1/")
-	val uiTargetUrlPentaxPqiAirCardThether =
+	private val uiTargetUrlPentaxPqiAirCardThether =
 		StringPref("ui_target_url_pqi_air_card_tether", "http://AutoDetect/")
 	
 	val uiFolderUri = StringPref("ui_folder_uri", "")

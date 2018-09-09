@@ -1,6 +1,5 @@
 package jp.juggler.fadownloader.model
 
-import jp.juggler.fadownloader.LocalFile
 import java.util.LinkedList
 
 class ScanItem(

@@ -4,6 +4,7 @@ import android.net.Uri
 import android.os.SystemClock
 import android.text.TextUtils
 import jp.juggler.fadownloader.*
+import jp.juggler.fadownloader.model.LocalFile
 import jp.juggler.fadownloader.model.ScanItem
 import jp.juggler.fadownloader.table.DownloadRecord
 import jp.juggler.fadownloader.util.LogWriter
@@ -151,7 +152,8 @@ class PqiAirCard(
 						val dir = if(item.remote_path == "/") "" else item.remote_path
 						
 						val remote_path = "$dir/$file_name"
-						val local_file = LocalFile(item.local_file, file_name)
+						val local_file =
+							LocalFile(item.local_file, file_name)
 						
 						if(type_str != "0") {
 							// フォルダはキューの頭に追加
@@ -362,7 +364,10 @@ class PqiAirCard(
 					ScanItem(
 						"",
 						"/",
-						LocalFile(service, thread.folder_uri.toString()),
+						LocalFile(
+							service,
+							thread.folder_uri.toString()
+						),
 						mime_type = ScanItem.MIME_TYPE_FOLDER
 					)
 				)

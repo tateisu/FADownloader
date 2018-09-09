@@ -9,6 +9,7 @@ import android.os.Build
 import android.support.v4.provider.DocumentFile
 import android.view.View
 import android.widget.*
+import jp.juggler.fadownloader.model.LocalFile
 
 class PageSetting(activity : Activity, ignored : View) :
 	PagerAdapterBase.PageViewHolder(activity, ignored), View.OnClickListener {

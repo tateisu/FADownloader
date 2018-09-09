@@ -9,18 +9,17 @@ import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.net.wifi.WifiManager
-import android.os.*
+import android.os.Build
+import android.os.Handler
+import android.os.IBinder
+import android.os.PowerManager
 import android.support.v4.app.NotificationCompat
-import com.google.android.gms.common.ConnectionResult
-import com.google.android.gms.common.api.GoogleApiClient
-import com.google.android.gms.location.LocationServices
 import jp.juggler.fadownloader.util.LogWriter
 import jp.juggler.fadownloader.util.NotificationHelper
 import jp.juggler.fadownloader.util.Utils
 
 class DownloadService : Service() {
-	
-	
+
 	companion object {
 		
 		internal const val ACTION_BROADCAST_RECEIVED = "broadcast_received"
@@ -94,43 +93,6 @@ class DownloadService : Service() {
 	private lateinit var mNotificationManager : NotificationManager
 	internal lateinit var worker_tracker : WorkerTracker
 	internal lateinit var media_tracker : MediaScannerTracker
-	private lateinit var mGoogleApiClient : GoogleApiClient
-	
-	private val connection_fail_callback : GoogleApiClient.OnConnectionFailedListener =
-		GoogleApiClient.OnConnectionFailedListener { connectionResult ->
-			val code = connectionResult.errorCode
-			if(code == ConnectionResult.SERVICE_INVALID) {
-				// Kindle端末で発生
-				return@OnConnectionFailedListener
-			}
-			
-			val msg = Utils.getConnectionResultErrorMessage(connectionResult)
-			log.w(R.string.play_service_connection_failed, code, msg)
-			location_tracker.onGoogleAPIDisconnected()
-		}
-	
-	private val connection_callback : GoogleApiClient.ConnectionCallbacks =
-		object : GoogleApiClient.ConnectionCallbacks {
-			override fun onConnected(bundle : Bundle?) {
-				if(! is_alive) return
-				
-				// 位置情報の追跡状態を更新する
-				location_tracker.onGoogleAPIConnected()
-			}
-			
-			// Playサービスとの接続が失われた
-			override fun onConnectionSuspended(i : Int) {
-				if(! is_alive) return
-				
-				val msg = Utils.getConnectionSuspendedMessage(i)
-				log.w(R.string.play_service_connection_suspended, i, msg)
-				
-				// 再接続は自動で行われるらしい
-				
-				// 位置情報の追跡状態を更新する
-				location_tracker.onGoogleAPIDisconnected()
-			}
-		}
 	
 	override fun onCreate() {
 		super.onCreate()
@@ -158,18 +120,7 @@ class DownloadService : Service() {
 		
 		setServiceNotification(getString(R.string.service_idle))
 		
-		mGoogleApiClient = GoogleApiClient.Builder(this)
-			.addConnectionCallbacks(connection_callback)
-			.addOnConnectionFailedListener(connection_fail_callback)
-			.addApi(LocationServices.API)
-			.build()
-		mGoogleApiClient.connect()
-		
-		location_tracker = LocationTracker(
-			this,
-			log,
-			mGoogleApiClient
-		) { location ->
+		location_tracker = LocationTracker(this, log) { location ->
 			DownloadService.location = location
 		}
 		
@@ -199,11 +150,6 @@ class DownloadService : Service() {
 		location_tracker.dispose()
 		
 		wifi_tracker.dispose()
-		
-		if(mGoogleApiClient.isConnected) {
-			mGoogleApiClient.disconnect()
-		}
-		
 		
 		if(cancel_alarm_on_destroy) {
 			try {
@@ -319,8 +265,8 @@ class DownloadService : Service() {
 		}
 	}
 	
-	internal fun addHiddenDownloadCount(count : Long,log:LogWriter) {
-		NewFileService.addHiddenDownloadCount(this, count,log)
+	internal fun addHiddenDownloadCount(count : Long, log : LogWriter) {
+		NewFileService.addHiddenDownloadCount(this, count, log)
 	}
 	
 	fun hasHiddenDownloadCount() : Boolean {
@@ -329,7 +275,7 @@ class DownloadService : Service() {
 	
 	private fun setServiceNotification(status : String) {
 		if(! is_alive) return
-
+		
 		val builder = if(Build.VERSION.SDK_INT >= 26) {
 			// Android 8 から、通知のスタイルはユーザが管理することになった
 			// NotificationChannel を端末に登録しておけば、チャネルごとに管理画面が作られる
@@ -345,7 +291,7 @@ class DownloadService : Service() {
 		} else {
 			NotificationCompat.Builder(this, "not_used")
 		}
-
+		
 		builder.setSmallIcon(R.drawable.ic_service)
 		builder.setContentTitle(getString(R.string.app_name))
 		builder.setContentText(status)

@@ -25,13 +25,13 @@ import com.example.android.trivialdrivesample.util.IabHelper
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.OnCompleteListener
 import config.BuildVariant
+import jp.juggler.fadownloader.model.LocalFile
+import jp.juggler.fadownloader.util.PermissionChecker
 import jp.juggler.fadownloader.util.Utils
 import jp.juggler.fadownloader.util.encodeUTF8
 import java.io.File
@@ -60,23 +60,18 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		internal const val REMOVE_AD_PRODUCT_ID = "remove_ad"
 		internal const val TAG = "ActMain"
 	}
-
+	
 	internal lateinit var tvStatus : TextView
-	
 	internal lateinit var pager : ViewPager
-	private lateinit var pager_adapter : PagerAdapterBase
-	private lateinit var mGoogleApiClient : GoogleApiClient
-	
 	internal lateinit var handler : Handler
-
+	
+	private lateinit var pager_adapter : PagerAdapterBase
+	private var mAdView : AdView? = null
 	private var permission_alert : WeakReference<Dialog>? = null
 	private var mLocationSettingsRequest : LocationSettingsRequest? = null
 	
 	private var is_resume = false
-	
 	internal var is_start = false
-	
-	private var mAdView : AdView? = null
 	
 	private var page_idx_setting : Int = 0
 	private var page_idx_log : Int = 0
@@ -127,6 +122,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 						
 					}
 				}
+				
 				LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE ->{
 					// Location settings are not satisfied.
 					// However, we have no way to fix the settings so we won't show the dialog.
@@ -136,6 +132,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 						R.string.location_setting_change_unavailable
 					)
 				}
+				
 				else->{
 					Utils.showToast(
 						this@ActMain,
@@ -157,51 +154,6 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			tvStatus.text = status
 		}
 	}
-	
-	
-	private val connection_fail_callback : GoogleApiClient.OnConnectionFailedListener =
-		GoogleApiClient.OnConnectionFailedListener { connectionResult ->
-			val code = connectionResult.errorCode
-			if(code == ConnectionResult.SERVICE_INVALID) {
-				// Kindle端末で発生
-				return@OnConnectionFailedListener
-			}
-			
-			var msg = Utils.getConnectionResultErrorMessage(connectionResult)
-			msg = getString(R.string.play_service_connection_failed, code, msg)
-			Utils.showToast(this@ActMain, false, msg)
-			
-			if(code == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED) {
-				try {
-					val intent = Intent(Intent.ACTION_VIEW)
-					intent.data = Uri.parse("market://details?id=com.google.android.gms")
-					startActivity(intent)
-				} catch(ex : Throwable) {
-					ex.printStackTrace()
-				}
-				
-			}
-		}
-	
-	private val connection_callback : GoogleApiClient.ConnectionCallbacks =
-		object : GoogleApiClient.ConnectionCallbacks {
-			override fun onConnected(bundle : Bundle?) {
-				permission_request()
-			}
-			
-			// Playサービスとの接続が失われた
-			override fun onConnectionSuspended(i : Int) {
-				val msg = Utils.getConnectionSuspendedMessage(i)
-				Utils.showToast(
-					this@ActMain,
-					false,
-					R.string.play_service_connection_suspended,
-					i,
-					msg
-				)
-				// 再接続は自動で行われるらしい
-			}
-		}
 	
 	private var mIabHelper : IabHelper? = null
 	internal var bSetupCompleted : Boolean = false
@@ -306,8 +258,6 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		val pageR = pager_adapter.getPage<PageRecord>(page_idx_record)
 		pageR?.onStart()
 		
-		mGoogleApiClient.connect()
-		
 		proc_status.run()
 		
 	}
@@ -315,9 +265,6 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	override fun onStop() {
 		is_start = false
 		
-		if(mGoogleApiClient.isConnected) {
-			mGoogleApiClient.disconnect()
-		}
 		
 		handler.removeCallbacks(proc_status)
 		
@@ -490,11 +437,6 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		pager.adapter = pager_adapter
 		pager.currentItem = Pref.uiLastPage( Pref.pref(this) )
 		
-		mGoogleApiClient = GoogleApiClient.Builder(this)
-			.addConnectionCallbacks(connection_callback)
-			.addOnConnectionFailedListener(connection_fail_callback)
-			.addApi(LocationServices.API)
-			.build()
 		
 		if(savedInstanceState == null) {
 			handleIntent(intent)
@@ -529,7 +471,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		return true
 	}
 	
-	internal fun permission_request() {
+	private fun permission_request() {
 		val missing_permission_list = PermissionChecker.getMissingPermissionList(this)
 		if(! missing_permission_list.isEmpty()) {
 			var dialog : Dialog?
@@ -604,9 +546,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			Pref.uiLocationMode(Pref.pref(this)) == LocationTracker.NO_LOCATION_UPDATE ->
 				startDownloadService()
 
-			mGoogleApiClient.isConnected -> startLocationSettingCheck()
-
-			else -> Utils.showToast(this, false, R.string.geo_tagging_not_enabled)
+			else-> startLocationSettingCheck()
 		}
 	}
 	
@@ -798,33 +738,32 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			Pref.purchasedRemoveAd(Pref.pref(this))
 		}
 		
+		if( bRemoveAdPurchased) return
 		
-		if(! bRemoveAdPurchased) {
-			try {
-				mIabHelper = IabHelper(this, APP_PUBLIC_KEY)
-				mIabHelper !!.startSetup(IabHelper.OnIabSetupFinishedListener { result ->
-					// return if activity is destroyed
-					if(mIabHelper == null) return@OnIabSetupFinishedListener
-					
-					if(! result.isSuccess) {
-						Log.d(
-							TAG, "onIabSetupFinished: "
-								+ result.response
-								+ "," + result.message
-						)
-						return@OnIabSetupFinishedListener
-					}
-					
-					bSetupCompleted = true
-					
-					// セットアップが終わったら購入済みアイテムの確認を開始する
-					mIabHelper !!.queryInventoryAsync(mGotInventoryListener)
-				})
-			} catch(ex : Throwable) {
-				ex.printStackTrace()
-				// 多分Google Playのない端末
-			}
-			
+		try {
+			val iabHelper = IabHelper(this, APP_PUBLIC_KEY)
+			mIabHelper =  iabHelper
+			iabHelper.startSetup(IabHelper.OnIabSetupFinishedListener { result ->
+				// return if activity is destroyed
+				if(mIabHelper == null) return@OnIabSetupFinishedListener
+				
+				if(! result.isSuccess) {
+					Log.d(
+						TAG, "onIabSetupFinished: "
+							+ result.response
+							+ "," + result.message
+					)
+					return@OnIabSetupFinishedListener
+				}
+				
+				bSetupCompleted = true
+				
+				// セットアップが終わったら購入済みアイテムの確認を開始する
+				mIabHelper?.queryInventoryAsync(mGotInventoryListener)
+			})
+		} catch(ex : Throwable) {
+			ex.printStackTrace()
+			// 多分Google Playのない端末
 		}
 	}
 	

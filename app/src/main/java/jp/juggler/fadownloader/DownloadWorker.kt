@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern
 
 import it.sephiroth.android.library.exif2.ExifInterface
+import jp.juggler.fadownloader.model.LocalFile
 import jp.juggler.fadownloader.model.ScanItem
 import jp.juggler.fadownloader.table.DownloadRecord
 import jp.juggler.fadownloader.targets.FlashAir

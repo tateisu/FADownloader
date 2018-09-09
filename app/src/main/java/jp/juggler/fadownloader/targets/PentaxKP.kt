@@ -12,6 +12,7 @@ import com.neovisionaries.ws.client.WebSocketFactory
 import com.neovisionaries.ws.client.WebSocketFrame
 import com.neovisionaries.ws.client.WebSocketState
 import jp.juggler.fadownloader.*
+import jp.juggler.fadownloader.model.LocalFile
 import jp.juggler.fadownloader.model.ScanItem
 import jp.juggler.fadownloader.table.DownloadRecord
 import jp.juggler.fadownloader.util.Utils
@@ -157,7 +158,8 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 				log.e("missing root folder.")
 				return false
 			}
-			val local_root = LocalFile(service, thread.folder_uri.toString())
+			val local_root =
+				LocalFile(service, thread.folder_uri.toString())
 			val local_dcim = LocalFile(local_root, "DCIM")
 			var i = 0
 			val ie = root_dir.length()
@@ -176,7 +178,8 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 					continue
 				}
 				
-				val sub_dir_local = LocalFile(local_dcim, sub_dir_name)
+				val sub_dir_local =
+					LocalFile(local_dcim, sub_dir_name)
 				val files = o.optJSONArray("files")
 				if(files == null) {
 					++ i
@@ -199,7 +202,8 @@ class PentaxKP(internal val service : DownloadService, internal val thread : Dow
 						// マッチした
 						
 						val remote_path = "/$sub_dir_name/$file_name"
-						val local_file = LocalFile(sub_dir_local, file_name)
+						val local_file =
+							LocalFile(sub_dir_local, file_name)
 						
 						// ローカルのファイルサイズを調べて既読スキップ
 						if(thread.checkSkip(local_file, log, 1L)) continue
