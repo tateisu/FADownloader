@@ -7,6 +7,7 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -17,7 +18,6 @@ import android.support.v4.provider.DocumentFile
 import android.support.v4.view.ViewPager
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
-import android.text.TextUtils
 import android.view.*
 import android.widget.TextView
 import com.example.android.trivialdrivesample.util.IabHelper
@@ -28,7 +28,6 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.OnCompleteListener
-import config.BuildVariant
 import jp.juggler.fadownloader.model.LocalFile
 import jp.juggler.fadownloader.picker.FolderPicker
 import jp.juggler.fadownloader.picker.SSIDPicker
@@ -61,6 +60,8 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		internal const val REMOVE_AD_PRODUCT_ID = "remove_ad"
 	}
 	
+	internal lateinit var pref : SharedPreferences
+	
 	internal lateinit var tvStatus : TextView
 	internal lateinit var handler : Handler
 	
@@ -81,69 +82,77 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	/////////////////////////////////////////////////////////////////////////
 	// アプリ権限の要求
 	
-	private val location_setting_callback2 :OnCompleteListener<LocationSettingsResponse> = OnCompleteListener{ task->
-		try {
-			task.getResult(ApiException::class.java)
-			// All location settings are satisfied.
-			// The client can initialize location requests here.
-			startDownloadService()
-		} catch (apiException: ApiException) {
-			when(apiException.statusCode) {
-				LocationSettingsStatusCodes.RESOLUTION_REQUIRED->{
-					
-					if(Build.VERSION.SDK_INT <= 17) {
+	private val location_setting_callback2 : OnCompleteListener<LocationSettingsResponse> =
+		OnCompleteListener { task ->
+			try {
+				task.getResult(ApiException::class.java)
+				// All location settings are satisfied.
+				// The client can initialize location requests here.
+				startDownloadService()
+			} catch(apiException : ApiException) {
+				when(apiException.statusCode) {
+					LocationSettingsStatusCodes.RESOLUTION_REQUIRED -> {
 						
-						// SH-02E(4.1.2),F10d(4.2.2)などで
-						// Wi-Fiが無効だと RESOLUTION_REQUIRED を返すが、
-						// STAモード前提だとWi-FiはOFFで正しい
-						// startResolutionForResult で表示されるダイアログで
-						// OKしてもキャンセルしても戻るボタンを押してもresultCodeが0を返す
-						// ていうかGeoTagging modeをOFF以外のどれにしてもWi-FiをONにしろと警告が出る
-						// これなら何もチェックせずにサービスを開始した方がマシ
-						// なお、4.3のGalaxy Nexus ではこの問題は起きなかった
-						
-						startDownloadService()
-						
-					} else {
-						// Location settings are not satisfied.
-						// But could be fixed by showing the user a dialog.
-						try {
-							if( apiException !is ResolvableApiException){
-								// should not happen
-							}else{
-								// Show the dialog by calling startResolutionForResult(),
-								// and check the result in onActivityResult().
-								apiException.startResolutionForResult( this@ActMain, REQUEST_RESOLUTION)
+						if(Build.VERSION.SDK_INT <= 17) {
+							
+							// SH-02E(4.1.2),F10d(4.2.2)などで
+							// Wi-Fiが無効だと RESOLUTION_REQUIRED を返すが、
+							// STAモード前提だとWi-FiはOFFで正しい
+							// startResolutionForResult で表示されるダイアログで
+							// OKしてもキャンセルしても戻るボタンを押してもresultCodeが0を返す
+							// ていうかGeoTagging modeをOFF以外のどれにしてもWi-FiをONにしろと警告が出る
+							// これなら何もチェックせずにサービスを開始した方がマシ
+							// なお、4.3のGalaxy Nexus ではこの問題は起きなかった
+							
+							startDownloadService()
+							
+						} else {
+							// Location settings are not satisfied.
+							// But could be fixed by showing the user a dialog.
+							try {
+								if(apiException !is ResolvableApiException) {
+									// should not happen
+								} else {
+									// Show the dialog by calling startResolutionForResult(),
+									// and check the result in onActivityResult().
+									apiException.startResolutionForResult(
+										this@ActMain,
+										REQUEST_RESOLUTION
+									)
+								}
+							} catch(ex : IntentSender.SendIntentException) {
+								log.trace(ex, "resolution_request_failed")
+								Utils.showToast(
+									this@ActMain,
+									true,
+									R.string.resolution_request_failed
+								)
 							}
-						} catch ( ex: IntentSender.SendIntentException ) {
-							log.trace(ex,"resolution_request_failed")
-							Utils.showToast(this@ActMain, true, R.string.resolution_request_failed)
+							
 						}
-						
 					}
-				}
-				
-				LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE ->{
-					// Location settings are not satisfied.
-					// However, we have no way to fix the settings so we won't show the dialog.
-					Utils.showToast(
-						this@ActMain,
-						true,
-						R.string.location_setting_change_unavailable
-					)
-				}
-				
-				else->{
-					Utils.showToast(
-						this@ActMain,
-						true,
-						R.string.location_setting_returns_unknown_status,
-						apiException.statusCode
-					)
+					
+					LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE -> {
+						// Location settings are not satisfied.
+						// However, we have no way to fix the settings so we won't show the dialog.
+						Utils.showToast(
+							this@ActMain,
+							true,
+							R.string.location_setting_change_unavailable
+						)
+					}
+					
+					else -> {
+						Utils.showToast(
+							this@ActMain,
+							true,
+							R.string.location_setting_returns_unknown_status,
+							apiException.statusCode
+						)
+					}
 				}
 			}
 		}
-	}
 	
 	private val proc_status : Runnable = object : Runnable {
 		override fun run() {
@@ -181,7 +190,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			if(mIabHelper == null) return@OnIabPurchaseFinishedListener
 			
 			if(result.isFailure) {
-				log.e( "onIabPurchaseFinished: ${result.response},${result.message}")
+				log.e("onIabPurchaseFinished: ${result.response},${result.message}")
 				return@OnIabPurchaseFinishedListener
 			}
 			
@@ -229,7 +238,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			mAdView !!.pause()
 		}
 		
-		val e = Pref.pref(this).edit()
+		val e = pref.edit()
 		e.put(Pref.uiLastPage, pager.currentItem)
 		
 		val page = pager_adapter.getPage<PageSetting>(page_idx_setting)
@@ -280,92 +289,102 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	}
 	
 	@SuppressLint("NewApi")
-	public override fun onActivityResult(requestCode : Int, resultCode : Int, resultData : Intent) {
-		// mIabHelper が結果を処理した
-		if(mIabHelper != null && mIabHelper !!.handleActivityResult(
-				requestCode,
-				resultCode,
-				resultData
-			)) return
+	public override fun onActivityResult(
+		requestCode : Int,
+		resultCode : Int,
+		resultData : Intent?
+	) {
 		
-		if(requestCode == REQUEST_RESOLUTION) {
-			if(resultCode == Activity.RESULT_OK) {
-				startDownloadService()
-			} else {
-				Utils.showToast(this, true, "resolution request result: %s", resultCode)
-			}
-			
-		} else if(requestCode == REQUEST_CODE_DOCUMENT) {
-			if(resultCode == Activity.RESULT_OK) {
-				if(Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION) {
-					try {
-						val treeUri = resultData.data
-						// 永続的な許可を取得
-						contentResolver.takePersistableUriPermission(
-							treeUri !!,
-							Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-						)
-						// 覚えておく
-						Pref.pref(this).edit()
-							.put(Pref.uiFolderUri, treeUri.toString())
-							.apply()
-					} catch(ex : Throwable) {
-						log.trace(ex,"folder access failed.")
-						
-						Utils.showToast(this, true,ex.withCaption("folder access failed."))
-					}
-					
-				}
-			}
-			val page = pager_adapter.getPage<PageSetting>(page_idx_setting)
-			page?.folder_view_update()
+		if(mIabHelper?.handleActivityResult(requestCode, resultCode, resultData) == true) {
+			// mIabHelper が結果を処理した
 			return
-		} else if(requestCode == REQUEST_FOLDER_PICKER) {
-			if(resultCode == Activity.RESULT_OK) {
-				try {
-					val path = resultData.getStringExtra(FolderPicker.EXTRA_FOLDER)
-					val dummy =
-						Thread.currentThread().id.toString() + "." + android.os.Process.myPid()
-					val test_dir = File(File(path), dummy)
-					
-					test_dir.mkdir()
-					try {
-						val test_file = File(test_dir, dummy)
+		}
+		if(requestCode != Activity.RESULT_OK) {
+			when(requestCode) {
+				REQUEST_RESOLUTION -> Utils.showToast(
+					this,
+					true,
+					"resolution request result: $resultCode"
+				)
+			}
+		} else if(resultCode == Activity.RESULT_OK) {
+			when(requestCode) {
+				REQUEST_RESOLUTION -> startDownloadService()
+				
+				REQUEST_CODE_DOCUMENT -> {
+					if(Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION) {
 						try {
-							FileOutputStream(test_file).use { fos ->
-								fos.write("TEST".encodeUTF8() )
+							val treeUri = resultData?.data
+							if(treeUri != null) {
+								// 永続的な許可を取得
+								contentResolver.takePersistableUriPermission(
+									treeUri,
+									Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+								)
+								// 覚えておく
+								pref.edit()
+									.put(Pref.uiFolderUri, treeUri.toString())
+									.apply()
 							}
-						} finally {
-							test_file.delete()
+						} catch(ex : Throwable) {
+							log.trace(ex, "folder access failed.")
+							
+							Utils.showToast(this, true, ex.withCaption("folder access failed."))
 						}
-					} finally {
-						test_dir.delete()
+						
 					}
-					// 覚えておく
-					Pref.pref(this).edit()
-						.put(Pref.uiFolderUri,path)
-						.apply()
-				} catch(ex : Throwable) {
-					log.trace(ex,"folder access failed.")
-					Utils.showToast(this,true, ex.withCaption( "folder access failed."))
+					val page = pager_adapter.getPage<PageSetting>(page_idx_setting)
+					page?.folder_view_update()
+					return
 				}
 				
-			}
-			val page = pager_adapter.getPage<PageSetting>(page_idx_setting)
-			page?.folder_view_update()
-			return
-		} else if(requestCode == REQUEST_SSID_PICKER) {
-			if(resultCode == Activity.RESULT_OK) {
-				val sv = resultData.getStringExtra(SSIDPicker.EXTRA_SSID)
-				if(! TextUtils.isEmpty(sv)) {
-					Pref.pref(this).edit()
-						.put(Pref.uiSsid,sv)
-						.apply()
+				REQUEST_FOLDER_PICKER -> {
+					try {
+						val path = resultData?.getStringExtra(FolderPicker.EXTRA_FOLDER)
+						if(path != null) {
+							val dummy =
+								Thread.currentThread().id.toString() + "." + android.os.Process.myPid()
+							val test_dir = File(File(path), dummy)
+							
+							test_dir.mkdir()
+							try {
+								val test_file = File(test_dir, dummy)
+								try {
+									FileOutputStream(test_file).use { fos ->
+										fos.write("TEST".encodeUTF8())
+									}
+								} finally {
+									test_file.delete()
+								}
+							} finally {
+								test_dir.delete()
+							}
+							// 覚えておく
+							pref.edit()
+								.put(Pref.uiFolderUri, path)
+								.apply()
+						}
+					} catch(ex : Throwable) {
+						log.trace(ex, "folder access failed.")
+						Utils.showToast(this, true, ex.withCaption("folder access failed."))
+					}
+					val page = pager_adapter.getPage<PageSetting>(page_idx_setting)
+					page?.folder_view_update()
+					return
+				}
+				
+				REQUEST_SSID_PICKER -> {
+					val sv = resultData?.getStringExtra(SSIDPicker.EXTRA_SSID)
+					if(sv?.isNotEmpty() == true) {
+						pref.edit()
+							.put(Pref.uiSsid, sv)
+							.apply()
+					}
+					val page = pager_adapter.getPage<PageSetting>(page_idx_setting)
+					page?.ssid_view_update()
+					return
 				}
 			}
-			val page = pager_adapter.getPage<PageSetting>(page_idx_setting)
-			page?.ssid_view_update()
-			return
 		}
 		
 		super.onActivityResult(requestCode, resultCode, resultData)
@@ -374,6 +393,9 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	
 	override fun onCreate(savedInstanceState : Bundle?) {
 		super.onCreate(savedInstanceState)
+		
+		this.pref = Pref.pref(this)
+		
 		setContentView(R.layout.act_main)
 		
 		//		ActionBar bar = getSupportActionBar();
@@ -386,7 +408,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		setupIabHelper()
 		
 		mAdView = findViewById(R.id.adView)
-		if(BuildVariant.AD_FREE) {
+		if(Pref.purchasedRemoveAd(pref)) {
 			(mAdView !!.parent as ViewGroup).removeView(mAdView)
 			mAdView = null
 		} else {
@@ -428,7 +450,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			PageOther::class.java
 		)
 		pager.adapter = pager_adapter
-		pager.currentItem = Pref.uiLastPage( Pref.pref(this) )
+		pager.currentItem = Pref.uiLastPage(pref)
 		
 		
 		if(savedInstanceState == null) {
@@ -503,7 +525,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	
 	// 転送サービスを停止
 	private fun download_stop_button() {
-		Pref.pref(this).edit()
+		pref.edit()
 			.put(Pref.lastMode, Pref.LAST_MODE_STOP)
 			.put(Pref.lastModeUpdate, System.currentTimeMillis())
 			.apply()
@@ -515,7 +537,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			val am = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
 			am?.cancel(pi)
 		} catch(ex : Throwable) {
-			log.trace(ex,"createAlarmPendingIntent failed.")
+			log.trace(ex, "createAlarmPendingIntent failed.")
 		}
 		
 	}
@@ -523,10 +545,10 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	// 転送サービスを開始
 	private fun download_start_button(repeat : Boolean) {
 		
-		val e = Pref.pref(this).edit()
+		val e = pref.edit()
 		
 		//repeat引数の値は、LocationSettingの確認が終わるまで覚えておく必要がある
-		e.put(Pref.uiRepeat,repeat)
+		e.put(Pref.uiRepeat, repeat)
 		
 		// UIフォームの値を設定に保存
 		val page = pager_adapter.getPage<PageSetting>(page_idx_setting)
@@ -536,10 +558,10 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		
 		when {
 			// 位置情報を使わないオプションの時はLocationSettingをチェックしない
-			Pref.uiLocationMode(Pref.pref(this)) == LocationTracker.NO_LOCATION_UPDATE ->
+			Pref.uiLocationMode(pref) == LocationTracker.NO_LOCATION_UPDATE ->
 				startDownloadService()
-
-			else-> startLocationSettingCheck()
+			
+			else -> startLocationSettingCheck()
 		}
 	}
 	
@@ -562,7 +584,6 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	}
 	
 	private fun startDownloadService() {
-		val pref = Pref.pref(this)
 		
 		// LocationSettingを確認する前のrepeat引数の値を思い出す
 		val repeat = Pref.uiRepeat(pref)
@@ -600,14 +621,14 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			return
 		}
 		
-		val interval = Pref.uiInterval.getIntOrNull(pref) ?: -1
+		val interval = Pref.uiInterval.getIntOrNull(pref) ?: - 1
 		if(repeat && interval < 1) {
 			Utils.showToast(this, true, getString(R.string.repeat_interval_not_ok))
 			return
 		}
 		
 		val file_type = Pref.uiFileType(pref).trim()
-		if(TextUtils.isEmpty(file_type)) {
+		if(file_type.isEmpty()) {
 			Utils.showToast(this, true, getString(R.string.file_type_empty))
 			return
 		}
@@ -623,22 +644,26 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		
 		if(location_mode != LocationTracker.NO_LOCATION_UPDATE) {
 			
-			fun x1000(v:Int?) =if(v!=null ){
+			fun x1000(v : Int?) = if(v != null) {
 				v.toLong() * 1000L
-			}else{
-				-1L
+			} else {
+				- 1L
 			}
 			
-			location_update_interval_desired = x1000(Pref.uiLocationIntervalDesired.getIntOrNull(pref))
+			location_update_interval_desired =
+				x1000(Pref.uiLocationIntervalDesired.getIntOrNull(pref))
 			location_update_interval_min = x1000(Pref.uiLocationIntervalMin.getIntOrNull(pref))
 			
-			when{
-				!repeat ->{}
-				location_update_interval_desired < 1000L ->{
+			when {
+				! repeat -> {
+				}
+				
+				location_update_interval_desired < 1000L -> {
 					Utils.showToast(this, true, getString(R.string.location_update_interval_not_ok))
 					return
 				}
-				location_update_interval_min < 1000L ->{
+				
+				location_update_interval_min < 1000L -> {
 					Utils.showToast(this, true, getString(R.string.location_update_interval_not_ok))
 					return
 				}
@@ -647,7 +672,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		
 		val force_wifi = Pref.uiForceWifi(pref)
 		
-		val ssid:String
+		val ssid : String
 		if(! force_wifi) {
 			ssid = ""
 		} else {
@@ -663,8 +688,8 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		
 		// 最後に押したボタンを覚えておく
 		pref.edit()
-			.put( Pref.lastMode,if(repeat) Pref.LAST_MODE_REPEAT else Pref.LAST_MODE_ONCE)
-			.put( Pref.lastModeUpdate,System.currentTimeMillis())
+			.put(Pref.lastMode, if(repeat) Pref.LAST_MODE_REPEAT else Pref.LAST_MODE_ONCE)
+			.put(Pref.lastModeUpdate, System.currentTimeMillis())
 			.apply()
 		
 		// 転送サービスを開始
@@ -725,23 +750,18 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	// onCreateから呼ばれる
 	private fun setupIabHelper() {
 		
-		bRemoveAdPurchased = if(BuildVariant.AD_FREE) {
-			true
-		} else {
-			Pref.purchasedRemoveAd(Pref.pref(this))
-		}
-		
-		if( bRemoveAdPurchased) return
+		bRemoveAdPurchased = Pref.purchasedRemoveAd(pref)
+		if(bRemoveAdPurchased) return
 		
 		try {
 			val iabHelper = IabHelper(this, APP_PUBLIC_KEY)
-			mIabHelper =  iabHelper
+			mIabHelper = iabHelper
 			iabHelper.startSetup(IabHelper.OnIabSetupFinishedListener { result ->
 				// return if activity is destroyed
 				if(mIabHelper == null) return@OnIabSetupFinishedListener
 				
 				if(! result.isSuccess) {
-					log.e( "onIabSetupFinished: ${result.response},${result.message}")
+					log.e("onIabSetupFinished: ${result.response},${result.message}")
 					return@OnIabSetupFinishedListener
 				}
 				
@@ -751,7 +771,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 				mIabHelper?.queryInventoryAsync(mGotInventoryListener)
 			})
 		} catch(ex : Throwable) {
-			log.trace(ex,"IabHelper failed.")
+			log.trace(ex, "IabHelper failed.")
 			// 多分Google Playのない端末
 		}
 	}
@@ -762,7 +782,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			val iabHelper = mIabHelper
 			if(iabHelper == null) {
 				Utils.showToast(this, false, getString(R.string.play_store_missing))
-			}else{
+			} else {
 				iabHelper.launchPurchaseFlow(
 					this,
 					REMOVE_AD_PRODUCT_ID,
@@ -775,19 +795,17 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			}
 			
 		} catch(ex : Throwable) {
-			log.trace(ex,"startRemoveAdPurchase failed.")
+			log.trace(ex, "startRemoveAdPurchase failed.")
 		}
 		
 	}
 	
 	internal fun remove_ad(isPurchased : Boolean) {
 		bRemoveAdPurchased = isPurchased
-		if(isPurchased) {
-			if(mAdView != null) {
-				(mAdView !!.parent as ViewGroup).removeView(mAdView)
-				mAdView !!.destroy()
-				mAdView = null
-			}
+		if(isPurchased && mAdView != null) {
+			(mAdView?.parent as? ViewGroup)?.removeView(mAdView)
+			mAdView?.destroy()
+			mAdView = null
 		}
 		
 		val page = pager_adapter.getPage<PageOther>(page_idx_other)
@@ -798,5 +816,5 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		val page = pager_adapter.getPage<PageRecord>(page_idx_record)
 		page?.viewer?.reload()
 	}
-
+	
 }

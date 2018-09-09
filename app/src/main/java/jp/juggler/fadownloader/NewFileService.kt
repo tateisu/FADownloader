@@ -29,21 +29,30 @@ class NewFileService : IntentService("DownloadCountService") {
 			var hidden_count =Pref.downloadCompleteCountHidden(pref)
 			if(hidden_count < 0L) hidden_count = 0L
 			
-			if(delta > 0L) {
-				hidden_count += delta
-				pref.edit().put(Pref.downloadCompleteCountHidden, hidden_count).apply()
-				return
-			} else if(hidden_count > 0) {
-				var count = Pref.downloadCompleteCount(pref)
-				if(count < 0L) count = 0L
-				count += hidden_count
-				hidden_count = 0L
-				pref.edit()
-					.put(Pref.downloadCompleteCountHidden, hidden_count)
-					.put(Pref.downloadCompleteCount, count)
-					.apply()
-				
-				showCount(context, count,log)
+			when {
+				// ダウンロードしたファイルが増えた際に呼ばれる
+				delta > 0L -> {
+					hidden_count += delta
+					pref.edit().put(Pref.downloadCompleteCountHidden, hidden_count).apply()
+					return
+				}
+				// スキャン完了時にdelta==0で呼ばれる
+				// 通知を更新する
+				hidden_count > 0 -> {
+					// 表示中のカウント値
+					var count = Pref.downloadCompleteCount(pref)
+					if(count < 0L) count = 0L
+					// 増えた分を追加する
+					count += hidden_count
+					hidden_count = 0L
+					// 値を保存する
+					pref.edit()
+						.put(Pref.downloadCompleteCountHidden, hidden_count)
+						.put(Pref.downloadCompleteCount, count)
+						.apply()
+					// 通知を表示する
+					showCount(context, count,log)
+				}
 			}
 		}
 		
@@ -107,15 +116,21 @@ class NewFileService : IntentService("DownloadCountService") {
 		}
 	}
 	
+	// 通知をタップ/消去した時に呼ばれる
 	override fun onHandleIntent(intentArg : Intent?) {
+		// 通知タップならアプリの画面を開く
 		if(ACTION_TAP == intentArg?.action) {
 			val intent = Intent(this, ActMain::class.java)
 			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
 			intent.putExtra(ActMain.EXTRA_TAB, ActMain.TAB_RECORD)
 			startActivity(intent)
 		}
+		// 通知を消去する
 		NotificationManagerCompat.from(this).cancel(NOTIFICATION_ID_DOWNLOAD_COMPLETE)
+		// カウント表示した分をクリアする
 		Pref.pref(this).edit().put(Pref.downloadCompleteCount, 0).apply()
+		
+		// ウィジェットがあればカウントを更新する
 		NewFileWidget.update(this)
 	}
 	

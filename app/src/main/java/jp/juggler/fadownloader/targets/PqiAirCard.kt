@@ -2,7 +2,6 @@ package jp.juggler.fadownloader.targets
 
 import android.net.Uri
 import android.os.SystemClock
-import android.text.TextUtils
 import jp.juggler.fadownloader.*
 import jp.juggler.fadownloader.model.LocalFile
 import jp.juggler.fadownloader.model.ScanItem
@@ -102,15 +101,15 @@ class PqiAirCard(
 							++ i
 							continue
 						}
-						if(TextUtils.isEmpty(size_str)) {
+						if(size_str?.isEmpty()!=false) {
 							++ i
 							continue
 						}
-						if(TextUtils.isEmpty(date_str)) {
+						if(date_str?.isEmpty()!=false) {
 							++ i
 							continue
 						}
-						if(TextUtils.isEmpty(type_str)) {
+						if(type_str?.isEmpty()!=false) {
 							++ i
 							continue
 						}

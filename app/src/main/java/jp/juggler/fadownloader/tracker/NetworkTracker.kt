@@ -12,7 +12,6 @@ import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.SystemClock
-import android.text.TextUtils
 import jp.juggler.fadownloader.Pref
 import jp.juggler.fadownloader.R
 import jp.juggler.fadownloader.util.*
@@ -36,7 +35,7 @@ class NetworkTracker(
 		
 		private val logStatic = LogTag("NetworkTracker")
 		
-		const val WIFI_SCAN_INTERVAL = 100000
+		const val WIFI_SCAN_INTERVAL = 10000
 		
 		////////////////////////////////////////////////////////////////////////
 		
@@ -66,8 +65,9 @@ class NetworkTracker(
 					sb.append("Wi-Fi(").append(ns.strWifiStatus).append(')')
 				} else {
 					sb.append(ns.type_name)
-					if(! TextUtils.isEmpty(ns.sub_name)) {
-						sb.append('(').append(ns.sub_name).append(')')
+					val sub_name = ns.sub_name
+					if(sub_name?.isNotEmpty() == true) {
+						sb.append('(').append(sub_name).append(')')
 					}
 				}
 			}
@@ -117,7 +117,7 @@ class NetworkTracker(
 	
 	internal val last_other_active = AtomicReference<String>()
 	
-	val otherActive : String
+	val otherActive : String?
 		get() = last_other_active.get()
 	
 	internal val urlChecker_FlashAir : UrlChecker = object :
@@ -543,9 +543,15 @@ class NetworkTracker(
 				}
 				
 				// スキャン範囲内に目的のSSIDがあるか？
+				var lastSeen :Long? = null
 				var found_in_scan = false
 				try {
 					for(result in wifiManager.scanResults) {
+						if( Build.VERSION.SDK_INT >= 17) {
+							if(lastSeen == null || result.timestamp > lastSeen){
+								lastSeen = result.timestamp
+							}
+						}
 						if(target_ssid != null && target_ssid == result.SSID.replace("\"", "")) {
 							found_in_scan = true
 							break
@@ -559,13 +565,14 @@ class NetworkTracker(
 				
 				// スキャン範囲内にない場合、定期的にスキャン開始
 				if(! found_in_scan) {
-					force_status =
-						context.getString(R.string.wifi_target_ssid_not_scanned, target_ssid)
-					
-					// 定期的にスキャン開始
 					try {
+						force_status = context.getString(R.string.wifi_target_ssid_not_scanned, target_ssid)
 						val now = SystemClock.elapsedRealtime()
-						if(now - last_wifi_scan_start >= WIFI_SCAN_INTERVAL) {
+						val remain = last_wifi_scan_start + WIFI_SCAN_INTERVAL - now
+						if( remain > 0L){
+							val lastSeenBefore = if(lastSeen==null) null else now - (lastSeen/1000L)
+							logStatic.d("$target_ssid is not found in latest scan result(${lastSeenBefore}ms before). next scan is start after ${remain}ms.")
+						}else{
 							last_wifi_scan_start = now
 							wifiManager.startScan()
 							log.d(R.string.wifi_scan_start)
@@ -574,12 +581,14 @@ class NetworkTracker(
 						log.trace(ex,"startScan() failed.")
 						error_status = ex.withCaption( "startScan() failed.")
 					}
-					
 					return false
 				}
 				
 				val now = SystemClock.elapsedRealtime()
-				if(now - last_wifi_ap_change >= 5000L) {
+				val remain = last_wifi_ap_change + 5000L - now
+				if( remain > 0L){
+					logStatic.d("wait ${remain}ms before force change WiFi AP")
+				}else{
 					last_wifi_ap_change = now
 					
 					try {
@@ -588,17 +597,17 @@ class NetworkTracker(
 							if(wc.networkId != target_config.networkId) {
 								val ssid = wc.SSID.replace("\"", "")
 								if(wc.status == WifiConfiguration.Status.CURRENT) {
-									log.d("%sから切断させます", ssid)
+									log.i("%sから切断させます", ssid)
 									wifiManager.disableNetwork(wc.networkId)
 								} else if(wc.status == WifiConfiguration.Status.ENABLED) {
-									log.d("%sへの自動接続を無効化します", ssid)
+									log.i("%sへの自動接続を無効化します", ssid)
 									wifiManager.disableNetwork(wc.networkId)
 								}
 							}
 						}
 						
 						val target_ssid = target_config.SSID.replace("\"", "")
-						log.d("%s への接続を試みます", target_ssid)
+						log.i("%s への接続を試みます", target_ssid)
 						wifiManager.enableNetwork(target_config.networkId, true)
 						
 						return false
@@ -671,6 +680,7 @@ class NetworkTracker(
 					result = keep_ap()
 					if(isCancelled) break
 				} catch(ex : Throwable) {
+					log.trace(ex,"network check failed.")
 					log.e(ex, "network check failed.")
 					result = false
 				}
@@ -681,11 +691,12 @@ class NetworkTracker(
 						try {
 							if(!is_dispose) callback(true, "Wi-Fi tracker")
 						} catch(ex : Throwable) {
+							log.trace(ex,"connection event handling failed.")
 							log.e(ex, "connection event handling failed.")
 						}
 					}
 				}
-				val next = if(result) 30000L else 3000L
+				val next = if(result) 5000L else 1000L
 				waitEx(next)
 			}
 		}

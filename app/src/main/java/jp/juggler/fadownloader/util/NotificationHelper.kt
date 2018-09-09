@@ -31,8 +31,8 @@ object NotificationHelper {
 			channel = NotificationChannel(channel_id, name, importance)
 		}
 		channel.name = name
-		channel.importance = importance
 		if(description != null) channel.description = description
+		// 上書きしない channel.importance = importance
 		notification_manager.createNotificationChannel(channel)
 		return channel
 		

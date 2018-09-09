@@ -161,4 +161,5 @@
     <string name="protected_only_help">ONにすると、プロテクト(リードオンリー属性)のついたファイルだけを転送対象にします。 現時点ではFlashAirのみこの機能に対応しています</string>
     <string name="skip_already_downloaded">ダウンロード履歴に名前があるファイルはスキップ</string>
     <string name="skip_already_downloaded_help">ダウンロード履歴に名前があるファイルはダウンロードしません。</string>
+    <string name="location_wait_timeout">少し待機しましたが位置情報を取得できません。JPEG画像への位置情報の付与を行えません。</string>
 </resources>

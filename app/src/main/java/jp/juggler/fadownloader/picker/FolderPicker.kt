@@ -8,7 +8,6 @@ import android.os.AsyncTask
 import android.os.Bundle
 import android.os.Environment
 import android.support.v7.app.AppCompatActivity
-import android.text.TextUtils
 import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
@@ -211,7 +210,7 @@ class FolderPicker : AppCompatActivity(), View.OnClickListener, AdapterView.OnIt
 		btnOk.setOnClickListener {_->
 			try {
 				val name = etName.text.toString().trim { it <= ' ' }
-				if(TextUtils.isEmpty(name)) {
+				if(name.isEmpty()) {
 					Utils.showToast(this@FolderPicker, false,
 						R.string.folder_name_empty
 					)

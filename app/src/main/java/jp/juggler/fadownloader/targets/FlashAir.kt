@@ -6,6 +6,7 @@ import jp.juggler.fadownloader.*
 import jp.juggler.fadownloader.model.LocalFile
 import jp.juggler.fadownloader.model.ScanItem
 import jp.juggler.fadownloader.table.DownloadRecord
+import jp.juggler.fadownloader.util.LogTag
 import jp.juggler.fadownloader.util.Utils
 import jp.juggler.fadownloader.util.decodeUTF8
 import java.io.File
@@ -15,7 +16,7 @@ import java.util.regex.Pattern
 class FlashAir(private val service : DownloadService, internal val thread : DownloadWorker) {
 	
 	companion object {
-		
+		private val logStatic = LogTag("FlashAir")
 		internal val reLine = Pattern.compile("([^\\x0d\\x0a]+)")
 		internal val reAttr = Pattern.compile(",(\\d+),(\\d+),(\\d+),(\\d+)$")
 		
@@ -47,9 +48,9 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 		
 	}
 	
+	// フォルダを読む
 	private fun loadFolder(network : Any?, item : ScanItem) {
-		
-		// フォルダを読む
+
 		val cgi_url =  "${thread.target_url}command.cgi?op=100&DIR=${Uri.encode(item.remote_path)}"
 		val data = thread.client.getHTTP(log, network, cgi_url)
 		if(thread.isCancelled) return
@@ -103,7 +104,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 				// https://flashair-developers.com/ja/support/forum/#/discussion/3/%E3%82%AB%E3%83%B3%E3%83%9E%E5%8C%BA%E5%88%87%E3%82%8A
 				val dir = if(item.remote_path == "/") "" else item.remote_path
 				val file_name = line.substring(dir.length + 1, mAttr.start())
-				
+
 				if(attr and 2 != 0) {
 					// skip hidden file
 					continue
@@ -117,7 +118,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 				
 				if(attr and 0x10 != 0) {
 					// フォルダはキューの頭に追加
-					thread.job_queue?.addFolder(
+					thread.job_queue!!.addFolder(
 						ScanItem(
 							file_name,
 							remote_path,
@@ -134,30 +135,38 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 						}
 					}
 					
+					var matched = false
 					for(re in thread.file_type_list) {
-						if(! re.matcher(file_name).find()) continue
-						// マッチした
-						
-						// ローカルのファイルサイズを調べて既読スキップ
-						if(thread.checkSkip(local_file, log, size)) continue
-						
-						val mime_type = Utils.getMimeType(log, file_name)
-						
-						// ファイルはキューの末尾に追加
-						val sub_item =
-							ScanItem(
-								file_name,
-								remote_path,
-								local_file,
-								size,
-								time = time,
-								mime_type = mime_type
-							)
-						thread.job_queue !!.addFile(sub_item)
-						thread.record(sub_item, 0L, DownloadRecord.STATE_QUEUED, "queued.")
-						
-						break
+						if(re.matcher(file_name).find()){
+							matched = true
+							break
+						}
 					}
+					if(!matched) {
+						logStatic.d("$file_name not match in file_type_list")
+						continue
+					}
+					// ローカルのファイルサイズを調べて既読スキップ
+					if(thread.checkSkip(local_file, log, size)) {
+						logStatic.d("$file_name already downloaded.")
+						continue
+					}
+						
+					val mime_type = Utils.getMimeType(log, file_name)
+					
+					// ファイルはキューの末尾に追加
+					val sub_item =
+						ScanItem(
+							file_name,
+							remote_path,
+							local_file,
+							size,
+							time = time,
+							mime_type = mime_type
+						)
+					thread.job_queue!!.addFile(sub_item)
+					thread.record(sub_item, 0L, DownloadRecord.STATE_QUEUED, "queued.")
+						
 				}
 			} catch(ex : Throwable) {
 				log.trace(ex, "folder list parse error: $line" )

@@ -2,7 +2,6 @@ package jp.juggler.fadownloader.targets
 
 import android.net.Uri
 import android.os.SystemClock
-import android.text.TextUtils
 
 import com.neovisionaries.ws.client.OpeningHandshakeException
 import com.neovisionaries.ws.client.WebSocket
@@ -171,7 +170,7 @@ class PentaxKP(private val service : DownloadService, internal val thread : Down
 				}
 				
 				val sub_dir_name = o.optString("name", null)
-				if(TextUtils.isEmpty(sub_dir_name)) {
+				if(sub_dir_name?.isEmpty()!=false) {
 					++ i
 					continue
 				}
@@ -189,7 +188,7 @@ class PentaxKP(private val service : DownloadService, internal val thread : Down
 				while(j < je) {
 					if(thread.isCancelled) return false
 					val file_name = files.optString(j)
-					if(TextUtils.isEmpty(file_name)) {
+					if(file_name?.isEmpty()!=false) {
 						++ j
 						continue
 					}
@@ -227,7 +226,7 @@ class PentaxKP(private val service : DownloadService, internal val thread : Down
 								} else {
 									//// thread.client.dump_res_header( log );
 									val sv = thread.client.getHeaderString("Content-Length", null)
-									if(! TextUtils.isEmpty(sv)) {
+									if(sv?.isNotEmpty()==true) {
 										size = java.lang.Long.parseLong(sv, 10)
 									}
 								}
@@ -430,7 +429,7 @@ class PentaxKP(private val service : DownloadService, internal val thread : Down
 					log.e(ex, "WebSocket connection failed(2).")
 					
 					val active_other = service.wifi_tracker.otherActive
-					if(! TextUtils.isEmpty(active_other)) {
+					if( active_other?.isNotEmpty() ==true ) {
 						log.w(R.string.other_active_warning, active_other)
 					}
 					

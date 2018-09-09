@@ -5,7 +5,6 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Handler
 import android.os.SystemClock
-import android.text.TextUtils
 import jp.juggler.fadownloader.util.LogWriter
 
 import java.io.File
@@ -71,16 +70,22 @@ class MediaScannerTracker(
 	
 	internal fun dispose() {
 		is_dispose = true
+		try{
+			conn.disconnect()
+		}catch(ex:Throwable){
+			log.trace(ex,"disconnect failed.")
+		}
 	}
 	
 	fun addFile(file : File?, mime_type : String) {
 		if(file == null || ! file.isFile) return
-		if(TextUtils.isEmpty(mime_type)) return
-		val item = Item()
-		item.path = file.absolutePath
-		item.mime_type = mime_type
-		queue.add(item)
-		handler.post(queue_reader)
+		if(mime_type.isNotEmpty() ){
+			val item = Item()
+			item.path = file.absolutePath
+			item.mime_type = mime_type
+			queue.add(item)
+			handler.post(queue_reader)
+		}
 	}
 	
 	private fun prepareConnection() : Boolean {

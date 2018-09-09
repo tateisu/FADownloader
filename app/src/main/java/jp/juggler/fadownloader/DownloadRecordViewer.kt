@@ -23,7 +23,6 @@ import android.support.v4.app.LoaderManager
 import android.support.v4.content.CursorLoader
 import android.support.v4.content.Loader
 import android.support.v7.app.AppCompatActivity
-import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -39,10 +38,7 @@ import jp.juggler.fadownloader.util.Utils
 import jp.juggler.fadownloader.util.getStringOrNull
 import jp.juggler.fadownloader.util.withCaption
 import org.apache.commons.io.IOUtils
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.InputStream
+import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.regex.Pattern
@@ -306,7 +302,7 @@ class DownloadRecordViewer {
 											}
 											
 											sv = exif.getTagStringValue(ExifInterface.TAG_MODEL)
-											if(! TextUtils.isEmpty(sv)) {
+											if(sv?.isNotEmpty() == true) {
 												exif_list.add(trimModelName(sv))
 											}
 											
@@ -319,6 +315,10 @@ class DownloadRecordViewer {
 											
 										}
 									}
+								}catch(ex: IllegalArgumentException){
+									log.e(ex,"missing $image_uri")
+								}catch(ex: FileNotFoundException){
+									log.e(ex,"missing $image_uri")
 								} catch(ex : Throwable) {
 									log.trace(ex,"exif check failed.")
 								}
@@ -414,7 +414,7 @@ class DownloadRecordViewer {
 				if(exif_list == null || exif_list.isEmpty()) return null
 				val sb = StringBuilder()
 				for(s in exif_list) {
-					if(TextUtils.isEmpty(s)) continue
+					if(s.isEmpty()) continue
 					if(sb.isNotEmpty()) sb.append(delimiter)
 					sb.append(s)
 				}
@@ -422,7 +422,7 @@ class DownloadRecordViewer {
 			}
 			
 			fun showTimeAndExif() {
-				if(TextUtils.isEmpty(exif_info)) {
+				if(exif_info?.isEmpty() != false ) {
 					tvTime.text = time_str
 				} else {
 					tvTime.text = "$time_str\n$exif_info"

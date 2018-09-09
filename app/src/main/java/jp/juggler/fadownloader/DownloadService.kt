@@ -25,7 +25,6 @@ import jp.juggler.fadownloader.util.Utils
 class DownloadService : Service() {
 
 	companion object {
-		
 		internal const val ACTION_BROADCAST_RECEIVED = "broadcast_received"
 		internal const val EXTRA_BROADCAST_INTENT = "broadcast_intent"
 		
@@ -187,6 +186,10 @@ class DownloadService : Service() {
 		if(intent != null) {
 			var action = intent.action
 			when(action) {
+				ACTION_START -> {
+					worker_tracker.start(intent)
+				}
+
 				ACTION_BROADCAST_RECEIVED -> {
 					val broadcast_intent = intent.getParcelableExtra<Intent>(EXTRA_BROADCAST_INTENT)
 					if(broadcast_intent != null) {
@@ -198,10 +201,6 @@ class DownloadService : Service() {
 							else -> log.d(getString(R.string.broadcast_received, action))
 						}
 					}
-				}
-				
-				ACTION_START -> {
-					worker_tracker.start(intent)
 				}
 				
 				else -> log.d(getString(R.string.unsupported_intent_received, action))
@@ -256,16 +255,18 @@ class DownloadService : Service() {
 	
 	fun onThreadStart() {
 		if(! is_alive) return
+		
 		setServiceNotification(getString(R.string.thread_running))
 	}
 	
 	internal fun onThreadEnd(complete_and_no_repeat : Boolean) {
-		if(! is_alive) return
+		if(! is_alive ) return
 		
 		if(complete_and_no_repeat) {
 			this@DownloadService.cancel_alarm_on_destroy = true
 			stopSelf()
 		} else {
+			location_tracker.tracking_end()
 			setServiceNotification(getString(R.string.service_idle))
 		}
 	}
@@ -289,7 +290,7 @@ class DownloadService : Service() {
 				"ServiceRunning",
 				"FA Downloader service",
 				"this notification is shown while FA Downloader service is active.",
-				NotificationManager.IMPORTANCE_DEFAULT,
+				NotificationManager.IMPORTANCE_LOW,
 				log
 			)
 			NotificationCompat.Builder(this, channel.id)

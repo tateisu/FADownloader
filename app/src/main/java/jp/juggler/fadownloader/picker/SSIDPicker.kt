@@ -9,7 +9,6 @@ import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.text.TextUtils
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
@@ -31,7 +30,7 @@ class SSIDPicker : AppCompatActivity(), AdapterView.OnItemClickListener, View.On
 				val intent = Intent(activity, SSIDPicker::class.java)
 				activity.startActivityForResult(intent, request_code)
 			} catch(ex : Throwable) {
-				log.trace(ex,"open failed.")
+				log.trace(ex, "open failed.")
 			}
 			
 		}
@@ -100,7 +99,7 @@ class SSIDPicker : AppCompatActivity(), AdapterView.OnItemClickListener, View.On
 		try {
 			for(wc in wifi_manager.configuredNetworks) {
 				val ssid = wc.SSID.replace("\"", "")
-				if(! TextUtils.isEmpty(ssid)) set.add(ssid)
+				if(ssid.isNotEmpty()) set.add(ssid)
 			}
 		} catch(ignored : Throwable) {
 		}
@@ -108,7 +107,7 @@ class SSIDPicker : AppCompatActivity(), AdapterView.OnItemClickListener, View.On
 		try {
 			for(result in wifi_manager.scanResults) {
 				val ssid = result.SSID.replace("\"", "")
-				if(! TextUtils.isEmpty(ssid)) set.add(ssid)
+				if(ssid.isNotEmpty()) set.add(ssid)
 			}
 		} catch(ignored : Throwable) {
 		}

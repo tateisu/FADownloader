@@ -23,8 +23,7 @@ class WorkerTracker(
 	internal var tracker_dispose_complete : Boolean = false
 	
 	internal var worker : DownloadWorker? = null
-	internal var worker_disposed : Boolean = false
-	
+
 	// パラメータ指定付きでのスレッド作成フラグ
 	internal var will_restart : Boolean = false
 	internal var start_param : Intent? = null
@@ -33,100 +32,15 @@ class WorkerTracker(
 	internal var will_wakeup : Boolean = false
 	internal var wakeup_cause : String? = null
 	
-	internal val proc_check : Runnable = object : Runnable {
-		override fun run() {
-			handler.removeCallbacks(this)
-			
-			if(tracker_disposed) {
-				if(! worker_disposed) {
-					worker?.cancel(service.getString(R.string.service_end))
-					handler.postDelayed(this, 3000L)
-				} else {
-					tracker_dispose_complete = true
-				}
-				return
-			}
-			
-			val start_param = this@WorkerTracker.start_param
-			if(will_restart && start_param != null) {
-				if(! worker_disposed) {
-					worker?.cancel(service.getString(R.string.manual_restart))
-					handler.postDelayed(this, 3000L)
-					return
-				}
-				
-				Pref.pref(service).edit()
-					.remove(Pref.lastIdleStart)
-					.remove(Pref.flashAirUpdateStatusOld)
-					.apply()
-				
-				try {
-					will_restart = false
-					worker_disposed = false
-					worker = DownloadWorker(
-						service,
-						start_param,
-						worker_callback
-					)
-					worker !!.start()
-				} catch(ex : Throwable) {
-					log.trace(ex,"thread start failed.")
-					log.e(ex, "thread start failed.")
-				}
-				
-			}
-			
-			if(will_wakeup) {
-				var worker = this@WorkerTracker.worker
-				when {
-					worker == null -> {
-					}
-					
-					! worker.isCancelled -> {
-						// キャンセルされていないなら通知して終わり
-						will_wakeup = false
-						worker.notifyEx()
-						return
-					}
-					
-					! worker_disposed -> {
-						// dispose 完了を待つ
-						log.d("waiting dispose previous thread..")
-						handler.postDelayed(this, 3000L)
-						return
-					}
-				}
-				// worker is null or disposed
-				
-				try {
-					will_wakeup = false
-					worker_disposed = false
-					worker =
-						DownloadWorker(
-							service,
-							wakeup_cause ?: "will_wakeup",
-							worker_callback
-						)
-					this@WorkerTracker.worker = worker
-					worker.start()
-				} catch(ex : Throwable) {
-					log.trace(ex,"thread start failed.")
-					log.e(ex, "thread start failed.")
-				}
-				
-			}
-		}
-	}
-	
-	internal val worker_callback : DownloadWorker.Callback = object :
+	private val worker_callback : DownloadWorker.Callback = object :
 		DownloadWorker.Callback {
 		
 		override val location : Location?
 			get() = if(tracker_disposed) null else service.location_tracker.location
 		
-		override fun onThreadEnd(complete_and_no_repeat : Boolean) {
+		override fun onThreadEnd(worker:DownloadWorker,complete_and_no_repeat : Boolean) {
 			Utils.runOnMainThread {
-				worker_disposed = true
+				worker.disposed = true
 				service.onThreadEnd(complete_and_no_repeat)
 				proc_check.run()
 			}
@@ -153,6 +67,90 @@ class WorkerTracker(
 			return service.hasHiddenDownloadCount()
 		}
 	}
+	
+	private val proc_check : Runnable = object : Runnable {
+		override fun run() {
+			handler.removeCallbacks(this)
+			
+			if(tracker_disposed) {
+				if(worker?.disposed == false ) {
+					worker?.cancel(service.getString(R.string.service_end))
+					handler.postDelayed(this, 3000L)
+				} else {
+					tracker_dispose_complete = true
+				}
+				return
+			}
+			
+			val start_param = this@WorkerTracker.start_param
+			if(will_restart && start_param != null) {
+				if(worker?.disposed == false ) {
+					worker?.cancel(service.getString(R.string.manual_restart))
+					handler.postDelayed(this, 3000L)
+					return
+				}
+				
+				Pref.pref(service).edit()
+					.remove(Pref.lastIdleStart)
+					.remove(Pref.flashAirUpdateStatusOld)
+					.apply()
+				
+				try {
+					will_restart = false
+					val worker =DownloadWorker(
+						service,
+						start_param,
+						worker_callback
+					)
+					this@WorkerTracker.worker = worker
+					worker.start()
+				} catch(ex : Throwable) {
+					log.trace(ex,"thread start failed.")
+					log.e(ex, "thread start failed.")
+				}
+				
+			}
+			
+			if(will_wakeup) {
+				var worker = this@WorkerTracker.worker
+				when {
+					worker == null -> {
+					}
+					
+					! worker.isCancelled -> {
+						// キャンセルされていないなら通知して終わり
+						will_wakeup = false
+						worker.notifyEx()
+						return
+					}
+					
+					! worker.disposed -> {
+						// dispose 完了を待つ
+						log.d("waiting dispose previous thread..")
+						handler.postDelayed(this, 3000L)
+						return
+					}
+				}
+				// worker is null or disposed
+				
+				try {
+					will_wakeup = false
+					worker = DownloadWorker(
+							service,
+							wakeup_cause ?: "will_wakeup",
+							worker_callback
+						)
+					this@WorkerTracker.worker = worker
+					worker.start()
+				} catch(ex : Throwable) {
+					log.trace(ex,"thread start failed.")
+					log.e(ex, "thread start failed.")
+				}
+				
+			}
+		}
+	}
+	
 	
 	// サービス終了時に破棄される
 	fun dispose() {

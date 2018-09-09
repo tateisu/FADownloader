@@ -9,7 +9,6 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.*
 import android.os.storage.StorageManager
-import android.text.TextUtils
 import android.util.Base64
 import android.util.SparseBooleanArray
 import android.util.SparseIntArray
@@ -304,23 +303,21 @@ object Utils {
 	
 	fun getMimeType(log : LogWriter?, src : String) : String {
 		var ext = MimeTypeMap.getFileExtensionFromUrl(src)
-		if(! TextUtils.isEmpty(ext)) {
+		if( ext?.isNotEmpty() == true) {
 			ext = ext.toLowerCase(Locale.US)
 			
 			//
 			var mime_type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
-			if(! TextUtils.isEmpty(mime_type)) return mime_type
+			if(mime_type?.isNotEmpty() == true) return mime_type
 			
 			//
 			mime_type = findMimeTypeEx(ext)
-			if(! TextUtils.isEmpty(mime_type)) return mime_type
+			if(mime_type?.isNotEmpty() == true) return mime_type
 			
 			// 戻り値が空文字列の場合とnullの場合があり、空文字列の場合は既知でありログ出力しない
-			
-			if(mime_type == null && log != null) log.w(
-				"getMimeType(): unknown file extension '%s'",
-				ext
-			)
+			if(mime_type == null){
+				log?.w("getMimeType(): unknown file extension '$ext'")
+			}
 		}
 		return MIME_TYPE_APPLICATION_OCTET_STREAM
 	}
@@ -391,9 +388,10 @@ object Utils {
 	fun toCamelCase(src : String) : String {
 		val sb = StringBuilder()
 		for(s in src.split("_".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
-			if(TextUtils.isEmpty(s)) continue
-			sb.append(Character.toUpperCase(s[0]))
-			sb.append(s.substring(1, s.length).toLowerCase())
+			if(s.isNotEmpty()){
+				sb.append(Character.toUpperCase(s[0]))
+				sb.append(s.substring(1, s.length).toLowerCase())
+			}
 		}
 		return sb.toString()
 	}
@@ -516,10 +514,8 @@ object Utils {
 							if(type != Cursor.FIELD_TYPE_STRING) continue
 							val name = cursor.getColumnName(i)
 							val value = if(cursor.isNull(i)) null else cursor.getString(i)
-							if(! TextUtils.isEmpty(value)) {
-								if("filePath" == name) {
-									return File(value !!)
-								}
+							if( "filePath" == name && value?.isNotEmpty() == true) {
+								return File(value )
 							}
 						}
 					}

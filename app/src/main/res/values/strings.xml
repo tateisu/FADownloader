@@ -212,5 +212,6 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="protected_only_help">ONにすると、プロテクト(リードオンリー属性)のついたファイルだけを転送対象にします。 現時点ではFlashAirのみこの機能に対応しています</string>
     <string name="skip_already_downloaded">Skip file name match in download record</string>
     <string name="skip_already_downloaded_help">skip download if the file name is matches in download record.</string>
+    <string name="location_wait_timeout">Waited for a while, but failed to acquire location information. Can not update location information for JPEG image.</string>
 
 </resources>

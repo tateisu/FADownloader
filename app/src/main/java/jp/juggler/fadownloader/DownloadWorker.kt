@@ -9,7 +9,6 @@ import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.SystemClock
-import android.text.TextUtils
 
 import org.apache.commons.io.IOUtils
 
@@ -41,8 +40,28 @@ class DownloadWorker : WorkerBase {
 		internal const val MACRO_WAIT_UNTIL = "%WAIT_UNTIL%"
 	}
 	
-	private val service : DownloadService
+	interface Callback {
+		
+		val location : Location?
+		
+		fun releaseWakeLock()
+		
+		fun acquireWakeLock()
+		
+		fun onThreadStart()
+		
+		fun onThreadEnd(worker:DownloadWorker,complete_and_no_repeat : Boolean)
+		
+		fun onAllFileCompleted(count : Long)
+		
+		fun hasHiddenDownloadCount() : Boolean
+	}
+	
 	val callback : Callback
+
+	internal var disposed = false
+	
+	private val service : DownloadService
 	
 	val repeat : Boolean
 	var target_url : String = ""
@@ -140,22 +159,7 @@ class DownloadWorker : WorkerBase {
 			}
 		}
 	
-	interface Callback {
-		
-		val location : Location?
-		
-		fun releaseWakeLock()
-		
-		fun acquireWakeLock()
-		
-		fun onThreadStart()
-		
-		fun onThreadEnd(complete_and_no_repeat : Boolean)
-		
-		fun onAllFileCompleted(count : Long)
-		
-		fun hasHiddenDownloadCount() : Boolean
-	}
+
 	
 	constructor(service : DownloadService, intent : Intent, callback : Callback) {
 		this.service = service
@@ -456,21 +460,21 @@ class DownloadWorker : WorkerBase {
 	fun checkSkip(local_file : LocalFile, log : LogWriter, size : Long) : Boolean {
 		
 		// ローカルにあるファイルのサイズが指定以上ならスキップする
-		if(local_file.length(log) >= size) return true
+		val localLength = local_file.length(log)
+		if( localLength >= size){
+			return true
+		}
 		
 		if(skip_already_download) {
 			val name = local_file.name
-			if(! TextUtils.isEmpty(name)) {
+			if( name?.isNotEmpty()==true) {
 				service.contentResolver.query(
 					DownloadRecord.meta.content_uri, null,
 					DownloadRecord.COL_NAME + "=?",
 					arrayOf(name), null
 				)?.use { cursor ->
-					if(cursor.moveToFirst()) {
-						// ダウンロード履歴に同じ名前のファイルがあるのでスキップする
-						log.i("skip %s : already found in download record.", name)
-						return true
-					}
+					// ダウンロード履歴に同じ名前のファイルがあるのでスキップする
+					if(cursor.moveToFirst()) return true
 				}
 			}
 		}
@@ -608,10 +612,10 @@ class DownloadWorker : WorkerBase {
 	}
 	
 	fun checkHostError() {
-		if(client.last_error !!.contains("UnknownHostException")) {
+		if(client.last_error ?.contains("UnknownHostException") == true) {
 			client.last_error = service.getString(R.string.target_host_error)
 			cancel(service.getString(R.string.target_host_error_short))
-		} else if(client.last_error !!.contains("ENETUNREACH")) {
+		} else if(client.last_error ?.contains("ENETUNREACH") == true ) {
 			client.last_error = service.getString(R.string.target_unreachable)
 			cancel(service.getString(R.string.target_unreachable))
 		}
@@ -654,6 +658,23 @@ class DownloadWorker : WorkerBase {
 			log.trace(ex,"alarm cancel failed")
 		}
 		
+		// 位置情報を得られるまで待機
+		run{
+			val timeEnd = SystemClock.elapsedRealtime() + 5000L
+			while( !isCancelled
+				&& service.location_tracker.isUpdateRequired
+				&& service.location_tracker.location == null
+			){
+				val remain =timeEnd -SystemClock.elapsedRealtime()
+				if(remain<=0L){
+					log.w( R.string.location_wait_timeout)
+					break
+				}
+				Thread.sleep(1000L)
+			}
+		}
+		
+		
 		when(target_type) {
 			Pref.TARGET_TYPE_FLASHAIR_AP, Pref.TARGET_TYPE_FLASHAIR_STA -> FlashAir(
 				service,
@@ -677,7 +698,7 @@ class DownloadWorker : WorkerBase {
 		}
 		setStatus(false, service.getString(R.string.thread_end))
 		callback.releaseWakeLock()
-		callback.onThreadEnd(complete_and_no_repeat)
+		callback.onThreadEnd(this@DownloadWorker,complete_and_no_repeat)
 	}
 	
 }

@@ -4,9 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.support.v4.provider.DocumentFile
-import android.text.TextUtils
 import jp.juggler.fadownloader.R
-import jp.juggler.fadownloader.util.LogTag
 import jp.juggler.fadownloader.util.LogWriter
 import jp.juggler.fadownloader.util.Utils
 import java.io.*
@@ -92,7 +90,7 @@ class LocalFile(
 					}
 					child_list = result
 				} catch(ex : Throwable) {
-					log.trace(ex,"listFiles() failed.")
+					log.trace(ex, "listFiles() failed.")
 					log.e(ex, "listFiles() failed.")
 				}
 				
@@ -130,18 +128,24 @@ class LocalFile(
 	}
 	
 	fun prepareFile(log : LogWriter, bCreate : Boolean, mimeTypeArg : String?) : Boolean {
-		var mime_type = mimeTypeArg
 		try {
 			if(local_file == null && parent != null && name != null) {
 				if(parent.prepareDirectory(log, bCreate)) {
 					local_file = parent.findChild(log, bCreate, name)
 					if(local_file == null && bCreate) {
-						if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
-							if(TextUtils.isEmpty(mime_type)) mime_type = "application/octet-stream"
-							local_file =
-								(parent.local_file as DocumentFile).createFile(mime_type, name)
-						} else {
-							local_file = File(parent.local_file as File?, name)
+						local_file = when {
+							Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ->
+								(parent.local_file as DocumentFile)
+									.createFile(
+										if(mimeTypeArg?.isNotEmpty() == true) {
+											mimeTypeArg
+										} else {
+											"application/octet-stream"
+										}
+										,name
+									)
+							else ->
+								File(parent.local_file as File?, name)
 						}
 						if(local_file == null) {
 							log.e(R.string.file_create_failed)
@@ -244,8 +248,8 @@ class LocalFile(
 			
 			path.setLastModified(time)
 		} catch(ex : Throwable) {
-			log.trace(ex,"setLastModified() failed.")
-			log.e(ex,"setLastModified() failed.")
+			log.trace(ex, "setLastModified() failed.")
+			log.e(ex, "setLastModified() failed.")
 		}
 		
 	}

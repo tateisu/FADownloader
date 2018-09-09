@@ -83,7 +83,6 @@ class PageOther(activity : Activity, ignored : View) :
 	fun updatePurchaseButton() {
 		val act = activity as ActMain
 		
-		btnRemoveAd.visibility =
-			if(act.bSetupCompleted && ! act.bRemoveAdPurchased) View.VISIBLE else View.GONE
+		btnRemoveAd.visibility = if(act.bSetupCompleted && ! act.bRemoveAdPurchased) View.VISIBLE else View.GONE
 	}
 }

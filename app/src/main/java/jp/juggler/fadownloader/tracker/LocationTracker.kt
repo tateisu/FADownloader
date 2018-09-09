@@ -2,6 +2,7 @@ package jp.juggler.fadownloader.tracker
 
 import android.content.Context
 import android.location.Location
+import android.os.SystemClock
 import com.google.android.gms.location.*
 import jp.juggler.fadownloader.R
 import jp.juggler.fadownloader.util.LogWriter
@@ -92,9 +93,13 @@ class LocationTracker(
 			return location_setting?.getModeString(context) ?: "(no location setting)"
 		}
 	
+	val isUpdateRequired : Boolean
+		get() = location_setting?.isUpdateRequired == true
+	
+	
 	val location : Location?
 		@Synchronized get() =
-			if(location_setting?.isUpdateRequired != true) {
+			if(!isUpdateRequired) {
 				null
 			} else {
 				mCurrentLocation
@@ -114,12 +119,13 @@ class LocationTracker(
 		tracking_start()
 	}
 	
-	private fun tracking_end() {
+	@Synchronized
+	fun tracking_end() {
 		if(! isTracked) return
 		
 		try {
 			fusedLocationClient.removeLocationUpdates(this)
-			log.d(R.string.location_update_end)
+			log.v(R.string.location_update_end)
 		} catch(ex : Throwable) {
 			log.trace(ex,"removeLocationUpdates() failed.")
 			log.e(ex, "removeLocationUpdates() failed.")
@@ -175,7 +181,7 @@ class LocationTracker(
 					log.e(ex, R.string.location_update_request_result)
 				}
 			
-			if(! isTracked) log.d(R.string.location_update_start)
+			if(! isTracked) log.v(R.string.location_update_start)
 			isTracked = true
 
 		} catch(ex : SecurityException) {
@@ -209,4 +215,6 @@ class LocationTracker(
 			callback(lastLocation)
 		}
 	}
+	
+	
 }
