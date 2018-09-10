@@ -105,18 +105,16 @@ class PageLog(activity : Activity, ignored : View) :
 							var i = 0
 							var count = cursor.count
 							if(count <= 0) count = 1
-							val colidx_time = cursor.getColumnIndex(LogData.COL_TIME)
-							val colidx_message = cursor.getColumnIndex(LogData.COL_MESSAGE)
-							val colidx_level = cursor.getColumnIndex(LogData.COL_LEVEL)
+							val colIdx_time = cursor.getColumnIndex(LogData.COL_TIME)
+							val colIdx_message = cursor.getColumnIndex(LogData.COL_MESSAGE)
+							val colIdx_level = cursor.getColumnIndex(LogData.COL_LEVEL)
 							while(cursor.moveToNext()) {
 								if(isCancelled) return null
 								publishProgress(i ++, count)
-								fos.printf(
-									"%s %s/%s\n",
-									LogViewer.date_fmt.format(cursor.getLong(colidx_time)),
-									LogData.getLogLevelString(cursor.getInt(colidx_level)),
-									cursor.getString(colidx_message)
-								)
+								val date = LogViewer.date_fmt.format(cursor.getLong(colIdx_time))
+								val level = LogData.getLogLevelString(cursor.getInt(colIdx_level))
+								val message = cursor.getString(colIdx_message)
+								fos.print("$date $level/$message\n")
 							}
 						}
 						

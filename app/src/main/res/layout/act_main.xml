@@ -8,6 +8,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="jp.juggler.fadownloader.ActMain"
+    tools:ignore="SpUsage"
     >
 
     <com.google.android.gms.ads.AdView
@@ -19,17 +20,35 @@
         android:background="#000"
         />
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#444"
+        android:orientation="horizontal"
+        android:background="#969696"
         android:gravity="center"
-        android:padding="6dp"
-        android:text="@string/app_name"
-        android:textColor="#fff"
-        android:textSize="20dp"
-        android:textStyle="bold"
-        />
+        >
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:src="@drawable/ic_app_logo"
+            android:scaleType="fitCenter"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
+            />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="#fff"
+            android:textStyle="bold"
+            android:textSize="24dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginLeft="4dp"
+            />
+
+    </LinearLayout>
+
 
     <LinearLayout
         android:id="@+id/llBtnList"
@@ -38,7 +57,9 @@
         android:layout_height="wrap_content"
         android:paddingEnd="@dimen/activity_horizontal_margin"
         android:paddingStart="@dimen/activity_horizontal_margin"
+        android:gravity="center"
         >
+
 
         <Button
             android:id="@+id/btnRepeat"
@@ -72,7 +93,7 @@
             style="?android:attr/buttonBarButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:minWidth="48dp"
+            android:minWidth="40dp"
             android:text="@string/question"
             />
     </LinearLayout>

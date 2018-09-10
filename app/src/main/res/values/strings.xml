@@ -114,10 +114,8 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="folder_list_failed">file listing failed. %1$s %2$s %3$s</string>
     <string name="download_file">DOWNLOADING: %1$s</string>
     <string name="thread_end">thread stopped</string>
-    <string name="geo_tagging_not_enabled">GeoTagging not enabled because this device can not use Location API of Google Play service</string>
+    <!--<string name="geo_tagging_not_enabled">GeoTagging not enabled because this device can not use Location API of Google Play service</string>-->
     <string name="resolution_request_failed">resolution request failed.</string>
-    <string name="play_service_connection_failed">play service connection failed. (%1$d)%2$s</string>
-    <string name="play_service_connection_suspended">play service connection suspended. (%1$d)%2$s</string>
 
 
     <string name="geo_tagging_mode">GeoTagging Mode</string>
@@ -157,8 +155,8 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="ssid_empty">SSID is empty.</string>
     <string name="not_enabled">無効</string>
 
-    <string name="wifi_status_unknown">wifi status unknown</string>
-    <string name="wifi_current_connection">WI-Fi AP:SSID=%1$s,id=%2$s,priority=%3$s,state=%4$s</string>
+    <!--<string name="wifi_status_unknown">wifi status unknown</string>-->
+    <!--<string name="wifi_current_connection">WI-Fi AP:SSID=%1$s,id=%2$s,priority=%3$s,state=%4$s</string>-->
     <string name="wifi_target_ssid_not_found">Wi-Fi AP %1$s is not configured.</string>
     <string name="wifi_target_ssid_not_scanned">Wi-Fi SSID %1$s not in scan result.</string>
     <string name="wifi_scan_start">Wi-Fi scan start.</string>
@@ -206,12 +204,19 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="target_type_pqi_air_card_tether">PQI Air Card (Tethering)</string>
     <string name="log_clear_confirm">All log data will be deleted.  Are you sure?</string>
     <string name="log_collection_progress">preparing log file …</string>
-    <string name="download_complete_notification">%1$d files downloaded.</string>
+    <string name="download_complete_notification">%1$d file(s) downloaded.</string>
     <string name="new_file">new file</string>
     <string name="protected_only">skip non-protected file</string>
     <string name="protected_only_help">ONにすると、プロテクト(リードオンリー属性)のついたファイルだけを転送対象にします。 現時点ではFlashAirのみこの機能に対応しています</string>
     <string name="skip_already_downloaded">Skip file name match in download record</string>
     <string name="skip_already_downloaded_help">skip download if the file name is matches in download record.</string>
     <string name="location_wait_timeout">Waited for a while, but failed to acquire location information. Can not update location information for JPEG image.</string>
+    <string name="target_url_hint">URL of target SD card.</string>
+    <string name="file_type_hint">space separated list of file extension(s).</string>
+    <string name="repeat_interval_hint">seconds of repeat scan interval</string>
+    <string name="location_interval_desired_hint">seconds of desired location update interval</string>
+    <string name="location_interval_min_hint">seconds of minimun location update interval</string>
+    <string name="wifi_ap_ssid_hint">Wi-Fi SSID of SD card</string>
+    <string name="folder_name_hint">folder name</string>
 
 </resources>

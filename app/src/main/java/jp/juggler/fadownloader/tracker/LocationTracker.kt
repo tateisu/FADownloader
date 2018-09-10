@@ -2,7 +2,6 @@ package jp.juggler.fadownloader.tracker
 
 import android.content.Context
 import android.location.Location
-import android.os.SystemClock
 import com.google.android.gms.location.*
 import jp.juggler.fadownloader.R
 import jp.juggler.fadownloader.util.LogWriter

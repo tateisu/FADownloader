@@ -139,23 +139,19 @@ class DownloadWorker : WorkerBase {
 		get() {
 			val fc = queued_file_count.get()
 			val s = _status.get()
-			if(fc > 0L) {
-				val bc = queued_byte_count.get()
-				val bcm = queued_byte_count_max.get()
-				return s !! + String.format(
-					"\n%s %d%%, %s %dfile %sbyte",
-					service.getString(R.string.progress),
-					if(bcm <= 0) 0 else 100L * (bcm - bc) / bcm,
-					service.getString(R.string.remain),
-					fc,
-					Utils.formatBytes(bc)
-				)
-			} else if(s != null && s.contains(MACRO_WAIT_UNTIL)) {
-				var remain = wait_until.get() - SystemClock.elapsedRealtime()
-				if(remain < 0L) remain = 0L
-				return s.replace(MACRO_WAIT_UNTIL, Utils.formatTimeDuration(remain))
-			} else {
-				return s
+			return when {
+				fc > 0L -> {
+					val bc = queued_byte_count.get()
+					val bcm = queued_byte_count_max.get()
+					"$s\n${service.getString(R.string.progress)} ${if(bcm <= 0) 0 else 100L * (bcm - bc) / bcm}%, ${service.getString(R.string.remain)} ${fc}file ${Utils.formatBytes(bc)}byte"
+					
+				}
+				s?.contains(MACRO_WAIT_UNTIL) ==true -> {
+					var remain = wait_until.get() - SystemClock.elapsedRealtime()
+					if(remain < 0L) remain = 0L
+					s.replace(MACRO_WAIT_UNTIL, Utils.formatTimeDuration(remain))
+				}
+				else -> s
 			}
 		}
 	

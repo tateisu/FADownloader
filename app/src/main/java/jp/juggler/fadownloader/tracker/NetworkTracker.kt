@@ -217,9 +217,9 @@ class NetworkTracker(
 				conn.readTimeout = 30000
 				conn.doOutput = false
 				conn.connect()
-				val rcode = conn.responseCode
-				if(rcode != 200) {
-					log.e("HTTP error %s. url=%s", rcode, check_url)
+				val resCode = conn.responseCode
+				if(resCode != 200) {
+					log.e("HTTP error %s. url=%s", resCode, check_url)
 				} else {
 					if(target_url != last_flash_air_url.get()) {
 						log.i("target detected. %s", target_url)

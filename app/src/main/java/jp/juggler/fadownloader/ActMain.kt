@@ -481,11 +481,6 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		if(TAB_RECORD == sv) pager.currentItem = page_idx_record
 	}
 	
-	override fun onCreateOptionsMenu(menu : Menu) : Boolean {
-		menuInflater.inflate(R.menu.act_main, menu)
-		return true
-	}
-	
 	private fun permission_request() {
 		val missing_permission_list = PermissionChecker.getMissingPermissionList(this)
 		if(! missing_permission_list.isEmpty()) {

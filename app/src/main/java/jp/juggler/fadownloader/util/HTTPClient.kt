@@ -727,12 +727,12 @@ class HTTPClient {
 	
 	//! HTTPレスポンスのヘッダを読む
 	@Suppress("unused")
-	fun getHeaderInt(key : String, defval : Int) : Int {
+	fun getHeaderInt(key : String, defVal : Int) : Int {
 		val v = getHeaderString(key, null)
 		return try {
 			Integer.parseInt(v, 10)
 		} catch(ex : Throwable) {
-			defval
+			defVal
 		}
 	}
 }

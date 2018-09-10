@@ -59,6 +59,7 @@
                 android:id="@+id/etTargetUrl"
                 style="@style/setting_edit_text"
                 android:inputType="textUri"
+                android:hint="@string/target_url_hint"
                 />
 
             <Button
@@ -110,6 +111,7 @@
                 android:id="@+id/etFileType"
                 style="@style/setting_edit_text"
                 android:inputType="text"
+                android:hint="@string/file_type_hint"
                 />
 
             <Button
@@ -174,6 +176,7 @@
                 android:id="@+id/etRepeatInterval"
                 style="@style/setting_edit_text"
                 android:inputType="number"
+                android:hint="@string/repeat_interval_hint"
                 />
 
             <Button
@@ -216,6 +219,7 @@
                 android:id="@+id/etLocationIntervalDesired"
                 style="@style/setting_edit_text"
                 android:inputType="number"
+                android:hint="@string/location_interval_desired_hint"
                 />
 
             <Button
@@ -238,6 +242,7 @@
                 android:id="@+id/etLocationIntervalMin"
                 style="@style/setting_edit_text"
                 android:inputType="number"
+                android:hint="@string/location_interval_min_hint"
                 />
 
             <Button
@@ -281,6 +286,7 @@
                 android:id="@+id/etSSID"
                 style="@style/setting_edit_text"
                 android:inputType="text"
+                android:hint="@string/wifi_ap_ssid_hint"
                 />
 
             <Button

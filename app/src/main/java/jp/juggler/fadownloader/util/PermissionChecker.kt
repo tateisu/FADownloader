@@ -10,7 +10,7 @@ import java.util.ArrayList
 
 object PermissionChecker {
 	
-	internal val permission_list = arrayOf(
+	private val permission_list = arrayOf(
 		Manifest.permission.INTERNET,
 		Manifest.permission.ACCESS_WIFI_STATE,
 		Manifest.permission.ACCESS_NETWORK_STATE,
