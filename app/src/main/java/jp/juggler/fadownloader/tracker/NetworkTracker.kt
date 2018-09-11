@@ -94,13 +94,13 @@ class NetworkTracker(
 	
 	val lastTargetUrl = AtomicReferenceNotNull("")
 	
-	private var last_force_status = AtomicReferenceNotNull("")
-	private var last_error_status = AtomicReferenceNotNull("")
-	private var last_current_status = AtomicReferenceNotNull("")
-	private var last_other_active = AtomicReferenceNotNull("")
+	private var lastStatusWarning = AtomicReferenceNotNull("")
+	private var lastStatusError = AtomicReferenceNotNull("")
+	private var lastStatusNetwork = AtomicReferenceNotNull("")
+	private var lastOtherActive = AtomicReferenceNotNull("")
 	
 	val otherActive : String
-		get() = last_other_active.get()
+		get() = lastOtherActive.get()
 	
 	private val isDisposed : Boolean
 		get() = worker != null
@@ -145,7 +145,7 @@ class NetworkTracker(
 	
 	// ネットワーク状態の表示
 	fun getStatus() : String {
-		return last_current_status.get()
+		return lastStatusNetwork.get()
 	}
 	
 	// WiFiスキャン完了、ネットワーク接続状態の変化、テザリング状態の変化などのブロードキャスト受信イベント
@@ -298,8 +298,8 @@ class NetworkTracker(
 	
 	private class NetworkStatusList : ArrayList<NetworkStatus>() {
 		
-		var force_status : String? = null
-		var error_status : String? = null
+		var statusWarning : String? = null
+		var statusError : String? = null
 		
 		var wifi_status : NetworkStatus? = null
 		
@@ -335,7 +335,7 @@ class NetworkTracker(
 			}
 		}
 		
-		fun buildCurrentStatus() : String {
+		override fun toString() : String {
 			
 			sortWith(Comparator { a, b ->
 				if(a.is_active && ! b.is_active) {
@@ -477,7 +477,7 @@ class NetworkTracker(
 	) : Long {
 		
 		if(! isTetheringEnabled) {
-			env.error_status = "Wi-Fi Tethering is not enabled."
+			env.statusError = "Wi-Fi Tethering is not enabled."
 			
 			if(setting.stopWhenTetheringOff) {
 				Utils.runOnMainThread {
@@ -491,7 +491,7 @@ class NetworkTracker(
 		
 		val tethering_address = tetheringAddress
 		if(tethering_address == null) {
-			env.error_status = "Wi-Fi Tethering is missing IP address."
+			env.statusError = "Wi-Fi Tethering is missing IP address."
 			return 1000L
 		}
 		
@@ -513,7 +513,7 @@ class NetworkTracker(
 		// ARPテーブルの読み出し
 		val strArp = Utils.readStringFile("/proc/net/arp")
 		if(strArp == null) {
-			env.error_status = "Can't read ARP table."
+			env.statusError = "Can't read ARP table."
 		} else {
 			val list = ArrayList<String>()
 			// ARPテーブル中のIPアドレスを確認
@@ -530,9 +530,9 @@ class NetworkTracker(
 				list.add(item_ip)
 			}
 			if(list.isEmpty()) {
-				env.error_status = "missing devices in ARP table."
+				env.statusError = "missing devices in ARP table."
 			} else {
-				env.force_status = "devices: ${list.joinToString(",")}"
+				env.statusWarning = "devices: ${list.joinToString(",")}"
 				for(item_ip in list) {
 					startTestUrl("http://$item_ip/", getCheckUrl)
 				}
@@ -571,7 +571,7 @@ class NetworkTracker(
 			}
 		} catch(ex : Throwable) {
 			log.trace(ex, "setWifiEnabled() failed.")
-			ns_list.error_status = ex.withCaption("setWifiEnabled() failed.")
+			ns_list.statusError = ex.withCaption("setWifiEnabled() failed.")
 			return 10000L
 		}
 		
@@ -587,7 +587,7 @@ class NetworkTracker(
 			}
 		} catch(ex : Throwable) {
 			log.trace(ex, "getConnectionInfo() failed.")
-			ns_list.error_status = ex.withCaption("getConnectionInfo() failed.")
+			ns_list.statusError = ex.withCaption("getConnectionInfo() failed.")
 			return 10000L
 		}
 		
@@ -640,7 +640,7 @@ class NetworkTracker(
 				
 				true -> if(target_config == null) {
 					// 指定されたSSIDはこの端末に設定されていない
-					ns_list.force_status =
+					ns_list.statusWarning =
 						context.getString(
 							R.string.wifi_target_ssid_not_found,
 							setting.target_ssid
@@ -651,14 +651,14 @@ class NetworkTracker(
 			}
 		} catch(ex : Throwable) {
 			log.trace(ex, "getConfiguredNetworks() failed.")
-			ns_list.error_status = ex.withCaption("getConfiguredNetworks() failed.")
+			ns_list.statusError = ex.withCaption("getConfiguredNetworks() failed.")
 			return 10000L
 		}
 		
 		if(Build.VERSION.SDK_INT < 26) {
 			// API level 25まではAPの優先順位を変えることができた
 			val error = updatePriority(target_config, priority_max)
-			if(error != null) ns_list.error_status = error
+			if(error != null) ns_list.statusError = error
 		}
 		
 		// 目的のAPが選択されていた場合
@@ -705,13 +705,13 @@ class NetworkTracker(
 			}
 		} catch(ex : Throwable) {
 			log.trace(ex, "getScanResults() failed.")
-			ns_list.error_status = ex.withCaption("getScanResults() failed.")
+			ns_list.statusError = ex.withCaption("getScanResults() failed.")
 			return 10000L
 		}
 		
 		// スキャン範囲内にない場合、定期的にスキャン開始
 		if(! found_in_scan) {
-			ns_list.force_status =
+			ns_list.statusWarning =
 				context.getString(R.string.wifi_target_ssid_not_scanned, setting.target_ssid)
 			val now = SystemClock.elapsedRealtime()
 			val remain = timeLastWiFiScan + setting.wifiScanInterval - now
@@ -726,7 +726,7 @@ class NetworkTracker(
 				3000L
 			} catch(ex : Throwable) {
 				log.trace(ex, "startScan() failed.")
-				ns_list.error_status = ex.withCaption("startScan() failed.")
+				ns_list.statusError = ex.withCaption("startScan() failed.")
 				10000L
 			}
 		} else {
@@ -761,7 +761,7 @@ class NetworkTracker(
 					1000L
 				} catch(ex : Throwable) {
 					log.trace(ex, "disableNetwork() or enableNetwork() failed.")
-					ns_list.error_status =
+					ns_list.statusError =
 						ex.withCaption("disableNetwork() or enableNetwork() failed.")
 					10000L
 				}
@@ -809,7 +809,7 @@ class NetworkTracker(
 				}
 			}
 			ns_list.afterAddAll()
-			last_other_active.set(ns_list.other_active)
+			lastOtherActive.set(ns_list.other_active)
 			
 			// ターゲット種別により、テザリング用とAP用の処理に分かれる
 			return when(setting.target_type) {
@@ -828,25 +828,25 @@ class NetworkTracker(
 			}
 			
 		} finally {
-			// 状態の変化があればログに出力する
+			// 状態の変化があった時だけログに出力する
 			
-			val current_status = ns_list.buildCurrentStatus()
+			var sv :String? = ns_list.toString()
 			
-			if(current_status != last_current_status.get()) {
-				last_current_status.set(current_status)
-				log.d(context.getString(R.string.network_status, current_status))
+			if(sv?.isNotEmpty() == true && sv != lastStatusNetwork.get()) {
+				lastStatusNetwork.set(sv)
+				log.d(context.getString(R.string.network_status, sv))
 			}
 			
-			val error_status = ns_list.error_status
-			if(error_status != null && error_status != last_error_status.get()) {
-				last_error_status.set(error_status)
-				log.e(error_status)
+			sv = ns_list.statusError
+			if(sv?.isNotEmpty() == true && sv != lastStatusError.get()) {
+				lastStatusError.set(sv)
+				log.e(sv)
 			}
 			
-			val force_status = ns_list.force_status
-			if(force_status != null && force_status != last_force_status.get()) {
-				last_force_status.set(force_status)
-				log.w(force_status)
+			sv = ns_list.statusWarning
+			if(sv?.isNotEmpty() == true && sv != lastStatusWarning.get()) {
+				lastStatusWarning.set(sv)
+				log.w(sv)
 			}
 		}
 	}
