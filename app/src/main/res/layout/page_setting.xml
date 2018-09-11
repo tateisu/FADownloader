@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:clipToPadding="false"
@@ -15,6 +16,7 @@
     android:paddingTop="@dimen/activity_vertical_margin"
 
     android:scrollbarStyle="outsideOverlay"
+    tools:ignore="TooManyViews"
     >
 
     <LinearLayout
@@ -176,7 +178,7 @@
                 android:id="@+id/etRepeatInterval"
                 style="@style/setting_edit_text"
                 android:inputType="number"
-                android:hint="@string/repeat_interval_hint"
+                android:hint="@string/seconds_hint"
                 />
 
             <Button
@@ -201,52 +203,6 @@
 
             <Button
                 android:id="@+id/btnLocationModeHelp"
-                style="@style/setting_row_help"
-                />
-        </LinearLayout>
-
-        <View style="@style/setting_divider"/>
-
-        <TextView
-            style="@style/setting_row_label"
-            android:labelFor="@+id/etLocationIntervalDesired"
-            android:text="@string/location_interval_desired"
-            />
-
-        <LinearLayout style="@style/setting_row_form">
-
-            <EditText
-                android:id="@+id/etLocationIntervalDesired"
-                style="@style/setting_edit_text"
-                android:inputType="number"
-                android:hint="@string/location_interval_desired_hint"
-                />
-
-            <Button
-                android:id="@+id/btnLocationIntervalDesiredHelp"
-                style="@style/setting_row_help"
-                />
-        </LinearLayout>
-
-        <View style="@style/setting_divider"/>
-
-        <TextView
-            style="@style/setting_row_label"
-            android:labelFor="@+id/etLocationIntervalMin"
-            android:text="@string/location_interval_min"
-            />
-
-        <LinearLayout style="@style/setting_row_form">
-
-            <EditText
-                android:id="@+id/etLocationIntervalMin"
-                style="@style/setting_edit_text"
-                android:inputType="number"
-                android:hint="@string/location_interval_min_hint"
-                />
-
-            <Button
-                android:id="@+id/btnLocationIntervalMinHelp"
                 style="@style/setting_row_help"
                 />
         </LinearLayout>
@@ -348,6 +304,147 @@
         <View style="@style/setting_divider"/>
 
         <TextView
+            style="@style/setting_row_label"
+            android:labelFor="@+id/etLocationIntervalDesired"
+            android:text="@string/location_interval_desired"
+            />
+
+        <LinearLayout style="@style/setting_row_form">
+
+            <EditText
+                android:id="@+id/etLocationIntervalDesired"
+                style="@style/setting_edit_text"
+                android:inputType="number"
+                android:hint="@string/seconds_hint"
+                />
+
+            <Button
+                android:id="@+id/btnLocationIntervalDesiredHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
+
+        <View style="@style/setting_divider"/>
+
+        <TextView
+            style="@style/setting_row_label"
+            android:labelFor="@+id/etLocationIntervalMin"
+            android:text="@string/location_interval_min"
+            />
+
+        <LinearLayout style="@style/setting_row_form">
+
+            <EditText
+                android:id="@+id/etLocationIntervalMin"
+                style="@style/setting_edit_text"
+                android:inputType="number"
+                android:hint="@string/seconds_hint"
+                />
+
+            <Button
+                android:id="@+id/btnLocationIntervalMinHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
+
+        <View style="@style/setting_divider"/>
+
+        <TextView
+            style="@style/setting_row_label"
+            android:labelFor="@+id/etTetherSprayInterval"
+            android:text="@string/tether_spray_interval"
+            />
+
+        <LinearLayout style="@style/setting_row_form">
+
+            <EditText
+                android:id="@+id/etTetherSprayInterval"
+                style="@style/setting_edit_text"
+                android:inputType="number"
+                android:hint="@string/seconds_hint"
+                />
+
+            <Button
+                android:id="@+id/btnTetherSprayIntervalHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
+
+        <View style="@style/setting_divider"/>
+
+
+        <TextView
+            style="@style/setting_row_label"
+            android:labelFor="@+id/etTetherTestConnectionTimeout"
+            android:text="@string/tether_test_connection_timeout"
+            />
+
+        <LinearLayout style="@style/setting_row_form">
+
+            <EditText
+                android:id="@+id/etTetherTestConnectionTimeout"
+                style="@style/setting_edit_text"
+                android:inputType="number"
+                android:hint="@string/seconds_hint"
+                />
+
+            <Button
+                android:id="@+id/btnTetherTestConnectionTimeoutHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
+
+        <View style="@style/setting_divider"/>
+
+        <TextView
+            style="@style/setting_row_label"
+            android:labelFor="@+id/etWifiScanInterval"
+            android:text="@string/wifi_scan_interval"
+            />
+
+        <LinearLayout style="@style/setting_row_form">
+
+            <EditText
+                android:id="@+id/etWifiScanInterval"
+                style="@style/setting_edit_text"
+                android:inputType="number"
+                android:hint="@string/seconds_hint"
+                />
+
+            <Button
+                android:id="@+id/btnWifiScanIntervalHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
+
+        <View style="@style/setting_divider"/>
+
+        <TextView
+            style="@style/setting_row_label"
+            android:labelFor="@+id/etWifiChangeApInterval"
+            android:text="@string/wifi_change_ap_interval"
+            />
+
+        <LinearLayout style="@style/setting_row_form">
+
+            <EditText
+                android:id="@+id/etWifiChangeApInterval"
+                style="@style/setting_edit_text"
+                android:inputType="number"
+                android:hint="@string/seconds_hint"
+                />
+
+            <Button
+                android:id="@+id/btnWifiChangeApIntervalHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
+
+        <View style="@style/setting_divider"/>
+
+
+
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="20dp"
@@ -355,5 +452,9 @@
             android:gravity="center"
             android:text="@string/setting_desc"
             />
+
+        <View style="@style/setting_divider"/>
+
+
     </LinearLayout>
 </ScrollView>

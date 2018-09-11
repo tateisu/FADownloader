@@ -60,7 +60,7 @@ class WorkerTracker(
 		}
 		
 		override fun onAllFileCompleted(count : Long) {
-			service.addHiddenDownloadCount(count,log)
+			service.addHiddenDownloadCount(count)
 		}
 		
 		override fun hasHiddenDownloadCount() : Boolean {

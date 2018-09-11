@@ -206,7 +206,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			
 			R.id.btnStop -> download_stop_button()
 			
-			R.id.btnModeHelp -> openHelp(R.layout.help_mode)
+			R.id.btnModeHelp -> openHelpLayout(R.layout.help_mode)
 		}
 	}
 	
@@ -528,9 +528,8 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		stopService(intent)
 		
 		try {
-			val pi = Utils.createAlarmPendingIntent(this)
 			val am = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
-			am?.cancel(pi)
+			am?.cancel(Receiver1.piAlarm(this))
 		} catch(ex : Throwable) {
 			log.trace(ex, "createAlarmPendingIntent failed.")
 		}
@@ -616,12 +615,6 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			return
 		}
 		
-		val interval = Pref.uiInterval.getIntOrNull(pref) ?: - 1
-		if(repeat && interval < 1) {
-			Utils.showToast(this, true, getString(R.string.repeat_interval_not_ok))
-			return
-		}
-		
 		val file_type = Pref.uiFileType(pref).trim()
 		if(file_type.isEmpty()) {
 			Utils.showToast(this, true, getString(R.string.file_type_empty))
@@ -634,34 +627,27 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			return
 		}
 		
-		var location_update_interval_desired = LocationTracker.DEFAULT_INTERVAL_DESIRED
-		var location_update_interval_min = LocationTracker.DEFAULT_INTERVAL_MIN
+		
+		fun validSeconds(v : Int?) : Boolean {
+			return v != null && v > 0
+		}
+		
+		if(repeat) {
+			if(! validSeconds(Pref.uiInterval.getIntOrNull(pref))) {
+				Utils.showToast(this, true, getString(R.string.repeat_interval_not_ok))
+				return
+			}
+		}
 		
 		if(location_mode != LocationTracker.NO_LOCATION_UPDATE) {
 			
-			fun x1000(v : Int?) = if(v != null) {
-				v.toLong() * 1000L
-			} else {
-				- 1L
+			if(! validSeconds(Pref.uiLocationIntervalDesired.getIntOrNull(pref))) {
+				Utils.showToast(this, true, getString(R.string.location_update_interval_not_ok))
+				return
 			}
-			
-			location_update_interval_desired =
-				x1000(Pref.uiLocationIntervalDesired.getIntOrNull(pref))
-			location_update_interval_min = x1000(Pref.uiLocationIntervalMin.getIntOrNull(pref))
-			
-			when {
-				! repeat -> {
-				}
-				
-				location_update_interval_desired < 1000L -> {
-					Utils.showToast(this, true, getString(R.string.location_update_interval_not_ok))
-					return
-				}
-				
-				location_update_interval_min < 1000L -> {
-					Utils.showToast(this, true, getString(R.string.location_update_interval_not_ok))
-					return
-				}
+			if(! validSeconds(Pref.uiLocationIntervalMin.getIntOrNull(pref))) {
+				Utils.showToast(this, true, getString(R.string.location_update_interval_not_ok))
+				return
 			}
 		}
 		
@@ -678,9 +664,6 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			}
 		}
 		
-		val protected_only = Pref.uiProtectedOnly(pref)
-		val skip_already_download = Pref.uiSkipAlreadyDownload(pref)
-		
 		// 最後に押したボタンを覚えておく
 		pref.edit()
 			.put(Pref.lastMode, if(repeat) Pref.LAST_MODE_REPEAT else Pref.LAST_MODE_ONCE)
@@ -691,28 +674,32 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		val intent = Intent(this, DownloadService::class.java)
 		intent.action = DownloadService.ACTION_START
 		
-		intent.putExtra(DownloadService.EXTRA_TARGET_TYPE, target_type)
-		intent.putExtra(DownloadService.EXTRA_REPEAT, repeat)
-		intent.putExtra(DownloadService.EXTRA_TARGET_URL, target_url)
-		intent.putExtra(DownloadService.EXTRA_LOCAL_FOLDER, folder_uri)
-		intent.putExtra(DownloadService.EXTRA_INTERVAL, interval)
-		intent.putExtra(DownloadService.EXTRA_FILE_TYPE, file_type)
+		intent.put(pref, Pref.uiTetherSprayInterval)
+		intent.put(pref, Pref.uiTetherTestConnectionTimeout)
+		intent.put(pref, Pref.uiWifiChangeApInterval)
+		intent.put(pref, Pref.uiWifiScanInterval)
+		intent.put(pref, Pref.uiLocationIntervalDesired)
+		intent.put(pref, Pref.uiLocationIntervalMin)
+		intent.put(pref, Pref.uiInterval)
 		
-		intent.putExtra(
-			DownloadService.EXTRA_LOCATION_INTERVAL_DESIRED,
-			location_update_interval_desired
-		)
-		intent.putExtra(DownloadService.EXTRA_LOCATION_INTERVAL_MIN, location_update_interval_min)
-		intent.putExtra(DownloadService.EXTRA_LOCATION_MODE, location_mode)
-		intent.putExtra(DownloadService.EXTRA_FORCE_WIFI, force_wifi)
-		intent.putExtra(DownloadService.EXTRA_SSID, ssid)
-		intent.putExtra(DownloadService.EXTRA_PROTECTED_ONLY, protected_only)
-		intent.putExtra(DownloadService.EXTRA_SKIP_ALREADY_DOWNLOAD, skip_already_download)
+		intent.put(pref, Pref.uiProtectedOnly)
+		intent.put(pref, Pref.uiSkipAlreadyDownload)
+		intent.put(pref, Pref.uiForceWifi)
+		intent.put(pref, Pref.uiRepeat)
+		intent.put(pref, Pref.uiLocationMode)
+		
+		intent.put(ssid, Pref.uiSsid)
+		intent.put(folder_uri, Pref.uiFolderUri)
+		intent.put(file_type, Pref.uiFileType)
+		
+		intent.put(target_type, Pref.uiTargetType)
+		intent.putExtra(DownloadService.EXTRA_TARGET_URL, target_url)
+		
 		
 		startService(intent)
 	}
 	
-	internal fun openHelp(layout_id : Int) {
+	internal fun openHelpLayout(layout_id : Int) {
 		val v = layoutInflater.inflate(layout_id, null, false)
 		val d = Dialog(this)
 		d.requestWindowFeature(Window.FEATURE_NO_TITLE)

@@ -15,10 +15,14 @@ class LogTag(category:String){
 	
 	private val tag = "$TAG:$category"
 	
+	fun v(fmt:String,vararg args:Any?){
+		Log.v(tag,format(fmt,args))
+	}
+
 	fun d(fmt:String,vararg args:Any?){
 		Log.d(tag,format(fmt,args))
 	}
-	
+
 	fun e(fmt:String,vararg args:Any?){
 		Log.e(tag,format(fmt,args))
 	}

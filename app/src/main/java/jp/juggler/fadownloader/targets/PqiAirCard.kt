@@ -298,9 +298,9 @@ class PqiAirCard(
 			
 			if(thread.target_type == Pref.TARGET_TYPE_PQI_AIR_CARD_TETHER) {
 				while(! thread.isCancelled) {
-					val tracker_last_result = service.wifi_tracker.last_result.get()
-					val air_url = service.wifi_tracker.last_flash_air_url.get()
-					if(tracker_last_result && air_url != null) {
+					val tracker_last_result = service.wifi_tracker.bLastConnected.get()
+					val air_url = service.wifi_tracker.lastTargetUrl.get()
+					if(tracker_last_result && air_url.isNotEmpty()) {
 						thread.target_url = air_url
 						break
 					}

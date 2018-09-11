@@ -44,7 +44,7 @@ class PageOther(activity : Activity, ignored : View) :
 				null
 			)
 			
-			R.id.btnOSSLicence -> (activity as ActMain).openHelp(activity.getString(R.string.help_oss_license_long))
+			R.id.btnOSSLicence -> (activity as ActMain).openHelp(activity.getString(R.string.oss_license_long_help))
 			
 			R.id.btnRemoveAd -> (activity as ActMain).startRemoveAdPurchase()
 			

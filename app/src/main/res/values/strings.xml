@@ -123,8 +123,8 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
 
     <string name="location_interval_desired">location update interval(desired)</string>
     <string name="location_interval_min">location update interval(min)</string>
-    <string name="help_location_interval_min">location interval min には位置情報を更新する時間間隔の最低値を秒数で指定します。\n少ない数字ほど位置情報の精度は良くなりますが、バッテリー消費も大きくなります。</string>
-    <string name="help_location_interval_desired">location interval desired には位置情報を更新する時間間隔の希望値を秒数で指定します。\n短い方が位置情報の精度は良くなりますが、バッテリー消費は大きくなります。\n\n端末やPlayサービスにより調整が行われるため、希望通りの時間間隔になるとは限りません。\n</string>
+    <string name="location_interval_min_help">location interval min には位置情報を更新する時間間隔の最低値を秒数で指定します。\n少ない数字ほど位置情報の精度は良くなりますが、バッテリー消費も大きくなります。</string>
+    <string name="location_interval_desired_help">location interval desired には位置情報を更新する時間間隔の希望値を秒数で指定します。\n短い方が位置情報の精度は良くなりますが、バッテリー消費は大きくなります。\n\n端末やPlayサービスにより調整が行われるため、希望通りの時間間隔になるとは限りません。\n</string>
 
     <string name="location_setting_change_unavailable">location setting change unavailable</string>
     <string name="location_setting_returns_unknown_status">location setting returns unknown status %1$d</string>
@@ -141,16 +141,16 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="location_last_known">location last known. location.time=%1$s</string>
     <string name="location_update_start">location update start.</string>
     <string name="oss_license_info">OSS license information</string>
-    <string name="help_oss_license_long">このアプリは sephiroth74氏の Android-Exif-Extended ライブラリを(SAF対応のために少し改造して)使用しています。\nhttps://github.com/sephiroth74/Android-Exif-Extended\nThis software is licensed under the Apache 2 license, quoted below.\nLicensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. You may obtain a copy of the License at\nhttp://www.apache.org/licenses/LICENSE-2.0\nUnless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.\n</string>
+    <string name="oss_license_long_help">このアプリは sephiroth74氏の Android-Exif-Extended ライブラリを(SAF対応のために少し改造して)使用しています。\nhttps://github.com/sephiroth74/Android-Exif-Extended\nThis software is licensed under the Apache 2 license, quoted below.\nLicensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. You may obtain a copy of the License at\nhttp://www.apache.org/licenses/LICENSE-2.0\nUnless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.\n</string>
     <string name="location_update_end">location update end</string>
     <string name="setting_desc">変更した設定はREPEAT/ONCEを押すと反映されます</string>
     <string name="remove_ad">remove ad</string>
 
     <string name="force_wifi_ap">Force Wi-Fi AP</string>
-    <string name="force_wifi_help" translatable="false">Wi-Fi強制機能をONにしてWi-Fi AP SSIDを入力すると、Wi-Fi接続がより安定します。\n・Wi-FiがOFFになっていたらONにします\n・指定したSSIDの優先度を上げます\n・指定したSSIDと現在の接続先が異なる場合、Wi-Fi APのスキャンを定期的に行います\n・指定したSSIDがスキャン結果に含まれる場合、そのWi-Fi APに接続先を切り替えます\n</string>
+    <string name="force_wifi_help">Enables this option and input SSID of target SD-LAN card, then this app try to force use specified SSID.\n・Enables Wi-Fi if disabled.\n・Start Wi-Fi scan if missing target SSID is not found in scan result.\n・Select specified SSID if it is found in scan result, but it is not selected.\n\nnotice: this option may waste battery while target AP is not available.</string>
 
     <string name="wifi_ap_ssid">Wi-Fi AP SSID</string>
-    <string name="wifi_ap_ssid_help" translatable="false">「Wi-Fi AP半強制」を有効にすると編集可能になります。Wi-Fi AP SSIDにはターゲットのWi-Fi APのSSIDを指定してください</string>
+    <string name="wifi_ap_ssid_help">This setting is pair with \"Force Wi-Fi AP\".\nPlease input SSID of target SD-LAN card. then this app try to force use specified SSID.</string>
 
     <string name="ssid_empty">SSID is empty.</string>
     <string name="not_enabled">無効</string>
@@ -191,8 +191,8 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="thumbnail">thumbnail</string>
     <string name="thumbnail_auto_rotate">auto rotate thumbnails</string>
     <string name="copy_before_view_send">copy before view/send</string>
-    <string name="help_thumbnail_auto_rotate">ダウンロード履歴に表示されるサムネイルを、Exifの回転情報を使って自動回転します。デフォルトはONです。</string>
-    <string name="help_copy_before_view_send">ダウンロード履歴から「見る/送る」で外部アプリを起動する際、Android OS バージョンによっては SDカードなどの non-primari storage へのアクセスが制限されるため、外部アプリがそのファイルを扱えないことがあります。\nこの設定をONにすると、外部アプリを開く際に、ファイルを端末のダウンロードフォルダにコピーして、コピー後のファイルURIを外部アプリに渡すようにします。\nデフォルトはOFFです。</string>
+    <string name="thumbnail_auto_rotate_help">ダウンロード履歴に表示されるサムネイルを、Exifの回転情報を使って自動回転します。デフォルトはONです。</string>
+    <string name="copy_before_view_send_help">ダウンロード履歴から「見る/送る」で外部アプリを起動する際、Android OS バージョンによっては SDカードなどの non-primari storage へのアクセスが制限されるため、外部アプリがそのファイルを扱えないことがあります。\nこの設定をONにすると、外部アプリを開く際に、ファイルを端末のダウンロードフォルダにコピーして、コピー後のファイルURIを外部アプリに渡すようにします。\nデフォルトはOFFです。</string>
     <string name="network_status">network status: %1$s</string>
 
 
@@ -213,10 +213,18 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="location_wait_timeout">Waited for a while, but failed to acquire location information. Can not update location information for JPEG image.</string>
     <string name="target_url_hint">URL of target SD card.</string>
     <string name="file_type_hint">space separated list of file extension(s).</string>
-    <string name="repeat_interval_hint">seconds of repeat scan interval</string>
-    <string name="location_interval_desired_hint">seconds of desired location update interval</string>
-    <string name="location_interval_min_hint">seconds of minimun location update interval</string>
     <string name="wifi_ap_ssid_hint">Wi-Fi SSID of SD card</string>
     <string name="folder_name_hint">folder name</string>
+
+    <string name="tether_spray_interval">UDP spray interval (tethering mode)</string>
+    <string name="tether_spray_interval_help">In tethering mode, this app sends UDP packets to all addressed in local network for detecting the target device.\nThis setting can change its intervals.\nUnit is seconds, default is 3.</string>
+    <string name="tether_test_connection_timeout">Test connection timeout(tethering mode)</string>
+    <string name="tether_test_connection_timeout_help">In tethering mode, this app test HTTP connection to detected device. but sometimes this test will failed by socket timeout.\nThis setting can change its timeouts.\nUnit is seconds, default is 15.</string>
+    <string name="wifi_scan_interval">Wi-Fi scan interval (force Wi-Fi AP mode)</string>
+    <string name="wifi_scan_interval_help">In force Wi-Fi AP mode, this app starts Wi-Fi scan to detect target AP if it\'s is not found in previous scan result.\nBut frequently Wi-Fi scan wastes battery.\nThis setting can change its intervals.\nUnit is seconds, default is 10.</string>
+    <string name="wifi_change_ap_interval">Wi-Fi change AP interval (force Wi-Fi AP mode)</string>
+    <string name="wifi_change_ap_interval_help">In force Wi-Fi AP mode, this app change Wi-Fi AP to target AP if it\'s is found in scan result, but it\'s not selected.\nThis setting can change its intervals.\nUnit is seconds, default is 5.</string>
+
+    <string name="seconds_hint">second(s)</string>
 
 </resources>

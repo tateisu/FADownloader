@@ -23,6 +23,7 @@
     <string name="target_type_invalid">Target Typeを指定してください</string>
 
     <string name="target_url">Target URL</string>
+    <string name="target_url_hint">接続先のURLを指定</string>
     <string name="target_url_not_ok">Target URLを指定してください</string>
 
     <string name="local_folder">Local Folder</string>
@@ -31,10 +32,11 @@
     <string name="local_folder_help_kitkat">Local Folder にはスマホ上の、画像をダウンロードして保存するフォルダを指定します\n\nAndroid 4.4.x の場合、このアプリからSDカードに書き込むことはできません。「Pictures」の下あたりにFADownloader用のフォルダを作成してください。\n</string>
 
     <string name="file_type">ファイル拡張子</string>
+    <string name="file_type_hint">ファイル拡張子を空白区切りで指定</string>
     <string name="file_type_empty">ファイル拡張子を1つ以上指定してください</string>
 
-    <string name="repeat_interval">Repeat Interval</string>
-    <string name="repeat_interval_not_ok">Repeat Intervalを1以上で指定してください</string>
+    <string name="repeat_interval">Repeatの間隔</string>
+    <string name="repeat_interval_not_ok">Repeatの間隔を1以上で指定してください</string>
 
     <string name="app_permission_required">アプリに権限が必要です</string>
     <string name="screen_shot">参考画像</string>
@@ -66,15 +68,19 @@
     <string name="flashair_not_updated">FlashAirは更新されてません</string>
     <string name="flashair_update_status_error">FlashAir更新ステータスのデータエラー</string>
 
+    <string name="target_type_pqi_air_card">PQI Air Card</string>
+    <string name="target_type_pqi_air_card_tether">PQI Air Card (テザリング)</string>
+
     <string name="geo_tagging_mode">GeoTagging Mode</string>
     <!--<string name="geo_tagging_not_enabled">Playサービスの位置情報APIを利用できないため、GeoTagging モードをOFFにしてください</string>-->
     <string name="geo_tagging_mode_help">GeoTagging Modeを設定すると、スマホから位置情報を取得してJPEGファイルのEXIF情報に位置データを付与します。\nサービス起動中はずっと位置情報を要求し続けます。\n位置精度が高いモードほどバッテリー消費が大きいことに注意してください。\n\nGoogle Play サービスの位置情報APIを利用しているため、Playサービスのない端末では位置情報の埋め込みは使えません。</string>
 
     <string name="location_interval_desired">位置取得頻度(希望)</string>
-    <string name="location_interval_min">位置取得頻度(最短)</string>
+    <string name="location_interval_desired_help">位置取得頻度(希望)には位置情報を更新する時間間隔の希望値を秒数で指定します。\n短い方が位置情報の精度は良くなりますが、バッテリー消費は大きくなります。\n\n端末やPlayサービスにより調整が行われるため、希望通りの時間間隔になるとは限りません。\n</string>
 
-    <string name="help_location_interval_desired">位置取得頻度(希望)には位置情報を更新する時間間隔の希望値を秒数で指定します。\n短い方が位置情報の精度は良くなりますが、バッテリー消費は大きくなります。\n\n端末やPlayサービスにより調整が行われるため、希望通りの時間間隔になるとは限りません。\n</string>
-    <string name="help_location_interval_min">位置取得頻度(最短)には位置情報を更新する時間間隔の最低値を秒数で指定します。\n少ない数字ほど位置情報の精度は良くなりますが、バッテリー消費も大きくなります。</string>
+    <string name="location_interval_min">位置取得頻度(最短)</string>
+    <string name="location_interval_min_help">位置取得頻度(最短)には位置情報を更新する時間間隔の最低値を秒数で指定します。\n少ない数字ほど位置情報の精度は良くなりますが、バッテリー消費も大きくなります。</string>
+
 
     <string name="target_host_error">接続先ホスト名を解決できません。もしかして：端末のWi-Fiから接続先のWi-Fi APに接続していない</string>
     <string name="target_host_error_short">接続先ホストが見つからない</string>
@@ -97,21 +103,29 @@
     <string name="location_update_interval_not_ok">位置取得頻度には1以上の整数を指定してください</string>
     <string name="location_update_start">位置取得を開始しました</string>
     <string name="resolution_request_failed">位置情報設定の精度変更要求が失敗しました</string>
-    <string name="help_oss_license_long">このアプリは sephiroth74氏の Android-Exif-Extended ライブラリを(SAF対応のために少し改造して)使用しています。\nhttps://github.com/sephiroth74/Android-Exif-Extended\nThis software is licensed under the Apache 2 license, quoted below.\nLicensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. You may obtain a copy of the License at\nhttp://www.apache.org/licenses/LICENSE-2.0\nUnless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.\n</string>
+    <string name="location_wait_timeout">少し待機しましたが位置情報を取得できません。JPEG画像への位置情報の付与を行えません。</string>
+
+    <string name="oss_license_long_help">このアプリは sephiroth74氏の Android-Exif-Extended ライブラリを(SAF対応のために少し改造して)使用しています。\nhttps://github.com/sephiroth74/Android-Exif-Extended\nThis software is licensed under the Apache 2 license, quoted below.\nLicensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. You may obtain a copy of the License at\nhttp://www.apache.org/licenses/LICENSE-2.0\nUnless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.\n</string>
+
     <string name="location_update_end">位置取得を終了しました</string>
     <string name="setting_desc">変更した設定はREPEAT/ONCEを押すと反映されます</string>
     <string name="remove_ad">広告非表示</string>
     <string name="other">その他</string>
     <string name="oss_license_info">OSSライセンス情報</string>
-    <string name="force_wifi_ap">Wi-Fi AP半強制</string>
     <string name="ssid_empty">SSIDを指定してください</string>
+
+    <string name="force_wifi_ap">Wi-Fi AP半強制</string>
+    <string name="force_wifi_help">Wi-Fi AP半強制をONにしてWi-Fi APのSSIDを入力すると、Wi-Fi接続がより安定します。\n・Wi-FiがOFFになっていたらONにします\n・指定したSSIDの優先度を上げます\n・指定したSSIDと現在の接続先が異なる場合、Wi-Fi APのスキャンを定期的に行います\n・指定したSSIDがスキャン結果に含まれる場合、そのWi-Fi APに接続先を切り替えます\n</string>
+
     <string name="wifi_ap_ssid">Wi-Fi APのSSID</string>
+    <string name="wifi_ap_ssid_hint">SSIDを入力</string>
+    <string name="wifi_target_ssid_not_found">Wi-Fi AP %1$s への接続設定がありません</string>
+    <string name="wifi_target_ssid_not_scanned">Wi-Fiスキャン結果に%1$sがありません</string>
+
     <!--<string name="wifi_current_connection">WI-Fi AP:SSID=%1$s,id=%2$s,priority=%3$s,state=%4$s</string>-->
     <string name="not_enabled">現在 Wi-Fiが有効ではありません</string>
     <string name="wifi_scan_start">Wi-Fiスキャンを開始しました</string>
     <!--<string name="wifi_status_unknown">Wi-Fiの状態が不明です</string>-->
-    <string name="wifi_target_ssid_not_found">Wi-Fi AP %1$s への接続設定がありません</string>
-    <string name="wifi_target_ssid_not_scanned">Wi-Fiスキャン結果に%1$sがありません</string>
     <string name="folder_picker">フォルダ選択</string>
     <string name="folder_select">「%1$s」を選択</string>
     <string name="folder_up">上のフォルダ階層へ</string>
@@ -125,8 +139,11 @@
     <string name="play_store_missing">Playストアがありません</string>
     <string name="folder_already_exist">フォルダは既に存在します</string>
     <string name="folder_creation_failed">フォルダ作成に失敗しました.</string>
+
     <string name="folder_name">フォルダの名前</string>
     <string name="folder_name_empty">フォルダの名前を指定してください</string>
+    <string name="folder_name_hint">フォルダの名前</string>
+
     <string name="target_unreachable">Target URLに到達できません</string>
     <string name="network_not_good">通信状態が悪いようです</string>
     <string name="download_record">ダウンロード履歴</string>
@@ -135,36 +152,49 @@
     <string name="ssid_picker">SSIDの選択</string>
     <string name="download_cancelled">ダウンロード中断</string>
     <string name="download_completed">ダウンロード完了</string>
+    <string name="download_complete_notification">%1$dファイルをダウンロードしました</string>
+
     <string name="queued">未取得</string>
     <string name="remain">残り</string>
     <string name="send">送る</string>
     <string name="view">見る</string>
     <string name="progress">進捗</string>
-    <string name="copy_before_view_send">見る/送るの際にファイルをコピー</string>
-    <string name="help_copy_before_view_send">ダウンロード履歴から「見る/送る」で外部アプリを起動する際、Android OS バージョンによっては SDカードなどの non-primari storage へのアクセスが制限されるため、外部アプリがそのファイルを扱えないことがあります。\nこの設定をONにすると、外部アプリを開く際に、ファイルを端末のダウンロードフォルダにコピーして、コピー後のファイルURIを外部アプリに渡すようにします。\nデフォルトはOFFです。</string>
-    <string name="help_thumbnail_auto_rotate">ダウンロード履歴に表示されるサムネイルを、Exifの回転情報を使って自動回転します。デフォルトはONです。</string>
     <string name="thumbnail">サムネイル</string>
-    <string name="thumbnail_auto_rotate">サムネイルの自動回転</string>
+
+
     <string name="network_status">通信状態: %1$s</string>
     <string name="remote_file_list_parse_error">接続先ファイル一覧のデータエラー</string>
     <string name="remote_file_listing">接続先ファイル一覧の取得中</string>
     <string name="other_active_warning">Wi-Fi以外の接続 %1$s がActiveになっています。OFFにするとTargetに接続できるかもしれません</string>
     <string name="log_clear_confirm">ログを全て消去します。よろしいですか？</string>
     <string name="log_collection_progress">ログファイルの準備中…</string>
-    <string name="target_type_pqi_air_card">PQI Air Card</string>
-    <string name="target_type_pqi_air_card_tether">PQI Air Card (テザリング)</string>
-    <string name="download_complete_notification">%1$dファイルをダウンロードしました</string>
     <string name="new_file">新しいファイル</string>
+
+    <string name="copy_before_view_send">見る/送るの際にファイルをコピー</string>
+    <string name="copy_before_view_send_help">ONにすると、ダウンロード履歴から「見る/送る」で外部アプリを起動する際、Android OS バージョンによっては SDカードなどの non-primari storage へのアクセスが制限されるため、外部アプリがそのファイルを扱えないことがあります。\nこの設定をONにすると、外部アプリを開く際に、ファイルを端末のダウンロードフォルダにコピーして、コピー後のファイルURIを外部アプリに渡すようにします。\nデフォルトはOFFです。</string>
+
+    <string name="thumbnail_auto_rotate">サムネイルの自動回転</string>
+    <string name="thumbnail_auto_rotate_help">ONにすると、ダウンロード履歴に表示されるサムネイルを、Exifの回転情報を使って自動回転します。デフォルトはONです。</string>
+
     <string name="protected_only">読み取り専用属性のついたファイルだけを転送</string>
     <string name="protected_only_help">ONにすると、プロテクト(リードオンリー属性)のついたファイルだけを転送対象にします。 現時点ではFlashAirのみこの機能に対応しています</string>
+
     <string name="skip_already_downloaded">ダウンロード履歴に名前があるファイルはスキップ</string>
-    <string name="skip_already_downloaded_help">ダウンロード履歴に名前があるファイルはダウンロードしません。</string>
-    <string name="location_wait_timeout">少し待機しましたが位置情報を取得できません。JPEG画像への位置情報の付与を行えません。</string>
-    <string name="target_url_hint">URL of target SD card.</string>
-    <string name="file_type_hint">space separated list of file extension(s).</string>
-    <string name="repeat_interval_hint">seconds of repeat scan interval</string>
-    <string name="location_interval_desired_hint">seconds of desired location update interval</string>
-    <string name="location_interval_min_hint">seconds of minimun location update interval</string>
-    <string name="wifi_ap_ssid_hint">Wi-Fi SSID of SD card</string>
-    <string name="folder_name_hint">folder name</string>
+    <string name="skip_already_downloaded_help">ONにすると、ダウンロード履歴に名前があるファイルはダウンロードしません。</string>
+
+
+    <string name="tether_spray_interval">UDPばら撒き間隔 (テザリング時)</string>
+    <string name="tether_spray_interval_help">テザリングモードでは、このアプリはデバイスのアドレスを検出するためにローカルネットワーク内の全てのアドレスにUDPパケットをばら撒きます。\nその時間間隔をこの設定で変更できます。単位は秒数、デフォルトは3です。</string>
+
+    <string name="tether_test_connection_timeout">テスト接続のタイムアウト (テザリング時)</string>
+    <string name="tether_test_connection_timeout_help">テザリングモードでは、このアプリはデバイスへのHTTP接続をテストします。しかしこのテストは通信状況などの理由により待たされた挙句失敗する場合があります。\nそのタイムアウトをこの設定で変更できます。単位は秒数、デフォルトは15です。</string>
+
+    <string name="wifi_scan_interval">Wi-Fiスキャン間隔 (Wi-Fi AP半強制時)</string>
+    <string name="wifi_scan_interval_help">Wi-Fi AP半強制モードでは、指定されたAPが過去のWi-Fiスキャン結果に含まれない場合にこのアプリは定期的にWi-Fiスキャンの開始を行います。\nしかし頻繁なWi-Fiスキャンは端末のバッテリーを浪費します。\nその時間間隔をこの設定で変更できます。単位は秒数、デフォルトは10です。</string>
+
+    <string name="wifi_change_ap_interval">Wi-Fi AP変更間隔</string>
+    <string name="wifi_change_ap_interval_help">Wi-Fi AP半強制モードでは、指定されたAPがスキャン結果に含まれるが選択されていない場合にこのアプリは定期的にW-Fi APの変更を試みます。\nその時間間隔をこの設定で変更できます。単位は秒数、デフォルトは5です。</string>
+
+    <string name="seconds_hint">秒数を指定</string>
+
 </resources>

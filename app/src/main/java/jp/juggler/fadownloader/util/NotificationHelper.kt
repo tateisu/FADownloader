@@ -7,6 +7,7 @@ import android.content.Context
 
 object NotificationHelper {
 	
+	private val log = LogTag("NotificationHelper")
 	
 	@TargetApi(26)
 	fun createNotificationChannel(
@@ -14,7 +15,6 @@ object NotificationHelper {
 		, name : String // The user-visible name of the channel.
 		, description : String? // The user-visible description of the channel.
 		, importance : Int
-		, log : LogWriter
 	) : NotificationChannel {
 		val notification_manager =
 			context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager?

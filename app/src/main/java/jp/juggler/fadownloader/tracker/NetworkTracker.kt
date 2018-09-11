@@ -15,50 +15,91 @@ import android.os.SystemClock
 import jp.juggler.fadownloader.Pref
 import jp.juggler.fadownloader.R
 import jp.juggler.fadownloader.util.*
-import org.apache.commons.io.IOUtils
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileInputStream
 import java.net.*
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern
+import kotlin.math.min
 
 class NetworkTracker(
 	internal val context : Context,
 	internal val log : LogWriter,
-	internal val callback : (is_connected : Boolean, cause : String)->Unit
-) {
+	internal val callback : (is_connected : Boolean, cause : String) -> Unit
+) : BroadcastReceiver() {
 	
 	companion object {
 		
 		private val logStatic = LogTag("NetworkTracker")
 		
-		const val WIFI_SCAN_INTERVAL = 10000
+		private const val TETHER_STATE_CHANGED = "android.net.conn.TETHER_STATE_CHANGED"
 		
-		////////////////////////////////////////////////////////////////////////
+		private val reIPAddr = Pattern.compile("(\\d+\\.\\d+\\.\\d+\\.\\d+)")
 		
-		internal fun readStringFile(path : String) : String? {
-			try {
-				FileInputStream(File(path)).use{fis->
-					val bao = ByteArrayOutputStream()
-					IOUtils.copy(fis, bao)
-					return (bao.toByteArray() as ByteArray).decodeUTF8()
-				}
-			} catch(ex : Throwable) {
-				logStatic.trace(ex,"readStringFile")
-				return null
+		private val reNotV4Address = "[^\\d.]+".toRegex()
+		
+		private val reLastDigits = "\\d+$".toRegex()
+		
+		private val reArp =
+			Pattern.compile("(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s*(0x\\d+)\\s*(0x\\d+)\\s*([0-9A-Fa-f:]+)")
+		
+	}
+	
+	internal class NetworkStatus(
+		var type_name : String,
+		var sub_name : String? = null,
+		var is_active : Boolean = false,
+		var strWifiStatus : String? = null
+	)
+	
+	internal class NetworkStateList : ArrayList<NetworkStatus>() {
+		
+		var wifi_status : NetworkStatus? = null
+		var other_active : String = ""
+		
+		fun addNetworkInfo(is_active : Boolean, ni : NetworkInfo?) {
+			ni ?: return
+			
+			val is_wifi = ni.type == ConnectivityManager.TYPE_WIFI
+			
+			// Wi-Fiでもなく接続中でもないなら全くの無関係
+			if(! is_wifi && ! ni.isConnected) return
+			
+			val ns = NetworkStatus(
+				type_name = ni.typeName,
+				sub_name = ni.subtypeName,
+				is_active = is_active
+			)
+			this.add(ns)
+			
+			if(is_wifi) {
+				wifi_status = ns
+			} else if(is_active) {
+				other_active = ns.type_name
 			}
 		}
 		
-		internal fun buildCurrentStatus(ns_list : ArrayList<NetworkStatus>) : String {
-			Collections.sort(ns_list, Comparator { a, b ->
-				if(a.is_active && ! b.is_active) return@Comparator - 1
-				if(! a.is_active && b.is_active) 1 else a.type_name !!.compareTo(b.type_name !!)
+		fun afterAddAll() {
+			if(wifi_status == null) {
+				val ws = NetworkStatus(type_name = "WIFI")
+				wifi_status = ws
+				this.add(ws)
+			}
+		}
+		
+		internal fun buildCurrentStatus() : String {
+			
+			sortWith(Comparator { a, b ->
+				if(a.is_active && ! b.is_active) {
+					- 1
+				} else if(! a.is_active && b.is_active) {
+					1
+				} else {
+					a.type_name.compareTo(b.type_name)
+				}
 			})
+			
 			val sb = StringBuilder()
-			for(ns in ns_list) {
+			for(ns in this) {
 				if(sb.isNotEmpty()) sb.append(" / ")
 				if(ns.is_active) sb.append("(Active)")
 				if(ns.strWifiStatus != null) {
@@ -74,157 +115,232 @@ class NetworkTracker(
 			return sb.toString()
 		}
 		
-		internal val reIPAddr = Pattern.compile("(\\d+\\.\\d+\\.\\d+\\.\\d+)")
-		internal val reArp =
-			Pattern.compile("(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s*(0x\\d+)\\s*(0x\\d+)\\s*([0-9A-Fa-f:]+)")
+		var force_status : String? = null
+		var error_status : String? = null
 	}
 	
-	internal interface UrlChecker {
-		fun checkUrl(url : String?) : Boolean
+	// API 26以降でpriorityは使えなくなった
+	@Suppress("DEPRECATION")
+	private fun getPriority(wc : WifiConfiguration) : Int {
+		return wc.priority
 	}
 	
+	// API 26以降でpriorityは使えなくなった
+	@Suppress("DEPRECATION")
+	private fun updatePriority(
+		target_config : WifiConfiguration,
+		priority_max : Int
+	) : String? {
+		try {
+			val priority_list = LinkedList<Int>()
+			
+			// priority の変更
+			val p = target_config.priority
+			if(p != priority_max) {
+				priority_list.add(p)
+				if(priority_list.size > 5) priority_list.removeFirst()
+				if(priority_list.size < 5 || priority_list.first.toInt() != priority_list.last.toInt()) {
+					// まだ上がるか試してみる
+					target_config.priority = priority_max + 1
+					wifiManager.updateNetwork(target_config)
+					wifiManager.saveConfiguration()
+					////頻出するのでログ出さない log.d( R.string.wifi_ap_priority_changed );
+				}
+			}
+		} catch(ex : Throwable) {
+			log.trace(ex, "updateNetwork() or saveConfiguration() failed.")
+			return ex.withCaption("updateNetwork() or saveConfiguration() failed.")
+		}
+		return null
+	}
 	
-	internal val wifiManager : WifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-	internal val cm : ConnectivityManager = context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+	private val wifiManager =
+		context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+	private val connectivityManager =
+		context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 	
-	internal var worker : Worker? = null
+	private val isTetheringEnabled : Boolean
+		get() {
+			try {
+				val rv = wifiManager.javaClass.getMethod("isWifiApEnabled").invoke(wifiManager)
+				if(rv is Boolean) return rv
+				log.e("isWifiApEnabled returns $rv")
+			} catch(ex : Throwable) {
+				log.trace(ex, "isTetheringEnabled")
+			}
+			return false
+		}
+	
+	private val tetheringAddress : String?
+		get() {
+			try {
+				val en = NetworkInterface.getNetworkInterfaces()
+				while(en.hasMoreElements()) {
+					val ni = en.nextElement()
+					try {
+						if(! ni.isUp) continue
+						if(ni.isLoopback) continue
+						if(ni.isVirtual) continue
+						if(ni.isPointToPoint) continue
+						if(ni.hardwareAddress == null) continue
+						val eip = ni.inetAddresses
+						while(eip.hasMoreElements()) {
+							val addr = eip.nextElement()
+							if(addr.address.size == 4) {
+								return addr.hostAddress.replace(reNotV4Address, "")
+							}
+						}
+					} catch(ex : SocketException) {
+						log.trace(ex, "wiFiAPAddress")
+					}
+				}
+			} catch(ex : SocketException) {
+				log.trace(ex, "wiFiAPAddress")
+			}
+			
+			return null
+		}
+	
+	// ネットワークアドレス(XXX.XXX.XXX.XXX) と ネットマスク(XXX.XXX.XXX.)を指定してUDPパケットをばら撒く
+	private fun sprayUDPPacket(nw_addr : String, ip_base : String) {
+		val start = SystemClock.elapsedRealtime()
+		
+		try {
+			val data = ByteArray(1)
+			val port = 80
+			val socket = DatagramSocket()
+			for(n in 2 .. 254) {
+				val try_ip = "$ip_base$n"
+				if(try_ip == nw_addr) continue
+				try {
+					val packet = DatagramPacket(
+						data,
+						data.size,
+						InetAddress.getByName(try_ip),
+						port
+					)
+					socket.send(packet)
+				} catch(ex : Throwable) {
+					log.trace(ex, "sprayUDPPacket")
+				}
+				
+			}
+			socket.close()
+		} catch(ex : Throwable) {
+			log.trace(ex, "sprayUDPPacket")
+		}
+		
+		log.v("sent UDP packet to '$ip_base*' time=${Utils.formatTimeDuration(SystemClock.elapsedRealtime() - start)}")
+	}
+	
+	private var worker : Worker? = null
 	
 	@Volatile
 	internal var is_dispose = false
 	
-	private val receiver : BroadcastReceiver = object : BroadcastReceiver() {
-		override fun onReceive(context : Context, intent : Intent) {
-			if(is_dispose) return
-			worker ?.notifyEx()
-		}
-	}
-	
-	@Volatile
-	internal var force_wifi : Boolean = false
-	@Volatile
-	internal var target_ssid : String? = null
-	@Volatile
-	internal var target_type : Int = 0 // カードはAPモードではなくSTAモードもしくはインターネット同時接続もーどで動作している
-
-	@Volatile
-	internal var target_url : String? = null
-	
 	////////////////////////////////////////////////////////////////////////
 	
-	val last_result = AtomicBoolean()
-	val last_flash_air_url = AtomicReference<String>()
-	internal val last_current_status = AtomicReference<String>()
+	private var timeLastSpray = 0L
+	private var timeLastWiFiScan : Long = 0
+	private var timeLastWiFiApChange : Long = 0
 	
-	internal val last_other_active = AtomicReference<String>()
+	val bLastConnected = AtomicBoolean()
 	
-	val otherActive : String?
+	private var last_force_status = AtomicReferenceNotNull("")
+	private var last_error_status = AtomicReferenceNotNull("")
+	private var last_current_status = AtomicReferenceNotNull("")
+	private var last_other_active = AtomicReferenceNotNull("")
+	
+	val lastTargetUrl = AtomicReferenceNotNull("")
+	
+	val otherActive : String
 		get() = last_other_active.get()
 	
-	internal val urlChecker_FlashAir : UrlChecker = object :
-		UrlChecker {
-		override fun checkUrl(url : String?) : Boolean {
-			return checkUrl_sub(url, url + "command.cgi?op=108")
-		}
-	}
-	
-	internal val urlChecker_PqiAirCard : UrlChecker = object :
-		UrlChecker {
-		override fun checkUrl(url : String?) : Boolean {
-			return checkUrl_sub(url, url + "cgi-bin/get_config.pl")
-		}
-	}
-	
-
 	init {
-		
-		context.registerReceiver(receiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
-		context.registerReceiver(receiver, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
-		worker = Worker()
-		worker !!.start()
+		context.registerReceiver(this, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
+		context.registerReceiver(this, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
+		context.registerReceiver(this, IntentFilter(TETHER_STATE_CHANGED))
+		worker = Worker().apply {
+			start()
+		}
 	}
 	
 	fun dispose() {
 		is_dispose = true
-		context.unregisterReceiver(receiver)
-		if(worker != null) {
-			worker !!.cancel("disposed")
-			worker = null
-		}
+		context.unregisterReceiver(this)
+		worker?.cancel("disposed")
+		worker = null
 	}
 	
-	fun updateSetting(force_wifi : Boolean, ssid : String?, target_type : Int, target_url : String?) {
+	override fun onReceive(context : Context, intent : Intent) {
+		if(intent.action == TETHER_STATE_CHANGED) {
+			val sb = StringBuilder("TETHER_STATE_CHANGED. ")
+			val extras = intent.extras
+			for( key in extras.keySet()){
+				val v = extras[key]
+				when(v){
+					is ArrayList<*> -> sb.append("$key=[${v.joinToString("/")}],")
+					is Array<*> -> sb.append("$key=[${v.joinToString("/")}],")
+					else->sb.append("$key=$v,")
+				}
+			}
+			log.d(sb.toString())
+		}
+		if(! is_dispose) worker?.notifyEx()
+	}
+	
+	class Setting(
+		val force_wifi : Boolean = false,
+		val target_ssid : String = "",
+		val target_type : Int = 0,
+		val target_url : String = "http://flashair/",
+		
+		val tetherSprayInterval : Long = 1000L,
+		val tetherTestConnectionTimeout : Long = 1000L,
+		val wifiChangeApInterval : Long = 1000L,
+		val wifiScanInterval : Long = 1000L
+	)
+	
+	var setting : Setting = Setting()
+	
+	fun updateSetting(setting : Setting) {
 		if(is_dispose) return
-		this.force_wifi = force_wifi
-		this.target_ssid = ssid
-		this.target_type = target_type
-		this.target_url = target_url
-		if(worker != null) worker !!.notifyEx()
+		this.setting = setting
+		worker?.notifyEx()
 	}
 	
-	internal class NetworkStatus {
-		
-		var is_active : Boolean = false
-		var type_name : String? = null
-		var sub_name : String? = null
-		var strWifiStatus : String? = null
+	fun getStatus() : String {
+		return requireNotNull(last_current_status.get())
 	}
 	
-	internal class NetworkStateList : ArrayList<NetworkStatus>() {
-		
-		var wifi_status : NetworkStatus? = null
-		var other_active : String? = null
-		
-		fun eachNetworkInfo(is_active : Boolean, ni : NetworkInfo) {
-			val is_wifi = ni.type == ConnectivityManager.TYPE_WIFI
-			if(! is_wifi && ! ni.isConnected) return
-			val ns = NetworkStatus()
-			this.add(ns)
-			if(is_wifi) wifi_status = ns
-			ns.type_name = ni.typeName
-			ns.sub_name = ni.subtypeName
-			
-			if(is_active) {
-				ns.is_active = true
-				if(! is_wifi) other_active = ns.type_name
-			}
-		}
-		
-		fun afterAllNetwork() {
-			if(wifi_status == null) {
-				val ws = NetworkStatus()
-				ws.type_name = "WIFI"
-				wifi_status = ws
-				this.add(ws)
-			}
-		}
+	private val urlChecker_FlashAir : (String) -> Boolean = { url ->
+		checkUrl_sub(url, "${url}command.cgi?op=108")
 	}
 	
-	fun getStatus(sb : StringBuilder) {
-		sb.append(last_current_status)
+	private val urlChecker_PqiAirCard : (String) -> Boolean = { url ->
+		checkUrl_sub(url, "${url}cgi-bin/get_config.pl")
 	}
 	
-	
-	internal fun checkUrl_sub(target_url : String?, check_url : String) : Boolean {
-		target_url ?: return false
-
+	private fun checkUrl_sub(target_url : String, check_url : String) : Boolean {
+		
 		var bFound = false
 		try {
 			val urlObject = URL(check_url)
 			val conn = urlObject.openConnection() as HttpURLConnection
 			try {
 				conn.doInput = true
-				conn.connectTimeout = 30000
-				conn.readTimeout = 30000
+				conn.connectTimeout = setting.tetherTestConnectionTimeout.toInt()
+				conn.readTimeout = setting.tetherTestConnectionTimeout.toInt()
 				conn.doOutput = false
 				conn.connect()
 				val resCode = conn.responseCode
 				if(resCode != 200) {
 					log.e("HTTP error %s. url=%s", resCode, check_url)
 				} else {
-					if(target_url != last_flash_air_url.get()) {
+					if(target_url != lastTargetUrl.get()) {
 						log.i("target detected. %s", target_url)
 					}
-					last_flash_air_url.set(target_url)
+					lastTargetUrl.set(target_url)
 					bFound = true
 				}
 			} finally {
@@ -235,132 +351,59 @@ class NetworkTracker(
 				
 			}
 		} catch(ex : Throwable) {
-			log.trace(ex,"failed: $check_url")
-			log.e(ex, check_url)
+			when(ex) {
+
+				is ConnectException ->{
+				}
+
+				is SocketTimeoutException -> {
+					// 通信エラーをトレースするとキリがないのでしない
+					log.w(ex.withCaption(check_url))
+				}
+				
+				else -> {
+					log.trace(ex, check_url)
+					log.e(ex, check_url)
+				}
+			}
 		}
 		
 		return bFound
 	}
 	
-	internal inner class Worker : WorkerBase() {
+	// 接続先が見つかったら0L
+	// またはリトライまでの秒数を返す
+	private fun detectTetheringClient(env : NetworkStateList,url_checker : (String) -> Boolean) : Long {
 		
-		private val isWifiAPEnabled : Boolean
-			get() {
-				try {
-					return wifiManager.javaClass.getMethod("isWifiApEnabled").invoke(wifiManager) as Boolean
-				} catch(ex : Throwable) {
-					log.trace(ex,"isWifiAPEnabled")
-				}
-				
-				return false
+		// 設定で指定されたURLを最初に試す
+		// ターゲットURLにIPアドレスが書かれているなら、それを最初に試す
+		if(reIPAddr.matcher(setting.target_url).find()) {
+			if(url_checker(setting.target_url)) {
+				return 0L
 			}
-		
-		private val wiFiAPAddress : String?
-			get() {
-				try {
-					val en = NetworkInterface.getNetworkInterfaces()
-					while(en.hasMoreElements()) {
-						val ni = en.nextElement()
-						try {
-							if(! ni.isUp) continue
-							if(ni.isLoopback) continue
-							if(ni.isVirtual) continue
-							if(ni.isPointToPoint) continue
-							if(ni.hardwareAddress == null) continue
-							val eip = ni.inetAddresses
-							while(eip.hasMoreElements()) {
-								val addr = eip.nextElement()
-								if(addr.address.size == 4) {
-									return addr.hostAddress.replace("[^\\d.]+".toRegex(), "")
-								}
-							}
-						} catch(ex : SocketException) {
-							log.trace(ex,"wiFiAPAddress")
-						}
-					}
-				} catch(ex : SocketException) {
-					log.trace(ex,"wiFiAPAddress")
-				}
-				
-				return null
-			}
-		
-		private val priority_list = LinkedList<Int>()
-		
-		private var last_force_status : String? = null
-		private var last_error_status : String? = null
-		private var last_wifi_ap_change : Long = 0
-		private var last_wifi_scan_start : Long = 0
-		
-		override fun cancel(reason : String) : Boolean {
-			val rv = super.cancel(reason)
-			try {
-				this.interrupt()
-			} catch(ignored : Throwable) {
-			}
-			
-			return rv
 		}
 		
-		private fun sprayUDPPacket(nw_addr : String, ip_base : String) {
-			val start = SystemClock.elapsedRealtime()
-			
-			try {
-				val data = ByteArray(1)
-				val port = 80
-				val socket = DatagramSocket()
-				for(n in 2 .. 254) {
-					val try_ip = ip_base + n
-					if(try_ip == nw_addr) continue
-					try {
-						
-						val packet = DatagramPacket(
-							data, data.size, InetAddress.getByName(try_ip), port
-						)
-						
-						socket.send(packet)
-					} catch(ex : Throwable) {
-						log.trace(ex,"sprayUDPPacket")
-					}
-					
-				}
-				socket.close()
-			} catch(ex : Throwable) {
-				log.trace(ex,"sprayUDPPacket")
-			}
-			
-			log.d("sent UDP packet to '$ip_base*' time=${Utils.formatTimeDuration(SystemClock.elapsedRealtime() - start)}")
+		if(! isTetheringEnabled) {
+			env.error_status = "Wi-Fi Tethering is not enabled."
+			// TETHER_STATE_CHANGED があるのでリトライ間隔は長めでもよさそう
+			return 5000L
 		}
 		
-		private fun detectTetheringClient(url_checker : UrlChecker) : Boolean {
-			
-			// 設定で指定されたURLを最初に試す
-			// ただしURLにIPアドレスが書かれている場合のみ
-			if(reIPAddr.matcher(target_url).find()) {
-				if(url_checker.checkUrl(target_url)) {
-					return true
-				}
-			}
-			
-			if(! isWifiAPEnabled) {
-				log.d("Wi-Fi Tethering is not enabled.")
-				return false
-			}
-			
-			val tethering_address = wiFiAPAddress
-			if(tethering_address == null) {
-				log.w("missing Wi-Fi Tethering IP address.")
-				return false
-			}
-			val ip_base = tethering_address.replace("\\d+$".toRegex(), "")
-			
-			// ARPテーブルの読み出し
-			val strArp =
-				readStringFile("/proc/net/arp")
-			if(strArp == null) {
-				log.e("can not read ARP table.")
-				return false
-			}
+		val tethering_address = tetheringAddress
+		if(tethering_address == null) {
+			env.error_status= "missing Wi-Fi Tethering IP address."
+			return 1000L
+		}
+		
+		// "XXX.XXX.XXX."
+		val ip_base = tethering_address.replace(reLastDigits, "")
+		
+		// ARPテーブルの読み出し
+		val strArp = Utils.readStringFile("/proc/net/arp")
+		if(strArp == null) {
+			env.error_status = "Can't read ARP table."
+		} else {
+			val list = ArrayList<String>()
 			// ARPテーブル中のIPアドレスを確認
 			val m = reArp.matcher(strArp)
 			while(m.find()) {
@@ -372,336 +415,373 @@ class NetworkTracker(
 				if(item_mac == "00:00:00:00:00:00" || ! item_ip.startsWith(ip_base))
 					continue
 				
-				if(url_checker.checkUrl("http://$item_ip/")) {
-					return true
+				list.add(item_ip)
+			}
+			if( list.isEmpty() ) {
+				env.error_status = "missing devices in ARP table."
+			}else{
+				env.force_status = "devices: ${list.joinToString(",")}"
+				
+				// 直前までに接続していたデバイスを優先的に確認する
+				val lastUrl = lastTargetUrl.get()
+				for( item_ip in list) {
+					val url = "http://$item_ip/"
+					if( url == lastUrl && url_checker(url) ){
+						return 0L
+					}
+				}
+
+				// 次にそれ以外のデバイスを確認する
+				for( item_ip in list) {
+					val url = "http://$item_ip/"
+					if( url != lastUrl && url_checker(url) ){
+						return 0L
+					}
 				}
 			}
-			
-			// カードが見つからない場合
-			// 直接ARPリクエストを投げるのは難しい？ので
-			// UDPパケットをばらまく
-			// 次回以降の確認で効果があるといいな
+		}
+		
+		// カードが見つからない場合
+		// 直接ARPリクエストを投げるのは難しい？のでUDPパケットをばらまく
+		// 次回以降の確認で効果ARPテーブルを読めれば良いのだが…。
+		val now = SystemClock.elapsedRealtime()
+		val remain = timeLastSpray + setting.tetherSprayInterval - now
+		return if(remain > 0L) {
+			remain
+		} else {
+			timeLastSpray = now
 			sprayUDPPacket(tethering_address, ip_base)
-			
-			return false
+			1000L
 		}
-		
-		private fun keep_ap() : Boolean {
-			if(isCancelled) return false
-			
-			val ns_list = NetworkStateList()
-			var force_status : String? = null
-			var error_status : String? = null
-			try {
-				if(Build.VERSION.SDK_INT >= 23) {
-					var active_handle : Long? = null
-					val an = cm.activeNetwork
-					if(an != null) {
-						active_handle = an.networkHandle
-					}
-					val src_list = cm.allNetworks
-					if(src_list != null) {
-						for(n in src_list) {
-							val is_active =
-								active_handle != null && active_handle == n.networkHandle
-							val ni = cm.getNetworkInfo(n)
-							ns_list.eachNetworkInfo(is_active, ni)
-						}
-					}
-				} else {
-					var active_name : String? = null
-					val ani = cm.activeNetworkInfo
-					if(ani != null) {
-						active_name = ani.typeName
-					}
-					@Suppress("DEPRECATION")
-					val src_list = cm.allNetworkInfo
-					if(src_list != null) {
-						for(ni in src_list) {
-							val is_active = active_name != null && active_name == ni.typeName
-							ns_list.eachNetworkInfo(is_active, ni)
-						}
-					}
-				}
-				ns_list.afterAllNetwork()
-				last_other_active.set(ns_list.other_active)
-				
-				if(target_type == Pref.TARGET_TYPE_FLASHAIR_STA) {
-					// FlashAir STAモードの時の処理
-					return detectTetheringClient(urlChecker_FlashAir)
-				} else if(target_type == Pref.TARGET_TYPE_PQI_AIR_CARD_TETHER) {
-					// PQI Air Card Tethering モードの時の処理
-					return detectTetheringClient(urlChecker_PqiAirCard)
-				}
-				
-				// Wi-Fiが無効なら有効にする
-				try {
-					ns_list.wifi_status !!.strWifiStatus = "?"
-					if(! wifiManager.isWifiEnabled) {
-						ns_list.wifi_status !!.strWifiStatus =
-							context.getString(R.string.not_enabled)
-						if(force_wifi) wifiManager.isWifiEnabled = true
-						return false
-					}
-				} catch(ex : Throwable) {
-					log.trace(ex,"setWifiEnabled() failed.")
-					error_status = ex.withCaption( "setWifiEnabled() failed.")
-					return false
-				}
-				
-				// Wi-Fiの現在の状態を取得する
-				val info : WifiInfo?
-				var current_supp_state : SupplicantState? = null
-				var current_ssid : String? = null
-				try {
-					info = wifiManager.connectionInfo
-					if(info != null) {
-						current_supp_state = info.supplicantState
-						val sv = info.ssid
-						current_ssid = sv?.replace("\"", "")
-					}
-				} catch(ex : Throwable) {
-					log.trace(ex,"getConnectionInfo() failed.")
-					error_status = ex.withCaption( "getConnectionInfo() failed.")
-					return false
-				}
-				
-				// 設定済みのAPを列挙する
-				var current_network_id = 0
-				var target_config : WifiConfiguration? = null
-				var priority_max = 0
-				try {
-					ns_list.wifi_status !!.strWifiStatus =
-						context.getString(R.string.no_ap_associated)
-					
-					val wc_list = wifiManager.configuredNetworks
-					if(wc_list == null) {
-						// getConfiguredNetworks() はたまにnullを返す
-						return false
-					} else {
-						for(wc in wc_list) {
-							val ssid = wc.SSID.replace("\"", "")
-							
-							val p = getPriority(wc)
-							
-							if(p > priority_max) {
-								priority_max = p
-							}
-							
-							// 目的のAPを覚えておく
-							if(target_ssid != null && target_ssid == ssid) {
-								target_config = wc
-							}
-							
-							// 接続中のAPの情報
-							if(ssid == current_ssid) {
-								current_network_id = wc.networkId
-								//
-								var strState = current_supp_state?.toString() ?: "?"
-								strState = Utils.toCamelCase(strState)
-								if("Completed" == strState) strState = "Connected"
-								ns_list.wifi_status !!.strWifiStatus = "$ssid,$strState"
-								if(! force_wifi) {
-									// AP強制ではないなら、何かアクティブな接続が生きていればOK
-									return current_supp_state == SupplicantState.COMPLETED
-								}
-							}
-						}
-						
-						if(! force_wifi) {
-							// AP強制ではない場合、接続中のAPがなければNGを返す
-							return false
-						} else if(target_config == null) {
-							force_status =
-								context.getString(R.string.wifi_target_ssid_not_found, target_ssid)
-							return false
-						}
-					}
-					
-				} catch(ex : Throwable) {
-					log.trace(ex,"getConfiguredNetworks() failed.")
-					error_status = ex.withCaption( "getConfiguredNetworks() failed.")
-					return false
-				}
+	}
+	
 
-				if( Build.VERSION.SDK_INT < 26){
-					val error = updatePriority(target_config,priority_max)
-					if(error != null) error_status = error
+	
+	private fun keep_ap() : Long {
+		
+		val ns_list = NetworkStateList()
+		try {
+			if(Build.VERSION.SDK_INT >= 23) {
+				var active_handle : Long? = null
+				val an = connectivityManager.activeNetwork
+				if(an != null) {
+					active_handle = an.networkHandle
 				}
-				
-				// 目的のAPが選択されていた場合
-				if(current_ssid != null && current_network_id == target_config.networkId) {
-					when(current_supp_state) {
-						SupplicantState.COMPLETED ->
-							// その接続の認証が終わっていて、他の種類の接続がActiveでなければOK
-							return ns_list.other_active == null
-						SupplicantState.ASSOCIATING, SupplicantState.ASSOCIATED, SupplicantState.AUTHENTICATING, SupplicantState.FOUR_WAY_HANDSHAKE, SupplicantState.GROUP_HANDSHAKE ->
-							// 現在のstateが何か作業中なら、余計なことはしないがOKでもない
-							return false
-						else->{}
+				val src_list = connectivityManager.allNetworks
+				if(src_list != null) {
+					for(n in src_list) {
+						val is_active =
+							active_handle != null && active_handle == n.networkHandle
+						val ni = connectivityManager.getNetworkInfo(n)
+						ns_list.addNetworkInfo(is_active, ni)
 					}
 				}
-				
-				// スキャン範囲内に目的のSSIDがあるか？
-				var lastSeen :Long? = null
-				var found_in_scan = false
-				try {
-					for(result in wifiManager.scanResults) {
-						if( Build.VERSION.SDK_INT >= 17) {
-							if(lastSeen == null || result.timestamp > lastSeen){
-								lastSeen = result.timestamp
-							}
-						}
-						if(target_ssid != null && target_ssid == result.SSID.replace("\"", "")) {
-							found_in_scan = true
-							break
-						}
+			} else {
+				var active_name : String? = null
+				val ani = connectivityManager.activeNetworkInfo
+				if(ani != null) {
+					active_name = ani.typeName
+				}
+				@Suppress("DEPRECATION")
+				val src_list = connectivityManager.allNetworkInfo
+				if(src_list != null) {
+					for(ni in src_list) {
+						val is_active = active_name != null && active_name == ni.typeName
+						ns_list.addNetworkInfo(is_active, ni)
 					}
-				} catch(ex : Throwable) {
-					log.trace(ex,"getScanResults() failed.")
-					error_status = ex.withCaption( "getScanResults() failed.")
-					return false
-				}
-				
-				// スキャン範囲内にない場合、定期的にスキャン開始
-				if(! found_in_scan) {
-					try {
-						force_status = context.getString(R.string.wifi_target_ssid_not_scanned, target_ssid)
-						val now = SystemClock.elapsedRealtime()
-						val remain = last_wifi_scan_start + WIFI_SCAN_INTERVAL - now
-						if( remain > 0L){
-							val lastSeenBefore = if(lastSeen==null) null else now - (lastSeen/1000L)
-							logStatic.d("$target_ssid is not found in latest scan result(${lastSeenBefore}ms before). next scan is start after ${remain}ms.")
-						}else{
-							last_wifi_scan_start = now
-							wifiManager.startScan()
-							log.d(R.string.wifi_scan_start)
-						}
-					} catch(ex : Throwable) {
-						log.trace(ex,"startScan() failed.")
-						error_status = ex.withCaption( "startScan() failed.")
-					}
-					return false
-				}
-				
-				val now = SystemClock.elapsedRealtime()
-				val remain = last_wifi_ap_change + 5000L - now
-				if( remain > 0L){
-					logStatic.d("wait ${remain}ms before force change WiFi AP")
-				}else{
-					last_wifi_ap_change = now
-					
-					try {
-						// 先に既存接続を無効にする
-						for(wc in wifiManager.configuredNetworks) {
-							if(wc.networkId != target_config.networkId) {
-								val ssid = wc.SSID.replace("\"", "")
-								if(wc.status == WifiConfiguration.Status.CURRENT) {
-									log.i("%sから切断させます", ssid)
-									wifiManager.disableNetwork(wc.networkId)
-								} else if(wc.status == WifiConfiguration.Status.ENABLED) {
-									log.i("%sへの自動接続を無効化します", ssid)
-									wifiManager.disableNetwork(wc.networkId)
-								}
-							}
-						}
-						
-						val target_ssid = target_config.SSID.replace("\"", "")
-						log.i("%s への接続を試みます", target_ssid)
-						wifiManager.enableNetwork(target_config.networkId, true)
-						
-						return false
-						
-					} catch(ex : Throwable) {
-						log.trace(ex,"disableNetwork() or enableNetwork() failed.")
-						error_status =
-							ex.withCaption( "disableNetwork() or enableNetwork() failed.")
-					}
-					
-				}
-				
-				return false
-			} finally {
-				val current_status =
-					buildCurrentStatus(
-						ns_list
-					)
-				if(current_status != last_current_status.get()) {
-					last_current_status.set(current_status)
-					log.d(context.getString(R.string.network_status, current_status))
-				}
-				
-				if(error_status != null && error_status != last_error_status) {
-					last_error_status = error_status
-					log.e(error_status)
-				}
-				
-				if(force_status != null && force_status != last_force_status) {
-					last_force_status = force_status
-					log.w(force_status)
 				}
 			}
-		}
-		
-		// API 26以降でpriorityは使えなくなった
-		@Suppress("DEPRECATION")
-		private fun getPriority(wc:WifiConfiguration):Int{
-			return wc.priority
-		}
-
-		// API 26以降でpriorityは使えなくなった
-		@Suppress("DEPRECATION")
-		private fun updatePriority(target_config:WifiConfiguration,priority_max:Int) :String? {
+			ns_list.afterAddAll()
+			last_other_active.set(ns_list.other_active)
+			
+			// テザリングモードの処理
+			when(setting.target_type) {
+				Pref.TARGET_TYPE_FLASHAIR_STA -> {
+					return detectTetheringClient(ns_list,urlChecker_FlashAir)
+				}
+				
+				Pref.TARGET_TYPE_PQI_AIR_CARD_TETHER -> {
+					return detectTetheringClient(ns_list,urlChecker_PqiAirCard)
+				}
+			}
+			
+			val wifi_status = requireNotNull(ns_list.wifi_status)
+			
+			// Wi-Fiが無効なら有効にする
 			try {
-				// priority の変更
-				val p = target_config.priority
-				if(p != priority_max) {
-					priority_list.add(p)
-					if(priority_list.size > 5) priority_list.removeFirst()
-					if(priority_list.size < 5 || priority_list.first.toInt() != priority_list.last.toInt()) {
-						// まだ上がるか試してみる
-						target_config.priority = priority_max + 1
-						wifiManager.updateNetwork(target_config)
-						wifiManager.saveConfiguration()
-						////頻出するのでログ出さない log.d( R.string.wifi_ap_priority_changed );
+				wifi_status.strWifiStatus = "?"
+				if(! wifiManager.isWifiEnabled) {
+					wifi_status.strWifiStatus = context.getString(R.string.not_enabled)
+					return if(setting.force_wifi) {
+						wifiManager.isWifiEnabled = true
+						1000L
+					} else {
+						Long.MAX_VALUE
 					}
 				}
 			} catch(ex : Throwable) {
-				log.trace(ex,"updateNetwork() or saveConfiguration() failed.")
-				return ex.withCaption( "updateNetwork() or saveConfiguration() failed.")
+				log.trace(ex, "setWifiEnabled() failed.")
+				ns_list.error_status = ex.withCaption("setWifiEnabled() failed.")
+				return 10000L
 			}
-			return null
+			
+			// Wi-Fiの現在の状態を取得する
+			val info : WifiInfo?
+			var current_supp_state : SupplicantState? = null
+			var current_ssid : String? = null
+			try {
+				info = wifiManager.connectionInfo
+				if(info != null) {
+					current_supp_state = info.supplicantState
+					current_ssid = info.ssid?.filterSsid()
+				}
+			} catch(ex : Throwable) {
+				log.trace(ex, "getConnectionInfo() failed.")
+				ns_list.error_status = ex.withCaption("getConnectionInfo() failed.")
+				return 10000L
+			}
+			
+			// 設定済みのAPを列挙する
+			var current_network_id = 0
+			var target_config : WifiConfiguration? = null
+			var priority_max = 0
+			try {
+				wifi_status.strWifiStatus = context.getString(R.string.no_ap_associated)
+				
+				val wc_list = wifiManager.configuredNetworks
+					?: return 5000L // getConfiguredNetworks() はたまにnullを返す
+				
+				for(wc in wc_list) {
+					val ssid = wc.SSID.filterSsid()
+					
+					val p = getPriority(wc)
+					
+					if(p > priority_max) {
+						priority_max = p
+					}
+					
+					// 目的のAPを覚えておく
+					if(ssid == setting.target_ssid) {
+						target_config = wc
+					}
+					
+					// 接続中のAPの情報
+					if(ssid == current_ssid) {
+						current_network_id = wc.networkId
+						//
+						var strState = Utils.toCamelCase(current_supp_state?.toString() ?: "?")
+						if("Completed" == strState) strState = "Connected"
+						
+						wifi_status.strWifiStatus = "$ssid,$strState"
+						
+						// AP強制ではないなら、何かアクティブな接続が生きていればOK
+						if(! setting.force_wifi && current_supp_state == SupplicantState.COMPLETED) {
+							return 0L
+						}
+					}
+				}
+				// 列挙終了
+				when(setting.force_wifi) {
+					false -> {
+						// AP強制ではない場合、接続中のAPがなければ待機して再確認
+						// 多分通信状況ブロードキャストで起こされる
+						return 10000L
+					}
+					
+					true -> if(target_config == null) {
+						// 指定されたSSIDはこの端末に設定されていない
+						ns_list.force_status =
+							context.getString(
+								R.string.wifi_target_ssid_not_found,
+								setting.target_ssid
+							)
+						return Long.MAX_VALUE
+						
+					}
+				}
+			} catch(ex : Throwable) {
+				log.trace(ex, "getConfiguredNetworks() failed.")
+				ns_list.error_status = ex.withCaption("getConfiguredNetworks() failed.")
+				return 10000L
+			}
+			
+			if(Build.VERSION.SDK_INT < 26) {
+				// API level 25まではAPの優先順位を変えることができた
+				val error = updatePriority(target_config, priority_max)
+				if(error != null) ns_list.error_status = error
+			}
+			
+			// 目的のAPが選択されていた場合
+			if(current_ssid != null && current_network_id == target_config.networkId) {
+				when(current_supp_state) {
+					SupplicantState.ASSOCIATING,
+					SupplicantState.ASSOCIATED,
+					SupplicantState.AUTHENTICATING,
+					SupplicantState.FOUR_WAY_HANDSHAKE,
+					SupplicantState.GROUP_HANDSHAKE ->
+						// 現在のstateが何か作業中なら、余計なことはしないがOKでもない
+						return 500L
+					
+					SupplicantState.COMPLETED -> {
+						return if(ns_list.other_active.isNotEmpty()) {
+							// 認証はできたが他の接続がアクティブならさらに待機する
+							1000L
+						} else {
+							// 他の接続もないしこれでOKだと思う
+							0L
+						}
+					}
+					
+					else -> {
+						// fall
+					}
+				}
+			}
+			
+			// スキャン結果に目的のSSIDがあるか？
+			var lastSeen : Long? = null
+			var found_in_scan = false
+			try {
+				for(result in wifiManager.scanResults) {
+					if(Build.VERSION.SDK_INT >= 17) {
+						if(lastSeen == null || result.timestamp > lastSeen) {
+							lastSeen = result.timestamp
+						}
+					}
+					if(setting.target_ssid == result.SSID.filterSsid()) {
+						found_in_scan = true
+						break
+					}
+				}
+			} catch(ex : Throwable) {
+				log.trace(ex, "getScanResults() failed.")
+				ns_list.error_status = ex.withCaption("getScanResults() failed.")
+				return 10000L
+			}
+			
+			// スキャン範囲内にない場合、定期的にスキャン開始
+			if(! found_in_scan) {
+				ns_list.force_status =
+					context.getString(R.string.wifi_target_ssid_not_scanned, setting.target_ssid)
+				val now = SystemClock.elapsedRealtime()
+				val remain = timeLastWiFiScan + setting.wifiScanInterval - now
+				return if(remain > 0L) {
+					val lastSeenBefore = if(lastSeen == null) null else now - (lastSeen / 1000L)
+					logStatic.d("${setting.target_ssid} is not found in latest scan result(${lastSeenBefore}ms before). next scan is start after ${remain}ms.")
+					min(remain, 3000L)
+				} else try {
+					timeLastWiFiScan = now
+					wifiManager.startScan()
+					log.d(R.string.wifi_scan_start)
+					3000L
+				} catch(ex : Throwable) {
+					log.trace(ex, "startScan() failed.")
+					ns_list.error_status = ex.withCaption("startScan() failed.")
+					10000L
+				}
+			} else {
+				val now = SystemClock.elapsedRealtime()
+				val remain = timeLastWiFiApChange + setting.wifiChangeApInterval - now
+				return if(remain > 0L) {
+					logStatic.d("wait ${remain}ms before force change WiFi AP")
+					min(remain, 3000L)
+				} else {
+					timeLastWiFiApChange = now
+					try {
+						// 先に既存接続を無効にする
+						for(wc in wifiManager.configuredNetworks) {
+							if(wc.networkId == target_config.networkId) continue
+							val ssid = wc.SSID.filterSsid()
+							when(wc.status) {
+								WifiConfiguration.Status.CURRENT -> {
+									log.v("${ssid}から切断させます")
+									wifiManager.disableNetwork(wc.networkId)
+								}
+								
+								WifiConfiguration.Status.ENABLED -> {
+									log.v("${ssid}への自動接続を無効化します")
+									wifiManager.disableNetwork(wc.networkId)
+								}
+							}
+						}
+						
+						val target_ssid = target_config.SSID.filterSsid()
+						log.i("${target_ssid}への接続を試みます")
+						wifiManager.enableNetwork(target_config.networkId, true)
+						1000L
+					} catch(ex : Throwable) {
+						log.trace(ex, "disableNetwork() or enableNetwork() failed.")
+						ns_list.error_status = ex.withCaption("disableNetwork() or enableNetwork() failed.")
+						10000L
+					}
+				}
+			}
+		} finally {
+			// 状態の変化があればログに出力する
+			
+			val current_status = ns_list.buildCurrentStatus()
+			
+			if(current_status != last_current_status.get()) {
+				last_current_status.set(current_status)
+				log.d(context.getString(R.string.network_status, current_status))
+			}
+			
+			val error_status = ns_list.error_status
+			if(error_status != null && error_status != last_error_status.get()) {
+				last_error_status.set(error_status)
+				log.e(error_status)
+			}
+			
+			val force_status = ns_list.force_status
+			if(force_status != null && force_status != last_force_status.get()) {
+				last_force_status.set(force_status)
+				log.w(force_status)
+			}
+		}
+	}
+	
+	internal inner class Worker : WorkerBase() {
+		
+		override fun cancel(reason : String) : Boolean {
+			val rv = super.cancel(reason)
+			
+			try {
+				this.interrupt()
+			} catch(ignored : Throwable) {
+			}
+			
+			return rv
 		}
 		
 		override fun run() {
 			while(! isCancelled) {
-				var result : Boolean
-				try {
-					result = keep_ap()
-					if(isCancelled) break
+				
+				val result = try {
+					keep_ap()
 				} catch(ex : Throwable) {
-					log.trace(ex,"network check failed.")
+					log.trace(ex, "network check failed.")
 					log.e(ex, "network check failed.")
-					result = false
+					5000L
 				}
 				
-				if(result != last_result.get()) {
-					last_result.set(result)
-					Utils.runOnMainThread{
+				if(isCancelled) break
+				
+				val bConnected = result <= 0L
+				if(bConnected != bLastConnected.get()) {
+					// 接続状態の変化
+					bLastConnected.set(bConnected)
+					Utils.runOnMainThread {
 						try {
-							if(!is_dispose) callback(true, "Wi-Fi tracker")
+							if(! is_dispose) callback(true, "Wi-Fi tracker")
 						} catch(ex : Throwable) {
-							log.trace(ex,"connection event handling failed.")
+							log.trace(ex, "connection event handling failed.")
 							log.e(ex, "connection event handling failed.")
 						}
 					}
 				}
-				val next = if(result) 5000L else 1000L
-				waitEx(next)
+				
+				waitEx(if(result <= 0L) 5000L else result)
 			}
 		}
-		
-
 	}
-	
 }

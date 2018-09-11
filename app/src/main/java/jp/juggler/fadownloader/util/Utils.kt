@@ -1,9 +1,7 @@
 package jp.juggler.fadownloader.util
 
 import android.annotation.SuppressLint
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.content.res.Resources
 import android.database.Cursor
 import android.net.Uri
@@ -14,13 +12,10 @@ import android.util.SparseBooleanArray
 import android.util.SparseIntArray
 import android.webkit.MimeTypeMap
 import android.widget.Toast
-import jp.juggler.fadownloader.Receiver1
+import org.apache.commons.io.IOUtils
 import org.w3c.dom.Element
 import org.w3c.dom.NamedNodeMap
-import java.io.ByteArrayInputStream
-import java.io.File
-import java.io.FileInputStream
-import java.io.IOException
+import java.io.*
 import java.security.MessageDigest
 import java.text.DecimalFormat
 import java.util.*
@@ -125,12 +120,7 @@ object Utils {
 		//		return sb.toString();
 	}
 	
-	fun createAlarmPendingIntent(context : Context) : PendingIntent {
-		val i = Intent(context.applicationContext, Receiver1::class.java)
-		i.action = Receiver1.ACTION_ALARM
-		return PendingIntent.getBroadcast(context.applicationContext, 0, i, 0)
-	}
-	
+
 	// 文字列と整数の変換
 	@Suppress("unused")
 	fun parse_int(v : String, defVal : Int) : Int {
@@ -527,6 +517,18 @@ object Utils {
 		return null
 	}
 	
+	internal fun readStringFile(path : String) : String? {
+		try {
+			FileInputStream(File(path)).use{fis->
+				val bao = ByteArrayOutputStream()
+				IOUtils.copy(fis, bao)
+				return bao.toByteArray().decodeUTF8()
+			}
+		} catch(ex : Throwable) {
+			log.trace(ex,"readStringFile")
+			return null
+		}
+	}
 }
 
 // 文字列とバイト列の変換
@@ -581,3 +583,5 @@ fun Throwable.withCaption(resources : Resources, string_id : Int, vararg args : 
 }
 
 fun Throwable.withCaption() = withCaption("?")
+
+fun String.filterSsid() =replace("\"", "")

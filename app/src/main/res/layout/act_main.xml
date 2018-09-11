@@ -8,7 +8,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="jp.juggler.fadownloader.ActMain"
-    tools:ignore="SpUsage"
+    tools:ignore="SpUsage,UnusedAttribute"
     >
 
     <com.google.android.gms.ads.AdView
@@ -35,6 +35,7 @@
             android:scaleType="fitCenter"
             android:paddingTop="3dp"
             android:paddingBottom="3dp"
+            android:importantForAccessibility="no"
             />
         <TextView
             android:layout_width="wrap_content"
@@ -45,6 +46,7 @@
             android:textSize="24dp"
             android:layout_marginStart="4dp"
             android:layout_marginLeft="4dp"
+            android:importantForAccessibility="no"
             />
 
     </LinearLayout>

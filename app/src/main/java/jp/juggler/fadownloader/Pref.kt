@@ -1,6 +1,7 @@
 package jp.juggler.fadownloader
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import jp.juggler.fadownloader.tracker.LocationTracker
 
@@ -15,10 +16,12 @@ class BooleanPref(
 ) : BasePref(key) {
 	
 	operator fun invoke(pref : SharedPreferences) = pref.getBoolean(key, defVal)
+	operator fun invoke(intent:Intent) = intent.getBooleanExtra(key, defVal)
 }
 
 fun SharedPreferences.Editor.put(bp : BooleanPref, v : Boolean) : SharedPreferences.Editor =
 	this.putBoolean(bp.key, v)
+
 
 class IntPref(
 	key : String,
@@ -26,6 +29,7 @@ class IntPref(
 ) : BasePref(key) {
 	
 	operator fun invoke(pref : SharedPreferences) = pref.getInt(key, defVal)
+	operator fun invoke(intent:Intent) = intent.getIntExtra(key, defVal)
 }
 
 fun SharedPreferences.Editor.put(bp : IntPref, v : Int) : SharedPreferences.Editor =
@@ -48,22 +52,53 @@ class StringPref(
 ) : BasePref(key) {
 	
 	operator fun invoke(pref : SharedPreferences) : String = pref.getString(key, defVal) ?: defVal
+	operator fun invoke(intent:Intent) : String = intent.getStringExtra(key) ?: defVal
 	
-	//	fun getInt(pref : SharedPreferences) = try {
-	//		invoke(pref).trim().toInt()
-	//	} catch(ex : Throwable) {
-	//		defVal.toInt()
-	//	}
-	
+//	fun getInt(pref : SharedPreferences) = try {
+//		invoke(pref).trim().toInt()
+//	} catch(ex : Throwable) {
+//		defVal.toInt()
+//	}
+
+	fun getInt(intent:Intent) = try {
+		invoke(intent).trim().toInt()
+	} catch(ex : Throwable) {
+		defVal.toInt()
+	}
+
 	fun getIntOrNull(pref : SharedPreferences) = try {
 		invoke(pref).trim().toInt()
 	} catch(ex : Throwable) {
 		null
 	}
+	
+//	fun getIntOrNull(intent:Intent) = try {
+//		invoke(intent).trim().toInt()
+//	} catch(ex : Throwable) {
+//		null
+//	}
 }
 
-fun SharedPreferences.Editor.put(bp : StringPref, v : String) : SharedPreferences.Editor =
-	this.putString(bp.key, v)
+fun SharedPreferences.Editor.put(p : StringPref, v : String) : SharedPreferences.Editor =
+	this.putString(p.key, v)
+
+fun Intent.put(pref:SharedPreferences,p:BooleanPref){
+	putExtra(p.key,p(pref))
+}
+fun Intent.put(pref:SharedPreferences,p:StringPref){
+	putExtra(p.key,p(pref))
+}
+fun Intent.put(pref:SharedPreferences,p:IntPref){
+	putExtra(p.key,p(pref))
+}
+
+fun Intent.put(v:String,p:StringPref){
+	putExtra(p.key,v)
+}
+
+fun Intent.put(v:Int,p:IntPref){
+	putExtra(p.key,v)
+}
 
 object Pref {
 	fun pref(context : Context) : SharedPreferences {
@@ -80,6 +115,11 @@ object Pref {
 	const val LAST_MODE_ONCE = 1
 	const val LAST_MODE_REPEAT = 2
 	
+	private const val WIFI_AP_CHANGE_INTERVAL = 5000L
+	private const val WIFI_SCAN_INTERVAL = 10000L
+	private const val TETHER_SPRAY_INTERVAL = 3000L
+	private const val TETHER_TEST_CONNECTION_TIMEOUT = 15000L
+	
 	// UI画面に表示されている情報の永続化
 	val uiRepeat = BooleanPref("ui_repeat", false)
 	val uiForceWifi = BooleanPref("ui_force_wifi", false)
@@ -93,9 +133,14 @@ object Pref {
 	val uiLocationMode = IntPref("ui_location_mode", LocationTracker.DEFAULT_MODE)
 	
 	val uiFolderUri = StringPref("ui_folder_uri", "")
-	val uiInterval = StringPref("ui_interval", "30")
 	val uiFileType = StringPref("ui_file_type", ".jp*")
 	val uiSsid = StringPref("ui_ssid", "")
+	
+	val uiInterval = StringPref("ui_interval", "30")
+	val uiTetherSprayInterval = StringPref("uiTetherSprayInterval", (TETHER_SPRAY_INTERVAL/1000L).toString())
+	val uiTetherTestConnectionTimeout = StringPref("uiTetherTestConnectionTimeout", (TETHER_TEST_CONNECTION_TIMEOUT/1000L).toString())
+	val uiWifiChangeApInterval = StringPref("uiWifiChangeApInterval", (WIFI_AP_CHANGE_INTERVAL/1000L).toString())
+	val uiWifiScanInterval = StringPref("uiWifiScanInterval", (WIFI_SCAN_INTERVAL/1000L).toString())
 	
 	val uiLocationIntervalDesired = StringPref(
 		"ui_location_interval_desired",
@@ -156,6 +201,11 @@ object Pref {
 	val workerSsid = StringPref("worker_ssid", "")
 	val workerProtectedOnly = BooleanPref("worker_protected_only", false)
 	val workerSkipAlreadyDownload = BooleanPref("worker_skip_already_download", false)
+	
+	val workerTetherSprayInterval = LongPref("workerTetherSprayInterval", TETHER_SPRAY_INTERVAL)
+	val workerTetherTestConnectionTimeout = LongPref("workerTetherTestConnectionTimeout", TETHER_TEST_CONNECTION_TIMEOUT)
+	val workerWifiChangeApInterval = LongPref("workerWifiChangeApInterval", WIFI_AP_CHANGE_INTERVAL)
+	val workerWifiScanInterval = LongPref("workerWifiScanInterval", WIFI_SCAN_INTERVAL)
 	
 	//////////////////////////////////////////////////////////////////////
 	

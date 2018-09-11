@@ -429,7 +429,7 @@ class PentaxKP(private val service : DownloadService, internal val thread : Down
 					log.e(ex, "WebSocket connection failed(2).")
 					
 					val active_other = service.wifi_tracker.otherActive
-					if( active_other?.isNotEmpty() ==true ) {
+					if( active_other.isNotEmpty() ) {
 						log.w(R.string.other_active_warning, active_other)
 					}
 					

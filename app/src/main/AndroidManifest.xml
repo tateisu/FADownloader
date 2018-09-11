@@ -33,10 +33,6 @@
             android:exported="false"
             />
 
-        <service
-            android:name="jp.juggler.fadownloader.NewFileService"
-            />
-
         <receiver
             android:name="jp.juggler.fadownloader.NewFileWidget"
             >

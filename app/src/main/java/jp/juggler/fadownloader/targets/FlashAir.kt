@@ -6,7 +6,6 @@ import jp.juggler.fadownloader.*
 import jp.juggler.fadownloader.model.LocalFile
 import jp.juggler.fadownloader.model.ScanItem
 import jp.juggler.fadownloader.table.DownloadRecord
-import jp.juggler.fadownloader.util.LogTag
 import jp.juggler.fadownloader.util.Utils
 import jp.juggler.fadownloader.util.decodeUTF8
 import java.io.File
@@ -16,7 +15,7 @@ import java.util.regex.Pattern
 class FlashAir(private val service : DownloadService, internal val thread : DownloadWorker) {
 	
 	companion object {
-		private val logStatic = LogTag("FlashAir")
+		// private val logStatic = LogTag("FlashAir")
 		internal val reLine = Pattern.compile("([^\\x0d\\x0a]+)")
 		internal val reAttr = Pattern.compile(",(\\d+),(\\d+),(\\d+),(\\d+)$")
 		
@@ -143,12 +142,12 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 						}
 					}
 					if(!matched) {
-						logStatic.d("$file_name not match in file_type_list")
+						// logStatic.d("$file_name not match in file_type_list")
 						continue
 					}
 					// ローカルのファイルサイズを調べて既読スキップ
 					if(thread.checkSkip(local_file, log, size)) {
-						logStatic.d("$file_name already downloaded.")
+						// logStatic.d("$file_name already downloaded.")
 						continue
 					}
 						
@@ -274,9 +273,9 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 			
 			if(thread.target_type == Pref.TARGET_TYPE_FLASHAIR_STA) {
 				while(! thread.isCancelled) {
-					val tracker_last_result = service.wifi_tracker.last_result.get()
-					val air_url = service.wifi_tracker.last_flash_air_url.get()
-					if(tracker_last_result && air_url != null) {
+					val tracker_last_result = service.wifi_tracker.bLastConnected.get()
+					val air_url = service.wifi_tracker.lastTargetUrl.get()
+					if(tracker_last_result && air_url.isNotEmpty() ) {
 						thread.target_url = air_url
 						break
 					}

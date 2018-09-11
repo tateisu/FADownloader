@@ -25,6 +25,7 @@ import jp.juggler.fadownloader.targets.FlashAir
 import jp.juggler.fadownloader.targets.PentaxKP
 import jp.juggler.fadownloader.targets.PqiAirCard
 import jp.juggler.fadownloader.tracker.LocationTracker
+import jp.juggler.fadownloader.tracker.NetworkTracker
 import jp.juggler.fadownloader.util.*
 
 class DownloadWorker : WorkerBase {
@@ -38,6 +39,14 @@ class DownloadWorker : WorkerBase {
 		internal val reFileType = Pattern.compile("(\\S+)")
 		
 		internal const val MACRO_WAIT_UNTIL = "%WAIT_UNTIL%"
+		
+		fun x1000Safe(v : Int) : Long {
+			return if(v > 0) {
+				v.toLong() * 1000L
+			} else {
+				1000L
+			}
+		}
 	}
 	
 	interface Callback {
@@ -50,7 +59,7 @@ class DownloadWorker : WorkerBase {
 		
 		fun onThreadStart()
 		
-		fun onThreadEnd(worker:DownloadWorker,complete_and_no_repeat : Boolean)
+		fun onThreadEnd(worker : DownloadWorker, complete_and_no_repeat : Boolean)
 		
 		fun onAllFileCompleted(count : Long)
 		
@@ -58,7 +67,7 @@ class DownloadWorker : WorkerBase {
 	}
 	
 	val callback : Callback
-
+	
 	internal var disposed = false
 	
 	private val service : DownloadService
@@ -70,10 +79,9 @@ class DownloadWorker : WorkerBase {
 	val file_type : String
 	val log : LogWriter
 	val file_type_list : ArrayList<Pattern>
-	private val force_wifi : Boolean
-	private val ssid : String?
 	val target_type : Int
 	private val location_setting : LocationTracker.Setting
+	private val network_setting : NetworkTracker.Setting
 	val protected_only : Boolean
 	private val skip_already_download : Boolean
 	
@@ -87,13 +95,13 @@ class DownloadWorker : WorkerBase {
 	
 	// SSID強制が指定されていない、または接続中のWi-FiのSSIDが指定されたものと同じなら真
 	private val isValidSsid : Boolean
-		get() = if(! force_wifi) {
+		get() = if(! network_setting.force_wifi) {
 			true
 		} else {
 			val wm =
 				service.applicationContext.getSystemService(Context.WIFI_SERVICE)
 					as? WifiManager
-			this.ssid == wm?.connectionInfo?.ssid?.replace("\"", "")
+			network_setting.target_ssid == wm?.connectionInfo?.ssid?.filterSsid()
 		}
 	
 	@Suppress("DEPRECATION")
@@ -143,19 +151,21 @@ class DownloadWorker : WorkerBase {
 				fc > 0L -> {
 					val bc = queued_byte_count.get()
 					val bcm = queued_byte_count_max.get()
-					"$s\n${service.getString(R.string.progress)} ${if(bcm <= 0) 0 else 100L * (bcm - bc) / bcm}%, ${service.getString(R.string.remain)} ${fc}file ${Utils.formatBytes(bc)}byte"
+					"$s\n${service.getString(R.string.progress)} ${if(bcm <= 0) 0 else 100L * (bcm - bc) / bcm}%, ${service.getString(
+						R.string.remain
+					)} ${fc}file ${Utils.formatBytes(bc)}byte"
 					
 				}
-				s?.contains(MACRO_WAIT_UNTIL) ==true -> {
+				
+				s?.contains(MACRO_WAIT_UNTIL) == true -> {
 					var remain = wait_until.get() - SystemClock.elapsedRealtime()
 					if(remain < 0L) remain = 0L
 					s.replace(MACRO_WAIT_UNTIL, Utils.formatTimeDuration(remain))
 				}
+				
 				else -> s
 			}
 		}
-	
-
 	
 	constructor(service : DownloadService, intent : Intent, callback : Callback) {
 		this.service = service
@@ -163,28 +173,34 @@ class DownloadWorker : WorkerBase {
 		this.log = LogWriter(service)
 		
 		log.i(R.string.thread_ctor_params)
-		this.repeat = intent.getBooleanExtra(DownloadService.EXTRA_REPEAT, false)
+		
+		this.target_type = Pref.uiTargetType(intent)
 		this.target_url = intent.getStringExtra(DownloadService.EXTRA_TARGET_URL)
-		this.folder_uri = intent.getStringExtra(DownloadService.EXTRA_LOCAL_FOLDER)
-		this.intervalSeconds = intent.getIntExtra(DownloadService.EXTRA_INTERVAL, 86400)
-		this.file_type = intent.getStringExtra(DownloadService.EXTRA_FILE_TYPE)
-		this.force_wifi = intent.getBooleanExtra(DownloadService.EXTRA_FORCE_WIFI, false)
-		this.ssid = intent.getStringExtra(DownloadService.EXTRA_SSID)
-		this.target_type = intent.getIntExtra(DownloadService.EXTRA_TARGET_TYPE, 0)
-		this.protected_only = intent.getBooleanExtra(DownloadService.EXTRA_PROTECTED_ONLY, false)
-		this.skip_already_download =
-			intent.getBooleanExtra(DownloadService.EXTRA_SKIP_ALREADY_DOWNLOAD, false)
-		this.location_setting = LocationTracker.Setting()
-		location_setting.interval_desired = intent.getLongExtra(
-			DownloadService.EXTRA_LOCATION_INTERVAL_DESIRED,
-			LocationTracker.DEFAULT_INTERVAL_DESIRED
+		this.file_type = Pref.uiFileType(intent).trim()
+
+		this.folder_uri = Pref.uiFolderUri(intent)
+		this.repeat = Pref.uiRepeat(intent)
+		this.intervalSeconds = Pref.uiInterval.getInt(intent)
+		this.protected_only = Pref.uiProtectedOnly(intent)
+		this.skip_already_download = Pref.uiSkipAlreadyDownload(intent)
+		
+		this.network_setting = NetworkTracker.Setting(
+			force_wifi =Pref.uiForceWifi(intent),
+			target_ssid = Pref.uiSsid(intent),
+			target_type = this.target_type,
+			target_url = this.target_url,
+			
+			tetherSprayInterval = x1000Safe(Pref.uiTetherSprayInterval.getInt(intent)),
+			tetherTestConnectionTimeout = x1000Safe(Pref.uiTetherTestConnectionTimeout.getInt(intent)),
+			wifiChangeApInterval = x1000Safe(Pref.uiWifiChangeApInterval.getInt(intent)),
+			wifiScanInterval = x1000Safe(Pref.uiWifiScanInterval.getInt(intent))
 		)
-		location_setting.interval_min = intent.getLongExtra(
-			DownloadService.EXTRA_LOCATION_INTERVAL_MIN,
-			LocationTracker.DEFAULT_INTERVAL_MIN
+		
+		this.location_setting = LocationTracker.Setting(
+			mode = Pref.uiLocationMode(intent),
+			interval_desired = x1000Safe(Pref.uiLocationIntervalDesired.getInt(intent)),
+			interval_min = x1000Safe(Pref.uiLocationIntervalMin.getInt(intent))
 		)
-		location_setting.mode =
-			intent.getIntExtra(DownloadService.EXTRA_LOCATION_MODE, LocationTracker.DEFAULT_MODE)
 		
 		Pref.pref(service).edit()
 			.put(Pref.workerRepeat, repeat)
@@ -196,10 +212,14 @@ class DownloadWorker : WorkerBase {
 			.put(Pref.workerLocationIntervalDesired, location_setting.interval_desired)
 			.put(Pref.workerLocationIntervalMin, location_setting.interval_min)
 			.put(Pref.workerLocationMode, location_setting.mode)
-			.put(Pref.workerForceWifi, force_wifi)
-			.put(Pref.workerSsid, ssid)
+			.put(Pref.workerForceWifi, network_setting.force_wifi)
+			.put(Pref.workerSsid, network_setting.target_ssid)
 			.put(Pref.workerProtectedOnly, protected_only)
 			.put(Pref.workerSkipAlreadyDownload, skip_already_download)
+			.put(Pref.workerTetherSprayInterval, network_setting.tetherSprayInterval)
+			.put(Pref.workerTetherTestConnectionTimeout, network_setting.tetherTestConnectionTimeout)
+			.put(Pref.workerWifiChangeApInterval, network_setting.wifiChangeApInterval)
+			.put(Pref.workerWifiScanInterval, network_setting.wifiScanInterval)
 			.apply()
 		
 		this.file_type_list = file_type_parse()
@@ -220,20 +240,27 @@ class DownloadWorker : WorkerBase {
 		this.folder_uri = Pref.workerFolderUri(pref)
 		this.intervalSeconds = Pref.workerInterval(pref)
 		this.file_type = Pref.workerFileType(pref)
+		this.target_type = Pref.workerTargetType(pref)
+		this.protected_only =Pref.workerProtectedOnly(pref)
+		this.skip_already_download =Pref.workerSkipAlreadyDownload(pref)
 		
-		this.force_wifi =
-			Pref.workerForceWifi(pref) // pref.getBoolean(Pref.WORKER_FORCE_WIFI, false)
-		this.ssid = Pref.workerSsid(pref) //pref.getString(Pref.WORKER_SSID, null)
-		this.target_type = Pref.workerTargetType(pref) //pref.getInt(Pref.WORKER_TARGET_TYPE, 0)
-		this.protected_only =
-			Pref.workerProtectedOnly(pref) //pref.getBoolean(Pref.WORKER_PROTECTED_ONLY, false)
-		this.skip_already_download =
-			Pref.workerSkipAlreadyDownload(pref) //pref.getBoolean(Pref.WORKER_SKIP_ALREADY_DOWNLOAD, false)
+		this.network_setting = NetworkTracker.Setting(
+			force_wifi = Pref.workerForceWifi(pref),
+			target_ssid =Pref.workerSsid(pref),
+			target_type = this.target_type,
+			target_url = this.target_url,
+			
+			tetherSprayInterval = Pref.workerTetherSprayInterval(pref),
+			tetherTestConnectionTimeout = Pref.workerTetherTestConnectionTimeout(pref),
+			wifiChangeApInterval = Pref.workerWifiChangeApInterval(pref),
+			wifiScanInterval = Pref.workerWifiScanInterval(pref)
+		)
 		
-		this.location_setting = LocationTracker.Setting()
-		location_setting.interval_desired = Pref.workerLocationIntervalDesired(pref)
-		location_setting.interval_min = Pref.workerLocationIntervalMin(pref)
-		location_setting.mode = Pref.workerLocationMode(pref)
+		this.location_setting = LocationTracker.Setting(
+			mode = Pref.workerLocationMode(pref),
+			interval_desired = Pref.workerLocationIntervalDesired(pref),
+			interval_min = Pref.workerLocationIntervalMin(pref)
+		)
 		
 		this.file_type_list = file_type_parse()
 		
@@ -242,7 +269,7 @@ class DownloadWorker : WorkerBase {
 	}
 	
 	private fun init() {
-		service.wifi_tracker.updateSetting(force_wifi, ssid, target_type, target_url)
+		service.wifi_tracker.updateSetting(network_setting)
 		service.location_tracker.updateSetting(location_setting)
 	}
 	
@@ -252,7 +279,7 @@ class DownloadWorker : WorkerBase {
 		try {
 			client.cancel(log)
 		} catch(ex : Throwable) {
-			log.trace(ex,"cancel failed")
+			log.trace(ex, "cancel failed")
 		}
 		
 		return rv
@@ -267,7 +294,7 @@ class DownloadWorker : WorkerBase {
 					.replace("\\\\\\*".toRegex(), ".*?")
 				list.add(Pattern.compile("$spec\\z", Pattern.CASE_INSENSITIVE))
 			} catch(ex : Throwable) {
-				log.trace(ex,"file_type_parse failed.")
+				log.trace(ex, "file_type_parse failed.")
 				log.e(
 					R.string.file_type_parse_error,
 					m.group(1),
@@ -290,8 +317,7 @@ class DownloadWorker : WorkerBase {
 		wait_until.set(SystemClock.elapsedRealtime() + remain)
 		
 		try {
-			val pi = Utils.createAlarmPendingIntent(service)
-			
+			val pi = Receiver1.piAlarm(service)
 			val am =
 				service.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
 			when {
@@ -310,8 +336,8 @@ class DownloadWorker : WorkerBase {
 				else -> am.set(AlarmManager.RTC_WAKEUP, now + remain, pi)
 			}
 		} catch(ex : Throwable) {
-			log.trace(ex,"待機の設定に失敗")
-			log.e(ex,"待機の設定に失敗")
+			log.trace(ex, "待機の設定に失敗")
+			log.e(ex, "待機の設定に失敗")
 		}
 		
 		cancel(service.getString(R.string.wait_alarm, Utils.formatTimeDuration(remain)))
@@ -389,7 +415,7 @@ class DownloadWorker : WorkerBase {
 				log.e(ex, "exif mangling failed.")
 				
 				// 変更失敗
-				em = ErrorAndMessage(true, ex.withCaption( "exif mangling failed."))
+				em = ErrorAndMessage(true, ex.withCaption("exif mangling failed."))
 			}
 			
 			if(em != null) return em
@@ -439,7 +465,7 @@ class DownloadWorker : WorkerBase {
 		} catch(ex : Throwable) {
 			log.trace(ex, "exif mangling failed.")
 			log.e(ex, "exif mangling failed.")
-			return ErrorAndMessage(true, ex.withCaption( "exif mangling failed."))
+			return ErrorAndMessage(true, ex.withCaption("exif mangling failed."))
 		} finally {
 			if(local_temp != null && bDeleteTempFile) {
 				try {
@@ -457,13 +483,13 @@ class DownloadWorker : WorkerBase {
 		
 		// ローカルにあるファイルのサイズが指定以上ならスキップする
 		val localLength = local_file.length(log)
-		if( localLength >= size){
+		if(localLength >= size) {
 			return true
 		}
 		
 		if(skip_already_download) {
 			val name = local_file.name
-			if( name?.isNotEmpty()==true) {
+			if(name?.isNotEmpty() == true) {
 				service.contentResolver.query(
 					DownloadRecord.meta.content_uri, null,
 					DownloadRecord.COL_NAME + "=?",
@@ -608,10 +634,10 @@ class DownloadWorker : WorkerBase {
 	}
 	
 	fun checkHostError() {
-		if(client.last_error ?.contains("UnknownHostException") == true) {
+		if(client.last_error?.contains("UnknownHostException") == true) {
 			client.last_error = service.getString(R.string.target_host_error)
 			cancel(service.getString(R.string.target_host_error_short))
-		} else if(client.last_error ?.contains("ENETUNREACH") == true ) {
+		} else if(client.last_error?.contains("ENETUNREACH") == true) {
 			client.last_error = service.getString(R.string.target_unreachable)
 			cancel(service.getString(R.string.target_unreachable))
 		}
@@ -646,24 +672,18 @@ class DownloadWorker : WorkerBase {
 		callback.onThreadStart()
 		
 		// 古いアラームがあれば除去
-		try {
-			val pi = Utils.createAlarmPendingIntent(service)
-			val am = service.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
-			am?.cancel(pi)
-		} catch(ex : Throwable) {
-			log.trace(ex,"alarm cancel failed")
-		}
+		Receiver1.cancelAlarm(service)
 		
 		// 位置情報を得られるまで待機
-		run{
+		run {
 			val timeEnd = SystemClock.elapsedRealtime() + 5000L
-			while( !isCancelled
+			while(! isCancelled
 				&& service.location_tracker.isUpdateRequired
 				&& service.location_tracker.location == null
-			){
-				val remain =timeEnd -SystemClock.elapsedRealtime()
-				if(remain<=0L){
-					log.w( R.string.location_wait_timeout)
+			) {
+				val remain = timeEnd - SystemClock.elapsedRealtime()
+				if(remain <= 0L) {
+					log.w(R.string.location_wait_timeout)
 					break
 				}
 				Thread.sleep(1000L)
@@ -694,7 +714,7 @@ class DownloadWorker : WorkerBase {
 		}
 		setStatus(false, service.getString(R.string.thread_end))
 		callback.releaseWakeLock()
-		callback.onThreadEnd(this@DownloadWorker,complete_and_no_repeat)
+		callback.onThreadEnd(this@DownloadWorker, complete_and_no_repeat)
 	}
 	
 }

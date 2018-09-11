@@ -32,17 +32,17 @@ class LocationTracker(
 	}
 	
 	class Setting(
-		internal var mode : Int = 0,
+		internal val mode : Int = 0,
 		
 		// Sets the desired intervalSeconds for active location updates. This intervalSeconds is
 		// inexact. You may not receive updates at all if no location sources are available, or
 		// you may receive them slower than requested. You may also receive updates faster than
 		// requested if other applications are requesting location at a faster intervalSeconds.
-		var interval_desired : Long = 0,
+		val interval_desired : Long = 0,
 		
 		// Sets the fastest rate for active location updates.
 		// This intervalSeconds is exact, and your application will never receive updates faster than this value.
-		var interval_min : Long = 0
+		val interval_min : Long = 0
 	) {
 		
 		internal val isUpdateRequired : Boolean

@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Build
+import android.support.annotation.StringRes
 import android.support.v4.provider.DocumentFile
 import android.view.View
 import android.widget.*
@@ -18,15 +19,24 @@ class PageSetting(activity : Activity, ignored : View) :
 	PagerAdapterBase.PageViewHolder(activity, ignored), View.OnClickListener {
 	
 	private lateinit var spTargetType : Spinner
-	internal lateinit var etTargetUrl : EditText
-	private lateinit var tvLocalFolder : TextView
-	private lateinit var etInterval : EditText
-	private lateinit var etFileType : EditText
 	private lateinit var spLocationMode : Spinner
-	private lateinit var etLocationIntervalDesired : EditText
-	private lateinit var etLocationIntervalMin : EditText
+
+	internal lateinit var etTargetUrl : EditText
+	private lateinit var etFileType : EditText
 	private lateinit var swForceWifi : Switch
 	private lateinit var etSSID : EditText
+	
+	private lateinit var tvLocalFolder : TextView
+	
+	private lateinit var etInterval : EditText
+	private lateinit var etLocationIntervalDesired : EditText
+	private lateinit var etLocationIntervalMin : EditText
+	private lateinit var etTetherSprayInterval : EditText
+	private lateinit var etTetherTestConnectionTimeout : EditText
+	private lateinit var etWifiChangeApInterval : EditText
+	private lateinit var etWifiScanInterval : EditText
+	
+	
 	private lateinit var swThumbnailAutoRotate : Switch
 	private lateinit var swCopyBeforeViewSend : Switch
 	private lateinit var swProtectedOnly : Switch
@@ -56,6 +66,11 @@ class PageSetting(activity : Activity, ignored : View) :
 		btnSSIDPicker = root.findViewById(R.id.btnSSIDPicker)
 		swProtectedOnly = root.findViewById(R.id.swProtectedOnly)
 		swSkipAlreadyDownload = root.findViewById(R.id.swSkipAlreadyDownload)
+		etTetherSprayInterval = root.findViewById(R.id.etTetherSprayInterval)
+		etTetherTestConnectionTimeout = root.findViewById(R.id.etTetherTestConnectionTimeout)
+		etWifiChangeApInterval = root.findViewById(R.id.etWifiChangeApInterval)
+		etWifiScanInterval = root.findViewById(R.id.etWifiScanInterval)
+		
 		
 		root.findViewById<View>(R.id.btnFolderPicker).setOnClickListener(this)
 		root.findViewById<View>(R.id.btnHelpFolderPicker).setOnClickListener(this)
@@ -73,6 +88,11 @@ class PageSetting(activity : Activity, ignored : View) :
 		root.findViewById<View>(R.id.btnTargetTypeHelp).setOnClickListener(this)
 		root.findViewById<View>(R.id.btnHelpProtectedOnly).setOnClickListener(this)
 		root.findViewById<View>(R.id.btnHelpSkipAlreadyDownload).setOnClickListener(this)
+		
+		root.findViewById<View>(R.id.btnTetherSprayIntervalHelp).setOnClickListener(this)
+		root.findViewById<View>(R.id.btnTetherTestConnectionTimeoutHelp).setOnClickListener(this)
+		root.findViewById<View>(R.id.btnWifiScanIntervalHelp).setOnClickListener(this)
+		root.findViewById<View>(R.id.btnWifiChangeApIntervalHelp).setOnClickListener(this)
 		
 		val location_mode_adapter = ArrayAdapter<CharSequence>(
 			activity, android.R.layout.simple_spinner_item
@@ -176,33 +196,39 @@ class PageSetting(activity : Activity, ignored : View) :
 		e.apply()
 	}
 	
+	private fun openHelp(@StringRes stringId:Int){
+		(activity as ActMain).openHelp(activity.getString(stringId))
+	}
+	
 	override fun onClick(view : View) {
 		when(view.id) {
 			R.id.btnFolderPicker -> folder_pick()
 			R.id.btnSSIDPicker -> ssid_pick()
 			
 			R.id.btnHelpFolderPicker -> if(Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION) {
-				(activity as ActMain).openHelp(R.layout.help_local_folder)
+				(activity as ActMain).openHelpLayout(R.layout.help_local_folder)
 			} else {
-				(activity as ActMain).openHelp(activity.getString(R.string.local_folder_help_kitkat))
+				openHelp(R.string.local_folder_help_kitkat)
 			}
-			R.id.btnHelpTargetUrl -> (activity as ActMain).openHelp(activity.getString(R.string.target_url_help))
-			R.id.btnIntervalHelp -> (activity as ActMain).openHelp(activity.getString(R.string.repeat_interval_help_text))
-			R.id.btnFileTypeHelp -> (activity as ActMain).openHelp(activity.getString(R.string.file_type_help))
-			R.id.btnLocationModeHelp -> (activity as ActMain).openHelp(activity.getString(R.string.geo_tagging_mode_help))
-			R.id.btnLocationIntervalDesiredHelp -> (activity as ActMain).openHelp(
-				activity.getString(
-					R.string.help_location_interval_desired
-				)
-			)
-			R.id.btnLocationIntervalMinHelp -> (activity as ActMain).openHelp(activity.getString(R.string.help_location_interval_min))
-			R.id.btnForceWifiHelp -> (activity as ActMain).openHelp(activity.getString(R.string.force_wifi_help))
-			R.id.btnSSIDHelp -> (activity as ActMain).openHelp(activity.getString(R.string.wifi_ap_ssid_help))
-			R.id.btnThumbnailAutoRotateHelp -> (activity as ActMain).openHelp(activity.getString(R.string.help_thumbnail_auto_rotate))
-			R.id.btnCopyBeforeViewSendHelp -> (activity as ActMain).openHelp(activity.getString(R.string.help_copy_before_view_send))
-			R.id.btnTargetTypeHelp -> (activity as ActMain).openHelp(activity.getString(R.string.target_type_help))
-			R.id.btnHelpProtectedOnly -> (activity as ActMain).openHelp(activity.getString(R.string.protected_only_help))
-			R.id.btnHelpSkipAlreadyDownload -> (activity as ActMain).openHelp(activity.getString(R.string.skip_already_downloaded_help))
+			R.id.btnHelpTargetUrl -> openHelp(R.string.target_url_help)
+			R.id.btnIntervalHelp -> openHelp(R.string.repeat_interval_help_text)
+			R.id.btnFileTypeHelp -> openHelp(R.string.file_type_help)
+			R.id.btnLocationModeHelp -> openHelp(R.string.geo_tagging_mode_help)
+			
+			R.id.btnForceWifiHelp ->openHelp(R.string.force_wifi_help)
+			R.id.btnSSIDHelp -> openHelp(R.string.wifi_ap_ssid_help)
+			R.id.btnThumbnailAutoRotateHelp -> openHelp(R.string.thumbnail_auto_rotate_help)
+			R.id.btnCopyBeforeViewSendHelp -> openHelp(R.string.copy_before_view_send_help)
+			R.id.btnTargetTypeHelp -> openHelp(R.string.target_type_help)
+			R.id.btnHelpProtectedOnly -> openHelp(R.string.protected_only_help)
+			R.id.btnHelpSkipAlreadyDownload -> openHelp(R.string.skip_already_downloaded_help)
+			
+			R.id.btnLocationIntervalDesiredHelp ->openHelp(R.string.location_interval_desired_help)
+			R.id.btnLocationIntervalMinHelp ->openHelp(R.string.location_interval_min_help)
+			R.id.btnTetherSprayIntervalHelp ->openHelp(R.string.tether_spray_interval_help)
+			R.id.btnTetherTestConnectionTimeoutHelp -> openHelp(R.string.tether_test_connection_timeout_help)
+			R.id.btnWifiScanIntervalHelp -> openHelp(R.string.wifi_scan_interval_help)
+			R.id.btnWifiChangeApIntervalHelp -> openHelp(R.string.wifi_change_ap_interval_help)
 		}
 	}
 	
@@ -225,6 +251,13 @@ class PageSetting(activity : Activity, ignored : View) :
 		etLocationIntervalDesired.setText(Pref.uiLocationIntervalDesired(pref))
 		etLocationIntervalMin.setText( Pref.uiLocationIntervalMin( pref))
 		etSSID.setText(Pref.uiSsid(pref))
+		etTetherSprayInterval.setText(Pref.uiTetherSprayInterval(pref))
+		etTetherTestConnectionTimeout.setText(Pref.uiTetherTestConnectionTimeout(pref))
+		etWifiChangeApInterval.setText(Pref.uiWifiChangeApInterval(pref))
+		etWifiScanInterval.setText(Pref.uiWifiScanInterval(pref))
+		
+		
+		
 		
 		// integer
 		var iv = Pref.uiTargetType(pref)
@@ -255,6 +288,10 @@ class PageSetting(activity : Activity, ignored : View) :
 		e
 			.put(Pref.uiTargetType, spTargetType.selectedItemPosition)
 			.put(Pref.uiInterval, etInterval.text.toString())
+			.put(Pref.uiTetherSprayInterval, etTetherSprayInterval.text.toString())
+			.put(Pref.uiTetherTestConnectionTimeout, etTetherTestConnectionTimeout.text.toString())
+			.put(Pref.uiWifiChangeApInterval, etWifiChangeApInterval.text.toString())
+			.put(Pref.uiWifiScanInterval, etWifiScanInterval.text.toString())
 			.put(Pref.uiFileType, etFileType.text.toString())
 			.put(Pref.uiLocationMode, spLocationMode.selectedItemPosition)
 			.put(Pref.uiLocationIntervalDesired, etLocationIntervalDesired.text.toString())

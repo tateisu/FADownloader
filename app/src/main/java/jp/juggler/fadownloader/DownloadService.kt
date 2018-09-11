@@ -1,9 +1,7 @@
 package jp.juggler.fadownloader
 
 import android.annotation.SuppressLint
-import android.app.AlarmManager
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -20,31 +18,18 @@ import jp.juggler.fadownloader.tracker.NetworkTracker
 import jp.juggler.fadownloader.tracker.WorkerTracker
 import jp.juggler.fadownloader.util.LogWriter
 import jp.juggler.fadownloader.util.NotificationHelper
-import jp.juggler.fadownloader.util.Utils
 
 class DownloadService : Service() {
-
+	
 	companion object {
 		internal const val ACTION_BROADCAST_RECEIVED = "broadcast_received"
 		internal const val EXTRA_BROADCAST_INTENT = "broadcast_intent"
 		
 		internal const val ACTION_START = "start"
 		
-		internal const val EXTRA_REPEAT = "repeat"
 		internal const val EXTRA_TARGET_URL = "uri"
-		internal const val EXTRA_LOCAL_FOLDER = "folder_uri"
-		internal const val EXTRA_INTERVAL = "intervalSeconds"
-		internal const val EXTRA_FILE_TYPE = "file_type"
-		internal const val EXTRA_LOCATION_INTERVAL_DESIRED = "location_interval_desired"
-		internal const val EXTRA_LOCATION_INTERVAL_MIN = "location_interval_min"
-		internal const val EXTRA_LOCATION_MODE = "location_mode"
-		internal const val EXTRA_FORCE_WIFI = "force_wifi"
-		internal const val EXTRA_SSID = "ssid"
-		internal const val EXTRA_TARGET_TYPE = "target_type"
 		
 		internal const val NOTIFICATION_ID_SERVICE = 1
-		const val EXTRA_PROTECTED_ONLY = "protected_only"
-		const val EXTRA_SKIP_ALREADY_DOWNLOAD = "skip_already_download"
 		
 		internal var service_instance : DownloadService? = null
 		
@@ -55,16 +40,17 @@ class DownloadService : Service() {
 			val sb = StringBuilder()
 			sb.append(context.getString(R.string.service_running))
 			sb.append("WakeLock=")
-				.append(if(service.wake_lock !!.isHeld) "ON" else "OFF")
+				.append(if(service.wake_lock?.isHeld == true) "ON" else "OFF")
 				.append(", ")
 				.append("WiFiLock=")
-				.append(if(service.wifi_lock !!.isHeld) "ON" else "OFF")
+				.append(if(service.wifi_lock?.isHeld == true) "ON" else "OFF")
 				.append(", ")
 				.append("Location=")
 				.append(service.location_tracker.status)
 				.append(", ")
 				.append("Network=")
-			service.wifi_tracker.getStatus(sb)
+				.append(service.wifi_tracker.getStatus())
+			
 			sb.append('\n')
 			
 			val worker = service.worker_tracker.worker
@@ -156,14 +142,7 @@ class DownloadService : Service() {
 		wifi_tracker.dispose()
 		
 		if(cancel_alarm_on_destroy) {
-			try {
-				val pi = Utils.createAlarmPendingIntent(this)
-				val am = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
-				am?.cancel(pi)
-			} catch(ex : Throwable) {
-				log.trace(ex,"cancel_alarm_on_destroy failed.")
-			}
-			
+			Receiver1.cancelAlarm(this)
 		}
 		
 		wake_lock?.release()
@@ -189,7 +168,7 @@ class DownloadService : Service() {
 				ACTION_START -> {
 					worker_tracker.start(intent)
 				}
-
+				
 				ACTION_BROADCAST_RECEIVED -> {
 					val broadcast_intent = intent.getParcelableExtra<Intent>(EXTRA_BROADCAST_INTENT)
 					if(broadcast_intent != null) {
@@ -260,7 +239,7 @@ class DownloadService : Service() {
 	}
 	
 	internal fun onThreadEnd(complete_and_no_repeat : Boolean) {
-		if(! is_alive ) return
+		if(! is_alive) return
 		
 		if(complete_and_no_repeat) {
 			this@DownloadService.cancel_alarm_on_destroy = true
@@ -271,12 +250,12 @@ class DownloadService : Service() {
 		}
 	}
 	
-	internal fun addHiddenDownloadCount(count : Long, log : LogWriter) {
-		NewFileService.addHiddenDownloadCount(this, count, log)
+	internal fun addHiddenDownloadCount(count : Long) {
+		NewFileWidget.addHiddenDownloadCount(this, count)
 	}
 	
 	fun hasHiddenDownloadCount() : Boolean {
-		return NewFileService.hasHiddenDownloadCount(this)
+		return NewFileWidget.hasHiddenDownloadCount(this)
 	}
 	
 	private fun setServiceNotification(status : String) {
@@ -290,8 +269,7 @@ class DownloadService : Service() {
 				"ServiceRunning",
 				"FA Downloader service",
 				"this notification is shown while FA Downloader service is active.",
-				NotificationManager.IMPORTANCE_LOW,
-				log
+				NotificationManager.IMPORTANCE_LOW
 			)
 			NotificationCompat.Builder(this, channel.id)
 		} else {
@@ -303,9 +281,8 @@ class DownloadService : Service() {
 		builder.setContentText(status)
 		builder.setOngoing(true)
 		
-		val intent = Intent(this, ActMain::class.java)
-		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
-		val pi = PendingIntent.getActivity(applicationContext, 567, intent, 0)
+		val pi = Receiver1.piActivity(this)
+		
 		builder.setContentIntent(pi)
 		
 		startForeground(NOTIFICATION_ID_SERVICE, builder.build())
