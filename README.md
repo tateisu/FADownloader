@@ -10,7 +10,7 @@ https://play.google.com/store/apps/details?id=jp.juggler.fadownloader
 + Generate signed SDK でも rc/dev のproductFlavor を選択してください
 
 ## 動作環境
-+ Android 4.0 以降
++ Android 4.0.3 以降
 + FlashAir ファームウェア v2.00.02 以降
 + Wi-Fi 必須
 + 位置情報埋め込み機能は Android 4.1以降推奨。Playサービスが必要です.
