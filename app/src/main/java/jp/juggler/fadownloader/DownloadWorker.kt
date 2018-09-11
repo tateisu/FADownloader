@@ -193,7 +193,9 @@ class DownloadWorker : WorkerBase {
 			tetherSprayInterval = x1000Safe(Pref.uiTetherSprayInterval.getInt(intent)),
 			tetherTestConnectionTimeout = x1000Safe(Pref.uiTetherTestConnectionTimeout.getInt(intent)),
 			wifiChangeApInterval = x1000Safe(Pref.uiWifiChangeApInterval.getInt(intent)),
-			wifiScanInterval = x1000Safe(Pref.uiWifiScanInterval.getInt(intent))
+			wifiScanInterval = x1000Safe(Pref.uiWifiScanInterval.getInt(intent)),
+
+			stopWhenTetheringOff = Pref.uiStopWhenTetheringOff(intent)
 		)
 		
 		this.location_setting = LocationTracker.Setting(
@@ -220,6 +222,7 @@ class DownloadWorker : WorkerBase {
 			.put(Pref.workerTetherTestConnectionTimeout, network_setting.tetherTestConnectionTimeout)
 			.put(Pref.workerWifiChangeApInterval, network_setting.wifiChangeApInterval)
 			.put(Pref.workerWifiScanInterval, network_setting.wifiScanInterval)
+			.put(Pref.workerStopWhenTetheringOff, network_setting.stopWhenTetheringOff)
 			.apply()
 		
 		this.file_type_list = file_type_parse()
@@ -253,7 +256,9 @@ class DownloadWorker : WorkerBase {
 			tetherSprayInterval = Pref.workerTetherSprayInterval(pref),
 			tetherTestConnectionTimeout = Pref.workerTetherTestConnectionTimeout(pref),
 			wifiChangeApInterval = Pref.workerWifiChangeApInterval(pref),
-			wifiScanInterval = Pref.workerWifiScanInterval(pref)
+			wifiScanInterval = Pref.workerWifiScanInterval(pref),
+			
+			stopWhenTetheringOff = Pref.workerStopWhenTetheringOff(pref)
 		)
 		
 		this.location_setting = LocationTracker.Setting(

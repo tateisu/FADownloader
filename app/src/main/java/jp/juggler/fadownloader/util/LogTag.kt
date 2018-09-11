@@ -15,26 +15,27 @@ class LogTag(category:String){
 	
 	private val tag = "$TAG:$category"
 	
-	fun v(fmt:String,vararg args:Any?){
-		Log.v(tag,format(fmt,args))
-	}
-
-	fun d(fmt:String,vararg args:Any?){
-		Log.d(tag,format(fmt,args))
-	}
-
-	fun e(fmt:String,vararg args:Any?){
-		Log.e(tag,format(fmt,args))
-	}
+	////////////////////////
 	
-	fun e(ex:Throwable,fmt:String,vararg args:Any?){
-		Log.e(tag,ex.withCaption(fmt,*args))
-	}
+	fun e(fmt:String,vararg args:Any?)=Log.e(tag,format(fmt,args))
+	
+	fun w(fmt:String,vararg args:Any?)=Log.w(tag,format(fmt,args))
+	
+	fun i(fmt:String,vararg args:Any?)=Log.i(tag,format(fmt,args))
+
+	fun d(fmt:String,vararg args:Any?)=Log.d(tag,format(fmt,args))
+
+	fun v(fmt:String,vararg args:Any?)=Log.v(tag,format(fmt,args))
+
+	////////////////////////
+
+	fun e(ex:Throwable,fmt:String,vararg args:Any?)=Log.e(tag,ex.withCaption(fmt,*args))
+
+	fun w(ex:Throwable,fmt:String,vararg args:Any?)=Log.w(tag,ex.withCaption(fmt,*args))
+	
+	////////////////////////
 	
 	fun trace(ex:Throwable,fmt:String,vararg args:Any?){
 		Log.e(tag,format(fmt,args),ex)
 	}
-	
-	
-	
 }

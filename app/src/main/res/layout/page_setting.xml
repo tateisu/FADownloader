@@ -263,6 +263,27 @@
 
         <TextView
             style="@style/setting_row_label"
+            android:text="@string/stop_when_tethering_off"
+            />
+
+        <LinearLayout style="@style/setting_row_form">
+
+            <Switch
+                android:id="@+id/swStopWhenTetheringOff"
+                style="@style/setting_horizontal_stretch"
+                android:gravity="center"
+                />
+
+            <Button
+                android:id="@+id/btnStopWhenTetheringOffHelp"
+                style="@style/setting_row_help"
+                />
+        </LinearLayout>
+
+        <View style="@style/setting_divider"/>
+
+        <TextView
+            style="@style/setting_row_label"
             android:text="@string/thumbnail_auto_rotate"
             />
 

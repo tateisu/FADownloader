@@ -161,6 +161,7 @@
     <string name="progress">進捗</string>
     <string name="thumbnail">サムネイル</string>
 
+    <string name="seconds_hint">秒数を指定</string>
 
     <string name="network_status">通信状態: %1$s</string>
     <string name="remote_file_list_parse_error">接続先ファイル一覧のデータエラー</string>
@@ -182,7 +183,6 @@
     <string name="skip_already_downloaded">ダウンロード履歴に名前があるファイルはスキップ</string>
     <string name="skip_already_downloaded_help">ONにすると、ダウンロード履歴に名前があるファイルはダウンロードしません。</string>
 
-
     <string name="tether_spray_interval">UDPばら撒き間隔 (テザリング時)</string>
     <string name="tether_spray_interval_help">テザリングモードでは、このアプリはデバイスのアドレスを検出するためにローカルネットワーク内の全てのアドレスにUDPパケットをばら撒きます。\nその時間間隔をこの設定で変更できます。単位は秒数、デフォルトは3です。</string>
 
@@ -195,6 +195,7 @@
     <string name="wifi_change_ap_interval">Wi-Fi AP変更間隔</string>
     <string name="wifi_change_ap_interval_help">Wi-Fi AP半強制モードでは、指定されたAPがスキャン結果に含まれるが選択されていない場合にこのアプリは定期的にW-Fi APの変更を試みます。\nその時間間隔をこの設定で変更できます。単位は秒数、デフォルトは5です。</string>
 
-    <string name="seconds_hint">秒数を指定</string>
+    <string name="stop_when_tethering_off">テザリングOFF時にサービス終了</string>
+    <string name="stop_when_tethering_off_help">ONにすると、テザリングを使う Taeget Type なのにテザリングが有効でない場合はFa Downloaderのサービスを停止します。</string>
 
 </resources>

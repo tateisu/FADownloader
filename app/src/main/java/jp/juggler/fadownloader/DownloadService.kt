@@ -96,16 +96,22 @@ class DownloadService : Service() {
 		this.log = log
 		log.d(getString(R.string.service_start))
 		
-		val pm = applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager
-		wake_lock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, packageName)
-		wake_lock !!.setReferenceCounted(false)
+		val pm = applicationContext.getSystemService(Context.POWER_SERVICE)
+			as PowerManager
+
+		wake_lock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, packageName).apply{
+			setReferenceCounted(false)
+		}
 		
-		val wm = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-		wifi_lock = wm.createWifiLock(WifiManager.WIFI_MODE_FULL, packageName)
-		wifi_lock !!.setReferenceCounted(false)
+		val wm = applicationContext.getSystemService(Context.WIFI_SERVICE)
+			as WifiManager
+
+		wifi_lock = wm.createWifiLock(WifiManager.WIFI_MODE_FULL, packageName).apply {
+			setReferenceCounted(false)
+		}
 		
-		mNotificationManager =
-			applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+		mNotificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE)
+			as NotificationManager
 		
 		setServiceNotification(getString(R.string.service_idle))
 		
@@ -116,16 +122,26 @@ class DownloadService : Service() {
 		media_tracker = MediaScannerTracker(this, log)
 		
 		wifi_tracker =
-			NetworkTracker(this, log) { is_connected, cause ->
-				if(is_connected) {
-					val last_mode = Pref.lastMode(Pref.pref(this@DownloadService))
-					if(last_mode != Pref.LAST_MODE_STOP) {
-						worker_tracker.wakeup(cause)
-					}
-				}
-			}
+			NetworkTracker(this, log, wifi_tracker_callback)
 		
 		worker_tracker = WorkerTracker(this, log)
+	}
+	
+	private  val wifi_tracker_callback = object:NetworkTracker.Callback{
+		override fun onConnectionStatus(is_connected : Boolean, cause : String) {
+			if(is_connected) {
+				val last_mode = Pref.lastMode(Pref.pref(this@DownloadService))
+				if(last_mode != Pref.LAST_MODE_STOP) {
+					worker_tracker.wakeup(cause)
+				}
+			}
+		}
+		
+		override fun onTetheringOff() {
+			log.e(R.string.stop_when_tethering_off)
+			this@DownloadService.cancel_alarm_on_destroy = true
+			stopSelf()
+		}
 	}
 	
 	override fun onDestroy() {

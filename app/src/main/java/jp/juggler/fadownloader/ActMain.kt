@@ -684,6 +684,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		
 		intent.put(pref, Pref.uiProtectedOnly)
 		intent.put(pref, Pref.uiSkipAlreadyDownload)
+		intent.put(pref, Pref.uiStopWhenTetheringOff)
 		intent.put(pref, Pref.uiForceWifi)
 		intent.put(pref, Pref.uiRepeat)
 		intent.put(pref, Pref.uiLocationMode)

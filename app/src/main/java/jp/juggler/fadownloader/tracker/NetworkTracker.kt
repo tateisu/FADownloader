@@ -24,7 +24,7 @@ import kotlin.math.min
 class NetworkTracker(
 	internal val context : Context,
 	internal val log : LogWriter,
-	internal val callback : (is_connected : Boolean, cause : String) -> Unit
+	internal val callback : Callback
 ) : BroadcastReceiver() {
 	
 	companion object {
@@ -42,6 +42,11 @@ class NetworkTracker(
 		private val reArp =
 			Pattern.compile("(\\d+\\.\\d+\\.\\d+\\.\\d+)\\s*(0x\\d+)\\s*(0x\\d+)\\s*([0-9A-Fa-f:]+)")
 		
+	}
+	
+	interface Callback{
+		fun onConnectionStatus(is_connected : Boolean, cause : String)
+		fun onTetheringOff()
 	}
 	
 	internal class NetworkStatus(
@@ -233,25 +238,39 @@ class NetworkTracker(
 		log.v("sent UDP packet to '$ip_base*' time=${Utils.formatTimeDuration(SystemClock.elapsedRealtime() - start)}")
 	}
 	
+	class Setting(
+		val force_wifi : Boolean = false,
+		val target_ssid : String = "",
+		val target_type : Int = 0,
+		val target_url : String = "http://flashair/",
+		
+		val tetherSprayInterval : Long = 1000L,
+		val tetherTestConnectionTimeout : Long = 1000L,
+		val wifiChangeApInterval : Long = 1000L,
+		val wifiScanInterval : Long = 1000L,
+		
+		val stopWhenTetheringOff: Boolean =false
+	)
+	
+	private var is_dispose = false
+	
 	private var worker : Worker? = null
 	
-	@Volatile
-	internal var is_dispose = false
-	
-	////////////////////////////////////////////////////////////////////////
+	private var setting : Setting = Setting()
 	
 	private var timeLastSpray = 0L
 	private var timeLastWiFiScan : Long = 0
 	private var timeLastWiFiApChange : Long = 0
+	private var timeLastTargetDetected = 0L
 	
+	private val testerMap = HashMap<String, NetworkTracker.UrlTester>()
 	val bLastConnected = AtomicBoolean()
+	val lastTargetUrl = AtomicReferenceNotNull("")
 	
 	private var last_force_status = AtomicReferenceNotNull("")
 	private var last_error_status = AtomicReferenceNotNull("")
 	private var last_current_status = AtomicReferenceNotNull("")
 	private var last_other_active = AtomicReferenceNotNull("")
-	
-	val lastTargetUrl = AtomicReferenceNotNull("")
 	
 	val otherActive : String
 		get() = last_other_active.get()
@@ -276,12 +295,12 @@ class NetworkTracker(
 		if(intent.action == TETHER_STATE_CHANGED) {
 			val sb = StringBuilder("TETHER_STATE_CHANGED. ")
 			val extras = intent.extras
-			for( key in extras.keySet()){
+			for(key in extras.keySet()) {
 				val v = extras[key]
-				when(v){
+				when(v) {
 					is ArrayList<*> -> sb.append("$key=[${v.joinToString("/")}],")
 					is Array<*> -> sb.append("$key=[${v.joinToString("/")}],")
-					else->sb.append("$key=$v,")
+					else -> sb.append("$key=$v,")
 				}
 			}
 			log.d(sb.toString())
@@ -289,23 +308,14 @@ class NetworkTracker(
 		if(! is_dispose) worker?.notifyEx()
 	}
 	
-	class Setting(
-		val force_wifi : Boolean = false,
-		val target_ssid : String = "",
-		val target_type : Int = 0,
-		val target_url : String = "http://flashair/",
-		
-		val tetherSprayInterval : Long = 1000L,
-		val tetherTestConnectionTimeout : Long = 1000L,
-		val wifiChangeApInterval : Long = 1000L,
-		val wifiScanInterval : Long = 1000L
-	)
-	
-	var setting : Setting = Setting()
-	
 	fun updateSetting(setting : Setting) {
 		if(is_dispose) return
 		this.setting = setting
+		timeLastTargetDetected =0L
+		timeLastSpray =0L
+		timeLastWiFiApChange =0L
+		timeLastWiFiScan = 0L
+		lastTargetUrl.set("")
 		worker?.notifyEx()
 	}
 	
@@ -313,87 +323,145 @@ class NetworkTracker(
 		return requireNotNull(last_current_status.get())
 	}
 	
-	private val urlChecker_FlashAir : (String) -> Boolean = { url ->
-		checkUrl_sub(url, "${url}command.cgi?op=108")
-	}
-	
-	private val urlChecker_PqiAirCard : (String) -> Boolean = { url ->
-		checkUrl_sub(url, "${url}cgi-bin/get_config.pl")
-	}
-	
-	private fun checkUrl_sub(target_url : String, check_url : String) : Boolean {
+	private class UrlTester(
+		val setting : Setting,
+		val log : LogWriter,
+		val targetUrl : String,
+		val checkUrl : String,
+		val callback : (tester : UrlTester) -> Unit
+	) : WorkerBase() {
 		
-		var bFound = false
-		try {
-			val urlObject = URL(check_url)
-			val conn = urlObject.openConnection() as HttpURLConnection
+		override fun cancel(reason : String) : Boolean {
+			val rv = super.cancel(reason)
 			try {
-				conn.doInput = true
-				conn.connectTimeout = setting.tetherTestConnectionTimeout.toInt()
-				conn.readTimeout = setting.tetherTestConnectionTimeout.toInt()
-				conn.doOutput = false
-				conn.connect()
-				val resCode = conn.responseCode
-				if(resCode != 200) {
-					log.e("HTTP error %s. url=%s", resCode, check_url)
-				} else {
-					if(target_url != lastTargetUrl.get()) {
-						log.i("target detected. %s", target_url)
-					}
-					lastTargetUrl.set(target_url)
-					bFound = true
-				}
-			} finally {
-				try {
-					conn.disconnect()
-				} catch(ignored : Throwable) {
-				}
-				
+				this.interrupt()
+			} catch(ignored : Throwable) {
 			}
-		} catch(ex : Throwable) {
-			when(ex) {
-
-				is ConnectException ->{
-				}
-
-				is SocketTimeoutException -> {
-					// 通信エラーをトレースするとキリがないのでしない
-					log.w(ex.withCaption(check_url))
-				}
-				
-				else -> {
-					log.trace(ex, check_url)
-					log.e(ex, check_url)
-				}
-			}
+			return rv
 		}
 		
-		return bFound
+		override fun run() {
+			val timeStart = SystemClock.elapsedRealtime()
+			var bFound = false
+			var error : Throwable? = null
+			try {
+				try {
+					val urlObject = URL(checkUrl)
+					val conn = urlObject.openConnection() as HttpURLConnection
+					try {
+						conn.doInput = true
+						conn.connectTimeout = setting.tetherTestConnectionTimeout.toInt()
+						conn.readTimeout = setting.tetherTestConnectionTimeout.toInt()
+						conn.doOutput = false
+						conn.connect()
+						val resCode = conn.responseCode
+						if(resCode == 200) {
+							bFound = true
+						} else {
+							logStatic.e("HTTP error %s. url=%s", resCode, checkUrl)
+						}
+					} finally {
+						try {
+							conn.disconnect()
+						} catch(ignored : Throwable) {
+						}
+						
+					}
+				} catch(ex : Throwable) {
+					error = ex
+				}
+			} finally {
+				val time = SystemClock.elapsedRealtime() - timeStart
+				when(error) {
+					null -> {
+					
+					}
+					
+					is ConnectException -> {
+						// このエラーは500ms程度で出る。
+						// ARPテーブルにあるアドレスだが実際にはネットワーク上に相手が存在しない。
+						// 頻出するのでログを出力しない
+						logStatic.w(error.withCaption("time=${time}ms, url=$checkUrl"))
+					}
+					
+					is SocketTimeoutException -> {
+						// タイムアウトは設定がおかしい場合やネットワークが不調な場合に発生する
+						// ユーザはエラーログを見て設定値を変更することができる
+						log.w(error.withCaption("time=${time}ms, url=$checkUrl"))
+					}
+					
+					else -> {
+						log.trace(error, "time=${time}ms, url=$checkUrl")
+						log.e(error.withCaption("time=${time}ms, url=$checkUrl"))
+					}
+				}
+				if(bFound) callback(this)
+			}
+		}
+	}
+	
+	private val onUrlTestComplete : (UrlTester) -> Unit = { tester ->
+		synchronized(testerMap) {
+			testerMap.remove(tester.checkUrl)
+			if(tester.setting.target_type == setting.target_type) {
+				if(tester.targetUrl != lastTargetUrl.get()) {
+					log.i("target detected. %s", tester.targetUrl)
+				}
+				lastTargetUrl.set(tester.targetUrl)
+				timeLastTargetDetected = SystemClock.elapsedRealtime()
+				worker?.notifyEx()
+			}
+		}
+	}
+	
+	private fun startTestUrl(targetUrl : String, getCheckUrl : (String) -> String) {
+		val checkUrl = getCheckUrl(targetUrl)
+		synchronized(testerMap) {
+			var tester = testerMap[checkUrl]
+			if(tester?.isAlive == true) return
+			tester = NetworkTracker.UrlTester(setting, log, targetUrl, checkUrl, onUrlTestComplete)
+			testerMap[checkUrl] = tester
+			tester.start()
+		}
 	}
 	
 	// 接続先が見つかったら0L
 	// またはリトライまでの秒数を返す
-	private fun detectTetheringClient(env : NetworkStateList,url_checker : (String) -> Boolean) : Long {
+	private fun detectTetheringClient(
+		env : NetworkStateList,
+		getCheckUrl : (String) -> String
+	) : Long {
 		
-		// 設定で指定されたURLを最初に試す
-		// ターゲットURLにIPアドレスが書かれているなら、それを最初に試す
-		if(reIPAddr.matcher(setting.target_url).find()) {
-			if(url_checker(setting.target_url)) {
-				return 0L
-			}
+		val now = SystemClock.elapsedRealtime()
+		if(now - timeLastTargetDetected < 10000L) {
+			// ターゲットが見つかってからしばらくの間は検出を行わない
+			return 0L
 		}
 		
 		if(! isTetheringEnabled) {
 			env.error_status = "Wi-Fi Tethering is not enabled."
+			
+			if(setting.stopWhenTetheringOff){
+				Utils.runOnMainThread {
+					callback.onTetheringOff()
+				}
+			}
+			
 			// TETHER_STATE_CHANGED があるのでリトライ間隔は長めでもよさそう
 			return 5000L
 		}
 		
 		val tethering_address = tetheringAddress
 		if(tethering_address == null) {
-			env.error_status= "missing Wi-Fi Tethering IP address."
+			env.error_status = "missing Wi-Fi Tethering IP address."
 			return 1000L
 		}
+		
+		if(reIPAddr.matcher(setting.target_url).find()) {
+			// 設定で指定されたURLにIPアドレスが書かれているなら、それを試す
+			startTestUrl(setting.target_url, getCheckUrl)
+		}
+		
 		
 		// "XXX.XXX.XXX."
 		val ip_base = tethering_address.replace(reLastDigits, "")
@@ -417,26 +485,12 @@ class NetworkTracker(
 				
 				list.add(item_ip)
 			}
-			if( list.isEmpty() ) {
+			if(list.isEmpty()) {
 				env.error_status = "missing devices in ARP table."
-			}else{
+			} else {
 				env.force_status = "devices: ${list.joinToString(",")}"
-				
-				// 直前までに接続していたデバイスを優先的に確認する
-				val lastUrl = lastTargetUrl.get()
-				for( item_ip in list) {
-					val url = "http://$item_ip/"
-					if( url == lastUrl && url_checker(url) ){
-						return 0L
-					}
-				}
-
-				// 次にそれ以外のデバイスを確認する
-				for( item_ip in list) {
-					val url = "http://$item_ip/"
-					if( url != lastUrl && url_checker(url) ){
-						return 0L
-					}
+				for(item_ip in list) {
+					startTestUrl("http://$item_ip/", getCheckUrl)
 				}
 			}
 		}
@@ -444,7 +498,6 @@ class NetworkTracker(
 		// カードが見つからない場合
 		// 直接ARPリクエストを投げるのは難しい？のでUDPパケットをばらまく
 		// 次回以降の確認で効果ARPテーブルを読めれば良いのだが…。
-		val now = SystemClock.elapsedRealtime()
 		val remain = timeLastSpray + setting.tetherSprayInterval - now
 		return if(remain > 0L) {
 			remain
@@ -454,8 +507,6 @@ class NetworkTracker(
 			1000L
 		}
 	}
-	
-
 	
 	private fun keep_ap() : Long {
 		
@@ -497,11 +548,11 @@ class NetworkTracker(
 			// テザリングモードの処理
 			when(setting.target_type) {
 				Pref.TARGET_TYPE_FLASHAIR_STA -> {
-					return detectTetheringClient(ns_list,urlChecker_FlashAir)
+					return detectTetheringClient(ns_list) { "${it}command.cgi?op=108" }
 				}
 				
 				Pref.TARGET_TYPE_PQI_AIR_CARD_TETHER -> {
-					return detectTetheringClient(ns_list,urlChecker_PqiAirCard)
+					return detectTetheringClient(ns_list) { "${it}cgi-bin/get_config.pl" }
 				}
 			}
 			
@@ -711,7 +762,8 @@ class NetworkTracker(
 						1000L
 					} catch(ex : Throwable) {
 						log.trace(ex, "disableNetwork() or enableNetwork() failed.")
-						ns_list.error_status = ex.withCaption("disableNetwork() or enableNetwork() failed.")
+						ns_list.error_status =
+							ex.withCaption("disableNetwork() or enableNetwork() failed.")
 						10000L
 					}
 				}
@@ -744,12 +796,10 @@ class NetworkTracker(
 		
 		override fun cancel(reason : String) : Boolean {
 			val rv = super.cancel(reason)
-			
 			try {
 				this.interrupt()
 			} catch(ignored : Throwable) {
 			}
-			
 			return rv
 		}
 		
@@ -772,7 +822,7 @@ class NetworkTracker(
 					bLastConnected.set(bConnected)
 					Utils.runOnMainThread {
 						try {
-							if(! is_dispose) callback(true, "Wi-Fi tracker")
+							if(! is_dispose) callback.onConnectionStatus(true, "Wi-Fi tracker")
 						} catch(ex : Throwable) {
 							log.trace(ex, "connection event handling failed.")
 							log.e(ex, "connection event handling failed.")

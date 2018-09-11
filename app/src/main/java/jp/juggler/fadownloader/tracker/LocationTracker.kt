@@ -23,10 +23,6 @@ class LocationTracker(
 		const val LOCATION_BALANCED = 3
 		const val LOCATION_HIGH_ACCURACY = 4
 		
-		// Setting のデフォルト値
-		const val DEFAULT_MODE = NO_LOCATION_UPDATE
-		const val DEFAULT_INTERVAL_DESIRED = 1000L * 3600
-		const val DEFAULT_INTERVAL_MIN = 1000L * 300
 		
 		internal val date_fmt = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
 	}

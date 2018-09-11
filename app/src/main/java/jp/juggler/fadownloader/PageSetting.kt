@@ -41,6 +41,7 @@ class PageSetting(activity : Activity, ignored : View) :
 	private lateinit var swCopyBeforeViewSend : Switch
 	private lateinit var swProtectedOnly : Switch
 	private lateinit var swSkipAlreadyDownload : Switch
+	private lateinit var swStopWhenTetheringOff : Switch
 	
 	private lateinit var btnSSIDPicker : View
 	internal var bLoading : Boolean = false
@@ -66,6 +67,7 @@ class PageSetting(activity : Activity, ignored : View) :
 		btnSSIDPicker = root.findViewById(R.id.btnSSIDPicker)
 		swProtectedOnly = root.findViewById(R.id.swProtectedOnly)
 		swSkipAlreadyDownload = root.findViewById(R.id.swSkipAlreadyDownload)
+		swStopWhenTetheringOff = root.findViewById(R.id.swStopWhenTetheringOff)
 		etTetherSprayInterval = root.findViewById(R.id.etTetherSprayInterval)
 		etTetherTestConnectionTimeout = root.findViewById(R.id.etTetherTestConnectionTimeout)
 		etWifiChangeApInterval = root.findViewById(R.id.etWifiChangeApInterval)
@@ -93,6 +95,7 @@ class PageSetting(activity : Activity, ignored : View) :
 		root.findViewById<View>(R.id.btnTetherTestConnectionTimeoutHelp).setOnClickListener(this)
 		root.findViewById<View>(R.id.btnWifiScanIntervalHelp).setOnClickListener(this)
 		root.findViewById<View>(R.id.btnWifiChangeApIntervalHelp).setOnClickListener(this)
+		root.findViewById<View>(R.id.btnStopWhenTetheringOffHelp).setOnClickListener(this)
 		
 		val location_mode_adapter = ArrayAdapter<CharSequence>(
 			activity, android.R.layout.simple_spinner_item
@@ -229,6 +232,7 @@ class PageSetting(activity : Activity, ignored : View) :
 			R.id.btnTetherTestConnectionTimeoutHelp -> openHelp(R.string.tether_test_connection_timeout_help)
 			R.id.btnWifiScanIntervalHelp -> openHelp(R.string.wifi_scan_interval_help)
 			R.id.btnWifiChangeApIntervalHelp -> openHelp(R.string.wifi_change_ap_interval_help)
+			R.id.btnStopWhenTetheringOffHelp -> openHelp(R.string.stop_when_tethering_off_help)
 		}
 	}
 	
@@ -244,6 +248,7 @@ class PageSetting(activity : Activity, ignored : View) :
 		swCopyBeforeViewSend.isChecked = Pref.uiCopyBeforeSend(pref)
 		swProtectedOnly.isChecked = Pref.uiProtectedOnly(pref)
 		swSkipAlreadyDownload.isChecked = Pref.uiSkipAlreadyDownload(pref)
+		swStopWhenTetheringOff.isChecked = Pref.uiStopWhenTetheringOff(pref)
 		
 		// string
 		etInterval.setText(Pref.uiInterval(pref))
@@ -300,6 +305,8 @@ class PageSetting(activity : Activity, ignored : View) :
 			.put(Pref.uiSsid, etSSID.text.toString())
 			.put(Pref.uiProtectedOnly, swProtectedOnly.isChecked)
 			.put(Pref.uiSkipAlreadyDownload, swSkipAlreadyDownload.isChecked)
+			.put(Pref.uiStopWhenTetheringOff, swStopWhenTetheringOff.isChecked)
+		
 		// .apply() は呼び出し側で行う
 	}
 	

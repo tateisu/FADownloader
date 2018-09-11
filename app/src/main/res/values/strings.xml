@@ -195,6 +195,7 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="copy_before_view_send_help">ダウンロード履歴から「見る/送る」で外部アプリを起動する際、Android OS バージョンによっては SDカードなどの non-primari storage へのアクセスが制限されるため、外部アプリがそのファイルを扱えないことがあります。\nこの設定をONにすると、外部アプリを開く際に、ファイルを端末のダウンロードフォルダにコピーして、コピー後のファイルURIを外部アプリに渡すようにします。\nデフォルトはOFFです。</string>
     <string name="network_status">network status: %1$s</string>
 
+    <string name="seconds_hint">second(s)</string>
 
 
     <string name="remote_file_list_parse_error">remote file list parse error</string>
@@ -218,13 +219,17 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
 
     <string name="tether_spray_interval">UDP spray interval (tethering mode)</string>
     <string name="tether_spray_interval_help">In tethering mode, this app sends UDP packets to all addressed in local network for detecting the target device.\nThis setting can change its intervals.\nUnit is seconds, default is 3.</string>
+
     <string name="tether_test_connection_timeout">Test connection timeout(tethering mode)</string>
     <string name="tether_test_connection_timeout_help">In tethering mode, this app test HTTP connection to detected device. but sometimes this test will failed by socket timeout.\nThis setting can change its timeouts.\nUnit is seconds, default is 15.</string>
+
     <string name="wifi_scan_interval">Wi-Fi scan interval (force Wi-Fi AP mode)</string>
     <string name="wifi_scan_interval_help">In force Wi-Fi AP mode, this app starts Wi-Fi scan to detect target AP if it\'s is not found in previous scan result.\nBut frequently Wi-Fi scan wastes battery.\nThis setting can change its intervals.\nUnit is seconds, default is 10.</string>
+
     <string name="wifi_change_ap_interval">Wi-Fi change AP interval (force Wi-Fi AP mode)</string>
     <string name="wifi_change_ap_interval_help">In force Wi-Fi AP mode, this app change Wi-Fi AP to target AP if it\'s is found in scan result, but it\'s not selected.\nThis setting can change its intervals.\nUnit is seconds, default is 5.</string>
 
-    <string name="seconds_hint">second(s)</string>
+    <string name="stop_when_tethering_off">Stop when tethering off</string>
+    <string name="stop_when_tethering_off_help">if enabled, if target type requires tethering but it is off, this app stop the downloader service.</string>
 
 </resources>
