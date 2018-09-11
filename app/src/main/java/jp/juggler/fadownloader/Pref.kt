@@ -116,6 +116,8 @@ object Pref {
 	const val LAST_MODE_ONCE = 1
 	const val LAST_MODE_REPEAT = 2
 	
+	private const val DEFAULT_REPEAT_INTERVAL_SECONDS = 30
+	
 	private const val DEFAULT_WIFI_AP_CHANGE_INTERVAL = 5000L
 	private const val DEFAULT_WIFI_SCAN_INTERVAL = 10000L
 	private const val DEFAULT_TETHER_SPRAY_INTERVAL = 3000L
@@ -145,7 +147,7 @@ object Pref {
 	
 	val uiInterval = StringPref(
 		"ui_interval",
-		"30" // unit : second
+		DEFAULT_REPEAT_INTERVAL_SECONDS.toString()
 	)
 	
 	val uiTetherSprayInterval = StringPref(
@@ -234,7 +236,7 @@ object Pref {
 	
 	val workerInterval = IntPref(
 		"worker_interval",
-		86400 // unit : second
+		DEFAULT_REPEAT_INTERVAL_SECONDS
 	)
 	
 	val workerLocationIntervalDesired = LongPref(
