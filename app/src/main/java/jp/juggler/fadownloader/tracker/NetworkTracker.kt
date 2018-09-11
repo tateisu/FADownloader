@@ -442,14 +442,14 @@ class NetworkTracker(
 			}
 		}
 	}
-
+	
 	private val onUrlTestComplete : (UrlTester) -> Unit = { tester ->
 		synchronized(testerMap) {
 			testerMap.remove(tester.checkUrl)
 			if(! isDisposed && tester.setting.target_type == setting.target_type) {
 				val targetUrl = tester.targetUrl
 				if(targetUrl != lastTargetUrl.get()) {
-					log.i("target detected. %s",targetUrl)
+					log.i("target detected. %s", targetUrl)
 					lastTargetUrl.set(targetUrl)
 				}
 				timeLastTargetDetected = SystemClock.elapsedRealtime()
@@ -729,42 +729,44 @@ class NetworkTracker(
 				ns_list.statusError = ex.withCaption("startScan() failed.")
 				10000L
 			}
+		}
+		
+		// スキャン範囲内にある場合、定期的にAP変更
+		
+		val now = SystemClock.elapsedRealtime()
+		val remain = timeLastWiFiApChange + setting.wifiChangeApInterval - now
+		return if(remain > 0L) {
+			logStatic.d("wait ${remain}ms before force change WiFi AP")
+			min(remain, 3000L)
 		} else {
-			val now = SystemClock.elapsedRealtime()
-			val remain = timeLastWiFiApChange + setting.wifiChangeApInterval - now
-			return if(remain > 0L) {
-				logStatic.d("wait ${remain}ms before force change WiFi AP")
-				min(remain, 3000L)
-			} else {
-				timeLastWiFiApChange = now
-				try {
-					// 先に既存接続を無効にする
-					for(wc in wifiManager.configuredNetworks) {
-						if(wc.networkId == target_config.networkId) continue
-						val ssid = wc.SSID.filterSsid()
-						when(wc.status) {
-							WifiConfiguration.Status.CURRENT -> {
-								log.v("${ssid}から切断させます")
-								wifiManager.disableNetwork(wc.networkId)
-							}
-							
-							WifiConfiguration.Status.ENABLED -> {
-								log.v("${ssid}への自動接続を無効化します")
-								wifiManager.disableNetwork(wc.networkId)
-							}
+			timeLastWiFiApChange = now
+			try {
+				// 先に既存接続を無効にする
+				for(wc in wifiManager.configuredNetworks) {
+					if(wc.networkId == target_config.networkId) continue
+					val ssid = wc.SSID.filterSsid()
+					when(wc.status) {
+						WifiConfiguration.Status.CURRENT -> {
+							log.v("${ssid}から切断させます")
+							wifiManager.disableNetwork(wc.networkId)
+						}
+						
+						WifiConfiguration.Status.ENABLED -> {
+							log.v("${ssid}への自動接続を無効化します")
+							wifiManager.disableNetwork(wc.networkId)
 						}
 					}
-					
-					val target_ssid = target_config.SSID.filterSsid()
-					log.i("${target_ssid}への接続を試みます")
-					wifiManager.enableNetwork(target_config.networkId, true)
-					1000L
-				} catch(ex : Throwable) {
-					log.trace(ex, "disableNetwork() or enableNetwork() failed.")
-					ns_list.statusError =
-						ex.withCaption("disableNetwork() or enableNetwork() failed.")
-					10000L
 				}
+				
+				val target_ssid = target_config.SSID.filterSsid()
+				log.i("${target_ssid}への接続を試みます")
+				wifiManager.enableNetwork(target_config.networkId, true)
+				1000L
+			} catch(ex : Throwable) {
+				log.trace(ex, "disableNetwork() or enableNetwork() failed.")
+				ns_list.statusError =
+					ex.withCaption("disableNetwork() or enableNetwork() failed.")
+				10000L
 			}
 		}
 	}
@@ -830,7 +832,7 @@ class NetworkTracker(
 		} finally {
 			// 状態の変化があった時だけログに出力する
 			
-			var sv :String? = ns_list.toString()
+			var sv : String? = ns_list.toString()
 			
 			if(sv?.isNotEmpty() == true && sv != lastStatusNetwork.get()) {
 				lastStatusNetwork.set(sv)
