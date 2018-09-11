@@ -273,7 +273,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 			
 			if(thread.target_type == Pref.TARGET_TYPE_FLASHAIR_STA) {
 				while(! thread.isCancelled) {
-					val tracker_last_result = service.wifi_tracker.bLastConnected.get()
+					val tracker_last_result = service.wifi_tracker.bLastConnected
 					val air_url = service.wifi_tracker.lastTargetUrl.get()
 					if(tracker_last_result && air_url.isNotEmpty() ) {
 						thread.target_url = air_url
