@@ -103,7 +103,7 @@ class NetworkTracker(
 		get() = lastOtherActive.get()
 	
 	private val isDisposed : Boolean
-		get() = worker != null
+		get() = worker == null
 	
 	private val wifiManager =
 		context.applicationContext.getSystemService(Context.WIFI_SERVICE)
@@ -133,6 +133,7 @@ class NetworkTracker(
 		if(isDisposed) return
 		
 		this.setting = setting
+		logStatic.d("updateSetting: targetType=${setting.target_type}")
 		
 		timeLastTargetDetected = 0L
 		timeLastSpray = 0L
@@ -463,6 +464,7 @@ class NetworkTracker(
 		synchronized(testerMap) {
 			var tester = testerMap[checkUrl]
 			if(tester?.isAlive == true) return
+			// log.v("${checkUrl}の確認を開始")
 			tester = NetworkTracker.UrlTester(setting, log, targetUrl, checkUrl, onUrlTestComplete)
 			testerMap[checkUrl] = tester
 			tester.start()
@@ -813,6 +815,7 @@ class NetworkTracker(
 			ns_list.afterAddAll()
 			lastOtherActive.set(ns_list.other_active)
 			
+			logStatic.d("checkNetwork:targetType =${setting.target_type}")
 			// ターゲット種別により、テザリング用とAP用の処理に分かれる
 			return when(setting.target_type) {
 				
@@ -868,7 +871,7 @@ class NetworkTracker(
 			
 			while(! isCancelled) {
 				
-				val remain = try {
+ 				val remain = try {
 					checkNetwork()
 				} catch(ex : Throwable) {
 					log.trace(ex, "network check failed.")
@@ -893,7 +896,8 @@ class NetworkTracker(
 					}
 				}
 				
-				waitEx(if(remain <= 0L) 5000L else remain)
+				logStatic.d("run: remain=$remain")
+				waitEx(if(remain <= 0L) 5000L else if(remain > 10000L )10000L else remain)
 			}
 		}
 	}

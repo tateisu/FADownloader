@@ -8,6 +8,7 @@
       <w>cqypc</w>
       <w>customtabs</w>
       <w>dcim</w>
+      <w>dinglisch</w>
       <w>emlsgvh</w>
       <w>enetunreach</w>
       <w>errored</w>
@@ -22,7 +23,10 @@
       <w>ioexception</w>
       <w>mobilesdk</w>
       <w>realtime</w>
+      <w>requery</w>
       <w>sephiroth</w>
+      <w>tasker</w>
+      <w>twofortyfouram</w>
     </words>
   </dictionary>
 </component>

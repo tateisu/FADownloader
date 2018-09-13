@@ -31,6 +31,7 @@ class DownloadService : Service() {
 		
 		internal const val NOTIFICATION_ID_SERVICE = 1
 		
+		@Volatile
 		internal var service_instance : DownloadService? = null
 		
 		fun getStatusForActivity(context : Context) : String {
@@ -125,6 +126,8 @@ class DownloadService : Service() {
 			NetworkTracker(this, log, wifi_tracker_callback)
 		
 		worker_tracker = WorkerTracker(this, log)
+		
+		Receiver1.sendTaskerQueryRequery(this,ActTaskerSettingCondition::class.java.name)
 	}
 	
 	private  val wifi_tracker_callback = object:NetworkTracker.Callback{
@@ -173,6 +176,8 @@ class DownloadService : Service() {
 		log.dispose()
 		
 		service_instance = null
+		
+		Receiver1.sendTaskerQueryRequery(this,ActTaskerSettingCondition::class.java.name)
 		
 		super.onDestroy()
 	}

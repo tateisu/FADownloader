@@ -232,4 +232,11 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="stop_when_tethering_off">Stop when tethering off</string>
     <string name="stop_when_tethering_off_help">if enabled, if target type requires tethering but it is off, this app stop the downloader service.</string>
 
+    <string name="action">Action</string>
+    <string name="save">Save</string>
+    <string name="tasker_setting_action">Action to FA Downloader</string>
+    <string name="tasker_setting_condition">Condition of FA Downloader</string>
+    <string name="there_is_no_parameter">There is no parameter.</string>
+    <string name="is_alive_service">Is alive Service?</string>
+
 </resources>

@@ -200,5 +200,11 @@
     <string name="stop_when_tethering_off">テザリングOFF時にサービス終了</string>
     <string name="stop_when_tethering_off_help">ONにすると、テザリングを使う Taeget Type なのにテザリングが有効でない場合はFa Downloaderのサービスを停止します。</string>
 
+    <string name="action">アクション</string>
+    <string name="save">保存</string>
+    <string name="tasker_setting_action">FADのアクション</string>
+    <string name="tasker_setting_condition">FADの状態</string>
+    <string name="there_is_no_parameter">パラメータはありません.</string>
+    <string name="is_alive_service">サービス起動中?</string>
 
 </resources>

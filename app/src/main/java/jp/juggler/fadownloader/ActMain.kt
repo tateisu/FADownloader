@@ -520,20 +520,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	
 	// 転送サービスを停止
 	private fun download_stop_button() {
-		pref.edit()
-			.put(Pref.lastMode, Pref.LAST_MODE_STOP)
-			.put(Pref.lastModeUpdate, System.currentTimeMillis())
-			.apply()
-		val intent = Intent(this, DownloadService::class.java)
-		stopService(intent)
-		
-		try {
-			val am = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
-			am?.cancel(Receiver1.piAlarm(this))
-		} catch(ex : Throwable) {
-			log.trace(ex, "createAlarmPendingIntent failed.")
-		}
-		
+		Receiver1.actionStop(this)
 	}
 	
 	// 転送サービスを開始
@@ -579,125 +566,10 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	
 	private fun startDownloadService() {
 		
-		// LocationSettingを確認する前のrepeat引数の値を思い出す
-		val repeat = Pref.uiRepeat(pref)
-		
-		// 設定から値を読んでバリデーション
-		
-		val target_type = Pref.uiTargetType(pref)
-		if(target_type < 0) {
-			Utils.showToast(this, true, getString(R.string.target_type_invalid))
-			return
+		val error = Receiver1.actionStart(this)
+		if( error != null) {
+			Utils.showToast(this, true, error)
 		}
-		
-		val target_url = Pref.loadTargetUrl(pref, target_type)
-		if(target_url.isEmpty()) {
-			Utils.showToast(this, true, getString(R.string.target_url_not_ok))
-			return
-		}
-		
-		var folder_uri = ""
-		val sv = Pref.uiFolderUri(pref)
-		if(sv.isNotEmpty()) {
-			if(Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION) {
-				val folder = DocumentFile.fromTreeUri(this, Uri.parse(sv))
-				if(folder != null) {
-					if(folder.exists() && folder.canWrite()) {
-						folder_uri = sv
-					}
-				}
-			} else {
-				folder_uri = sv
-			}
-		}
-		if(folder_uri.isEmpty()) {
-			Utils.showToast(this, true, getString(R.string.local_folder_not_ok))
-			return
-		}
-		
-		val file_type = Pref.uiFileType(pref).trim()
-		if(file_type.isEmpty()) {
-			Utils.showToast(this, true, getString(R.string.file_type_empty))
-			return
-		}
-		
-		val location_mode = Pref.uiLocationMode(pref)
-		if(location_mode < 0 || location_mode > LocationTracker.LOCATION_HIGH_ACCURACY) {
-			Utils.showToast(this, true, getString(R.string.location_mode_invalid))
-			return
-		}
-		
-		
-		fun validSeconds(v : Int?) : Boolean {
-			return v != null && v > 0
-		}
-		
-		if(repeat) {
-			if(! validSeconds(Pref.uiInterval.getIntOrNull(pref))) {
-				Utils.showToast(this, true, getString(R.string.repeat_interval_not_ok))
-				return
-			}
-		}
-		
-		if(location_mode != LocationTracker.NO_LOCATION_UPDATE) {
-			
-			if(! validSeconds(Pref.uiLocationIntervalDesired.getIntOrNull(pref))) {
-				Utils.showToast(this, true, getString(R.string.location_update_interval_not_ok))
-				return
-			}
-			if(! validSeconds(Pref.uiLocationIntervalMin.getIntOrNull(pref))) {
-				Utils.showToast(this, true, getString(R.string.location_update_interval_not_ok))
-				return
-			}
-		}
-		
-		val force_wifi = Pref.uiForceWifi(pref)
-		
-		val ssid : String
-		if(! force_wifi) {
-			ssid = ""
-		} else {
-			ssid = Pref.uiSsid(pref).trim()
-			if(ssid.isEmpty()) {
-				Utils.showToast(this, true, getString(R.string.ssid_empty))
-				return
-			}
-		}
-		
-		// 最後に押したボタンを覚えておく
-		pref.edit()
-			.put(Pref.lastMode, if(repeat) Pref.LAST_MODE_REPEAT else Pref.LAST_MODE_ONCE)
-			.put(Pref.lastModeUpdate, System.currentTimeMillis())
-			.apply()
-		
-		// 転送サービスを開始
-		val intent = Intent(this, DownloadService::class.java)
-		intent.action = DownloadService.ACTION_START
-		
-		intent.put(pref, Pref.uiTetherSprayInterval)
-		intent.put(pref, Pref.uiTetherTestConnectionTimeout)
-		intent.put(pref, Pref.uiWifiChangeApInterval)
-		intent.put(pref, Pref.uiWifiScanInterval)
-		intent.put(pref, Pref.uiLocationIntervalDesired)
-		intent.put(pref, Pref.uiLocationIntervalMin)
-		intent.put(pref, Pref.uiInterval)
-		
-		intent.put(pref, Pref.uiProtectedOnly)
-		intent.put(pref, Pref.uiSkipAlreadyDownload)
-		intent.put(pref, Pref.uiStopWhenTetheringOff)
-		intent.put(pref, Pref.uiForceWifi)
-		intent.put(pref, Pref.uiRepeat)
-		intent.put(pref, Pref.uiLocationMode)
-		
-		intent.put(ssid, Pref.uiSsid)
-		intent.put(folder_uri, Pref.uiFolderUri)
-		intent.put(file_type, Pref.uiFileType)
-		
-		intent.put(target_type, Pref.uiTargetType)
-		intent.putExtra(DownloadService.EXTRA_TARGET_URL, target_url)
-		
-		
-		startService(intent)
 	}
 	
 	internal fun openHelpLayout(layout_id : Int) {
