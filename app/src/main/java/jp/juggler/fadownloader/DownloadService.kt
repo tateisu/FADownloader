@@ -55,7 +55,7 @@ class DownloadService : Service() {
 			sb.append('\n')
 			
 			val worker = service.worker_tracker.worker
-			if(worker == null || ! worker.isAlive) {
+			if(worker?.isAlive != true) {
 				sb.append(context.getString(R.string.thread_not_running_status))
 			} else {
 				sb.append(worker.status)
@@ -84,6 +84,23 @@ class DownloadService : Service() {
 	internal lateinit var worker_tracker : WorkerTracker
 	internal lateinit var media_tracker : MediaScannerTracker
 	
+	private val wifi_tracker_callback = object : NetworkTracker.Callback {
+		override fun onConnectionStatus(is_connected : Boolean, cause : String) {
+			if(is_connected) {
+				val last_mode = Pref.lastMode(Pref.pref(this@DownloadService))
+				if(last_mode != Pref.LAST_MODE_STOP) {
+					worker_tracker.wakeup(cause)
+				}
+			}
+		}
+		
+		override fun onTetheringOff() {
+			log.e(R.string.stop_when_tethering_off)
+			this@DownloadService.cancel_alarm_on_destroy = true
+			stopSelf()
+		}
+	}
+	
 	override fun onCreate() {
 		super.onCreate()
 		
@@ -99,14 +116,14 @@ class DownloadService : Service() {
 		
 		val pm = applicationContext.getSystemService(Context.POWER_SERVICE)
 			as PowerManager
-
-		wake_lock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, packageName).apply{
+		
+		wake_lock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, packageName).apply {
 			setReferenceCounted(false)
 		}
 		
 		val wm = applicationContext.getSystemService(Context.WIFI_SERVICE)
 			as WifiManager
-
+		
 		wifi_lock = wm.createWifiLock(WifiManager.WIFI_MODE_FULL, packageName).apply {
 			setReferenceCounted(false)
 		}
@@ -127,24 +144,7 @@ class DownloadService : Service() {
 		
 		worker_tracker = WorkerTracker(this, log)
 		
-		Receiver1.sendTaskerQueryRequery(this,ActTaskerSettingCondition::class.java.name)
-	}
-	
-	private  val wifi_tracker_callback = object:NetworkTracker.Callback{
-		override fun onConnectionStatus(is_connected : Boolean, cause : String) {
-			if(is_connected) {
-				val last_mode = Pref.lastMode(Pref.pref(this@DownloadService))
-				if(last_mode != Pref.LAST_MODE_STOP) {
-					worker_tracker.wakeup(cause)
-				}
-			}
-		}
-		
-		override fun onTetheringOff() {
-			log.e(R.string.stop_when_tethering_off)
-			this@DownloadService.cancel_alarm_on_destroy = true
-			stopSelf()
-		}
+		Receiver1.sendTaskerConditionUpdate(this, ActTaskerSettingCondition::class.java.name)
 	}
 	
 	override fun onDestroy() {
@@ -177,7 +177,7 @@ class DownloadService : Service() {
 		
 		service_instance = null
 		
-		Receiver1.sendTaskerQueryRequery(this,ActTaskerSettingCondition::class.java.name)
+		Receiver1.sendTaskerConditionUpdate(this, ActTaskerSettingCondition::class.java.name)
 		
 		super.onDestroy()
 	}
@@ -219,14 +219,14 @@ class DownloadService : Service() {
 	internal fun releaseWakeLock() {
 		if(! is_alive) return
 		try {
-			wake_lock !!.release()
+			wake_lock?.release()
 		} catch(ex : Throwable) {
 			log.trace(ex, "WakeLock release failed.")
 			log.e(ex, "WakeLock release failed.")
 		}
 		
 		try {
-			wifi_lock !!.release()
+			wifi_lock?.release()
 		} catch(ex : Throwable) {
 			log.trace(ex, "WifiLock release failed.")
 			log.e(ex, "WifiLock release failed.")
@@ -245,7 +245,7 @@ class DownloadService : Service() {
 		}
 		
 		try {
-			wifi_lock !!.acquire()
+			wifi_lock?.acquire()
 		} catch(ex : Throwable) {
 			log.trace(ex, "WifiLock acquire failed.")
 			log.e(ex, "WifiLock acquire failed.")

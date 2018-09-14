@@ -520,7 +520,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	
 	// 転送サービスを停止
 	private fun download_stop_button() {
-		Receiver1.actionStop(this)
+		actionStop(this)
 	}
 	
 	// 転送サービスを開始
@@ -566,7 +566,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	
 	private fun startDownloadService() {
 		
-		val error = Receiver1.actionStart(this)
+		val error = actionStart(this)
 		if( error != null) {
 			Utils.showToast(this, true, error)
 		}

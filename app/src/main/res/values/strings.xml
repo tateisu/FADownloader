@@ -234,9 +234,9 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
 
     <string name="action">Action</string>
     <string name="save">Save</string>
-    <string name="tasker_setting_action">Action to FA Downloader</string>
-    <string name="tasker_setting_condition">Condition of FA Downloader</string>
+    <string name="tasker_setting_action">FAD Action</string>
+    <string name="tasker_setting_condition">FAD Condition</string>
     <string name="there_is_no_parameter">There is no parameter.</string>
-    <string name="is_alive_service">Is alive Service?</string>
+    <string name="is_alive_service">Is service alive?</string>
 
 </resources>
