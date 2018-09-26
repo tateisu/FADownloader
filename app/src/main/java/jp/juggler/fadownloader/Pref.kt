@@ -285,6 +285,8 @@ object Pref {
 	
 	val purchasedRemoveAd = BooleanPref("remove_ad_purchased", false)
 	
+	val agreedPrivacyPolicyDigest = StringPref("agreedPrivacyPolicyDigest", "")
+	
 	//////////////////////////////////////////////////////////////////////
 	
 	fun initialize(context : Context) {

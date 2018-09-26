@@ -206,5 +206,7 @@
     <string name="tasker_setting_condition">FADの状態</string>
     <string name="there_is_no_parameter">パラメータはありません.</string>
     <string name="is_alive_service">サービス起動中?</string>
+    <string name="privacy_policy">プライバシーポリシー</string>
+    <string name="agree">同意</string>
 
 </resources>

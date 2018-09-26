@@ -33,6 +33,8 @@ import jp.juggler.fadownloader.picker.FolderPicker
 import jp.juggler.fadownloader.picker.SSIDPicker
 import jp.juggler.fadownloader.tracker.LocationTracker
 import jp.juggler.fadownloader.util.*
+import org.apache.commons.io.IOUtils
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.ref.WeakReference
@@ -70,6 +72,8 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	private var mAdView : AdView? = null
 	private var permission_alert : WeakReference<Dialog>? = null
 	private var mLocationSettingsRequest : LocationSettingsRequest? = null
+	
+	var dlgPrivacyPolicy : WeakReference<Dialog>?=null
 	
 	private var is_resume = false
 	internal var is_start = false
@@ -456,6 +460,8 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		if(savedInstanceState == null) {
 			handleIntent(intent)
 		}
+		
+		checkPrivacyPolicy()
 	}
 	
 	public override fun onDestroy() {
@@ -672,4 +678,42 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		page?.viewer?.reload()
 	}
 	
+	private fun checkPrivacyPolicy() {
+
+		// 既に表示中かもしれない
+		if( dlgPrivacyPolicy?.get()?.isShowing == true) return
+		
+		// プライバシーポリシーデータの読み込み
+		val bytes = readRawResource(this,R.raw.privacy_policy)
+		if( bytes?.isEmpty() != false) return
+		
+		// 同意ずみなら表示しない
+		val digest = bytes.digestSHA256().encodeBase64Safe()
+		if( digest == Pref.agreedPrivacyPolicyDigest(pref) ) return
+		
+		val dialog = AlertDialog.Builder(this)
+			.setTitle(R.string.privacy_policy)
+			.setMessage( bytes.decodeUTF8())
+			.setNegativeButton(R.string.cancel){_,_ ->
+				finish()
+			}
+			.setOnCancelListener{_->
+				finish()
+			}
+			.setPositiveButton(R.string.agree){_,_ ->
+				pref.edit().put(Pref.agreedPrivacyPolicyDigest,digest).apply()
+			}
+			.create()
+		dlgPrivacyPolicy = WeakReference(dialog)
+		dialog.show()
+	}
+	
+	private fun readRawResource(context:Context, resId:Int):ByteArray?{
+		context.resources.openRawResource(resId)?.use{inStream->
+			val bao = ByteArrayOutputStream( inStream.available() )
+			IOUtils.copy(inStream,bao)
+			return bao.toByteArray()
+		}
+		return null
+	}
 }
