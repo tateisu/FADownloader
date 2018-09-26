@@ -114,9 +114,15 @@ class DownloadWorker : WorkerBase {
 				}
 				
 				Build.VERSION.SDK_INT >= 21 -> for(n in cm.allNetworks) {
-					val info = cm.getNetworkInfo(n)
-					if(info.isConnected && info.type == ConnectivityManager.TYPE_WIFI) {
-						if(isValidSsid) return n
+					try {
+						val info = cm.getNetworkInfo(n)
+						if(info.isConnected && info.type == ConnectivityManager.TYPE_WIFI) {
+							if(isValidSsid) return n
+						}
+					}catch(ex:Throwable){
+						// クラッシュレポートによるとこのあたりで java.lang.IllegalStateException が発生するらしい
+						// Platform type の利用でnull例外が起きてるのだろう
+						log.trace(ex)
 					}
 				}
 				
