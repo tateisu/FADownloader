@@ -552,7 +552,7 @@ fun ByteArray.digestSHA256() : ByteArray {
 	return digest.digest(this)
 }
 
-fun ByteArray.encodeBase64Safe() :String = Base64.encodeToString(this, Base64.URL_SAFE)
+fun ByteArray.encodeBase64Safe() :String = Base64.encodeToString(this, Base64.URL_SAFE or Base64.NO_WRAP)
 
 fun ByteArray.digestMD5() : String {
 	val md = MessageDigest.getInstance("MD5")

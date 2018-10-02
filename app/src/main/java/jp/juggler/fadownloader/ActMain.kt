@@ -292,7 +292,6 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		}
 	}
 	
-	@SuppressLint("NewApi")
 	public override fun onActivityResult(
 		requestCode : Int,
 		resultCode : Int,
@@ -303,7 +302,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			// mIabHelper が結果を処理した
 			return
 		}
-		if(requestCode != Activity.RESULT_OK) {
+		if(resultCode != Activity.RESULT_OK) {
 			when(requestCode) {
 				REQUEST_RESOLUTION -> Utils.showToast(
 					this,
@@ -316,64 +315,12 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 				REQUEST_RESOLUTION -> startDownloadService()
 				
 				REQUEST_CODE_DOCUMENT -> {
-					if(Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION) {
-						try {
-							val treeUri = resultData?.data
-							if(treeUri != null) {
-								// 永続的な許可を取得
-								contentResolver.takePersistableUriPermission(
-									treeUri,
-									Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-								)
-								// 覚えておく
-								pref.edit()
-									.put(Pref.uiFolderUri, treeUri.toString())
-									.apply()
-							}
-						} catch(ex : Throwable) {
-							log.trace(ex, "folder access failed.")
-							
-							Utils.showToast(this, true, ex.withCaption("folder access failed."))
-						}
-						
-					}
-					val page = pager_adapter.getPage<PageSetting>(page_idx_setting)
-					page?.folder_view_update()
+					handleLocalFolder2(resultData)
 					return
 				}
 				
 				REQUEST_FOLDER_PICKER -> {
-					try {
-						val path = resultData?.getStringExtra(FolderPicker.EXTRA_FOLDER)
-						if(path != null) {
-							val dummy =
-								Thread.currentThread().id.toString() + "." + android.os.Process.myPid()
-							val test_dir = File(File(path), dummy)
-							
-							test_dir.mkdir()
-							try {
-								val test_file = File(test_dir, dummy)
-								try {
-									FileOutputStream(test_file).use { fos ->
-										fos.write("TEST".encodeUTF8())
-									}
-								} finally {
-									test_file.delete()
-								}
-							} finally {
-								test_dir.delete()
-							}
-							// 覚えておく
-							pref.edit()
-								.put(Pref.uiFolderUri, path)
-								.apply()
-						}
-					} catch(ex : Throwable) {
-						log.trace(ex, "folder access failed.")
-						Utils.showToast(this, true, ex.withCaption("folder access failed."))
-					}
-					val page = pager_adapter.getPage<PageSetting>(page_idx_setting)
-					page?.folder_view_update()
+					handleLocalFolder2(resultData)
 					return
 				}
 				
@@ -395,6 +342,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		
 	}
 	
+
 	override fun onCreate(savedInstanceState : Bundle?) {
 		super.onCreate(savedInstanceState)
 		
@@ -689,7 +637,11 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		
 		// 同意ずみなら表示しない
 		val digest = bytes.digestSHA256().encodeBase64Safe()
-		if( digest == Pref.agreedPrivacyPolicyDigest(pref) ) return
+		val agreed = Pref.agreedPrivacyPolicyDigest(pref).trim()
+		// SharedPreferenceは文字列の末尾に改行があるとゴミを付与する事例があった
+		// encodeBase64Safe()が改行を付与しないよう修正したが、過去のagreedには末尾にゴミが残っているのでtrimが必要
+		log.d("digest=$digest agreed=$agreed")
+		if( digest == agreed ) return
 		
 		val dialog = AlertDialog.Builder(this)
 			.setTitle(R.string.privacy_policy)
@@ -715,5 +667,63 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			return bao.toByteArray()
 		}
 		return null
+	}
+	
+	@SuppressLint("NewApi")
+	private fun handleLocalFolder2(resultData:Intent?){
+		if(Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION) {
+			try {
+				val treeUri = resultData?.data
+				if(treeUri != null) {
+					// 永続的な許可を取得
+					contentResolver.takePersistableUriPermission(
+						treeUri,
+						Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+					)
+					// 覚えておく
+					pref.edit()
+						.put(Pref.uiFolderUri, treeUri.toString())
+						.apply()
+				}
+			} catch(ex : Throwable) {
+				log.trace(ex, "folder access failed.")
+				
+				Utils.showToast(this, true, ex.withCaption("folder access failed."))
+			}
+			
+		}else{
+			try {
+				val path = resultData?.getStringExtra(FolderPicker.EXTRA_FOLDER)
+				if(path != null) {
+					val dummy =
+						Thread.currentThread().id.toString() + "." + android.os.Process.myPid()
+					val test_dir = File(File(path), dummy)
+					
+					test_dir.mkdir()
+					try {
+						val test_file = File(test_dir, dummy)
+						try {
+							FileOutputStream(test_file).use { fos ->
+								fos.write("TEST".encodeUTF8())
+							}
+						} finally {
+							test_file.delete()
+						}
+					} finally {
+						test_dir.delete()
+					}
+					// 覚えておく
+					pref.edit()
+						.put(Pref.uiFolderUri, path)
+						.apply()
+				}
+			} catch(ex : Throwable) {
+				log.trace(ex, "folder access failed.")
+				Utils.showToast(this, true, ex.withCaption("folder access failed."))
+			}
+			
+		}
+		val page = pager_adapter.getPage<PageSetting>(page_idx_setting)
+		page?.folder_view_update()
 	}
 }
