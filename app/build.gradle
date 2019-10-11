@@ -10,8 +10,8 @@ android {
         minSdkVersion min_sdk_version
         targetSdkVersion target_sdk_version
 
-        versionCode 24
-        versionName "1.14.4"
+        versionCode 25
+        versionName "1.15.0"
         applicationId "jp.juggler.fadownloader"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
