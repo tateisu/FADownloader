@@ -312,10 +312,11 @@ class PentaxKP(private val service : DownloadService, internal val thread : Down
 		
 		try {
 			val remote_path = item.remote_path
+			val file_name = item.local_file.name
+
 			val local_file = item.local_file
-			val file_name = local_file.name
-			
-			if(! local_file.prepareFile(log, true, item.mime_type)) {
+				.prepareFile(log, true, item.mime_type)
+			if(local_file == null ) {
 				log.e("%s//%s :skip. can not prepare local file.", item.remote_path, file_name)
 				thread.record(
 					item,

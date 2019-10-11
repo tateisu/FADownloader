@@ -139,11 +139,11 @@ class HTTPClient {
 	@Synchronized
 	fun cancel(log : LogWriter) {
 		val t = io_thread ?: return
-		log.i( "[$caption,cancel] $t" )
+		log.i("[$caption,cancel] $t")
 		try {
 			t.interrupt()
 		} catch(ex : Throwable) {
-			log.trace(ex,"cancel")
+			log.trace(ex, "cancel")
 		}
 		
 	}
@@ -344,9 +344,9 @@ class HTTPClient {
 						)
 						
 						if(! silent_error) {
-							log.e( "[$caption,connect] $last_error")
+							log.e("[$caption,connect] $last_error")
 							if(ex.message == null) {
-								log.trace(ex,"getHTTP")
+								log.trace(ex, "getHTTP")
 							}
 						}
 						this.rcode = - 1
@@ -356,9 +356,9 @@ class HTTPClient {
 							String.format("%s %s", ex.javaClass.simpleName, ex.message)
 						
 						if(! silent_error) {
-							log.e( "[$caption,connect] $last_error")
+							log.e("[$caption,connect] $last_error")
 							if(ex.message == null) {
-								log.trace(ex,"getHTTP")
+								log.trace(ex, "getHTTP")
 							}
 						}
 						
@@ -367,7 +367,7 @@ class HTTPClient {
 						if(ex is IOException
 							&& ex.message?.contains("authentication challenge") == true
 						) {
-							log.trace(ex,"getHTTP")
+							log.trace(ex, "getHTTP")
 							log.d("Please check device's date and time.")
 							this.rcode = 401
 							return null
@@ -429,13 +429,13 @@ class HTTPClient {
 					}
 				} catch(ex : Throwable) {
 					last_error = String.format("%s %s", ex.javaClass.simpleName, ex.message)
-					log.trace(ex,"getHTTP")
+					log.trace(ex, "getHTTP")
 				}
 				
 			}
 			if(! silent_error) log.e("[%s] fail. try=%d. rcode=%d", caption, max_try, rcode)
 		} catch(ex : Throwable) {
-			log.trace(ex,"getHTTP")
+			log.trace(ex, "getHTTP")
 			last_error = String.format("%s %s", ex.javaClass.simpleName, ex.message)
 		} finally {
 			synchronized(this) {
@@ -514,7 +514,7 @@ class HTTPClient {
 								
 							}
 						} catch(ex : Throwable) {
-							log.trace(ex,"get_cache")
+							log.trace(ex, "get_cache")
 							if(file.exists()) {
 								
 								file.delete()
@@ -540,11 +540,11 @@ class HTTPClient {
 				}
 				// retry ?
 			} catch(ex : MalformedURLException) {
-				log.trace(ex,"get_cache")
+				log.trace(ex, "get_cache")
 				last_error = String.format("bad URL:%s", ex.message)
 				break
 			} catch(ex : IOException) {
-				log.trace(ex,"get_cache")
+				log.trace(ex, "get_cache")
 				last_error = String.format("%s %s", ex.javaClass.simpleName, ex.message)
 			}
 			
@@ -637,7 +637,7 @@ class HTTPClient {
 							/// log.d("200: %s",file);
 							return file
 						} catch(ex : Throwable) {
-							setError(log,ex)
+							setError(log, ex)
 						} finally {
 							try {
 								inStream?.close()
@@ -683,14 +683,14 @@ class HTTPClient {
 				// このエラーはリトライしてもムリ
 				break
 			} catch(ex : MalformedURLException) {
-				setError(log,ex)
+				setError(log, ex)
 				break
 			} catch(ex : SocketTimeoutException) {
 				setError_silent(log, ex)
 			} catch(ex : ConnectException) {
 				setError_silent(log, ex)
 			} catch(ex : IOException) {
-				setError(log,ex)
+				setError(log, ex)
 			}
 			
 		}
@@ -705,8 +705,8 @@ class HTTPClient {
 		return false
 	}
 	
-	private fun setError(log:LogWriter,ex : Throwable) : Boolean {
-		log.trace(ex,"setError")
+	private fun setError(log : LogWriter, ex : Throwable) : Boolean {
+		log.trace(ex, "setError")
 		rcode = 0
 		last_error = String.format("%s %s", ex.javaClass.simpleName, ex.message)
 		return false
@@ -728,9 +728,8 @@ class HTTPClient {
 	//! HTTPレスポンスのヘッダを読む
 	@Suppress("unused")
 	fun getHeaderInt(key : String, defVal : Int) : Int {
-		val v = getHeaderString(key, null)
 		return try {
-			Integer.parseInt(v, 10)
+			getHeaderString(key, null)?.toInt() ?: defVal
 		} catch(ex : Throwable) {
 			defVal
 		}

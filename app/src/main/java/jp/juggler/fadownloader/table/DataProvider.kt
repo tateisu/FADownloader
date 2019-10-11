@@ -48,8 +48,13 @@ class DataProvider : ContentProvider() {
 	
 	private lateinit var mDBHelper : DBHelper1
 	
+	// super.getContext()はNullableなのでラップする
+	// コンストラクタ以外ではnullになることはないが、常時同じ値ではないはず
+	private val contextEx :Context
+		get() = super.getContext()!!
+	
 	override fun onCreate() : Boolean {
-		this.mDBHelper = DBHelper1(context)
+		this.mDBHelper = DBHelper1(contextEx)
 		return true
 	}
 	
@@ -65,7 +70,7 @@ class DataProvider : ContentProvider() {
 		val match = TableMeta.matchUri(uri)
 		
 		return match?.meta?.insert(
-			context.contentResolver,
+			contextEx.contentResolver,
 			mDBHelper.writableDatabase,
 			match,
 			uri,
@@ -79,7 +84,7 @@ class DataProvider : ContentProvider() {
 		val match = TableMeta.matchUri(uri)
 		
 		return match?.meta?.delete(
-			context.contentResolver,
+			contextEx.contentResolver,
 			mDBHelper.writableDatabase,
 			match,
 			uri,
@@ -95,7 +100,7 @@ class DataProvider : ContentProvider() {
 		val match = TableMeta.matchUri(uri)
 		
 		return match?.meta?.update(
-			context.contentResolver,
+			contextEx.contentResolver,
 			mDBHelper.writableDatabase,
 			match,
 			uri,
@@ -115,7 +120,7 @@ class DataProvider : ContentProvider() {
 		val match = TableMeta.matchUri(uri)
 		
 		return match?.meta?.query(
-			context.contentResolver,
+			contextEx.contentResolver,
 			mDBHelper.writableDatabase,
 			match,
 			uri,

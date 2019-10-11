@@ -438,6 +438,12 @@
                 />
         </LinearLayout>
 
+        <TextView style="@style/setting_row_form"
+            android:id="@+id/tvWifiScanInterval"
+            android:text="@string/wifi_scan_warning"
+            android:textColor="#f80"
+            />
+
         <View style="@style/setting_divider"/>
 
         <TextView

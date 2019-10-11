@@ -4,8 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.support.v4.content.ContextCompat
-import android.support.v4.provider.DocumentFile
+import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import jp.juggler.fadownloader.model.LocalFile
 import jp.juggler.fadownloader.tracker.LocationTracker
 import jp.juggler.fadownloader.util.Utils

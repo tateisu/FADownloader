@@ -5,8 +5,8 @@ import android.app.Activity
 import android.content.Intent
 import android.os.AsyncTask
 import android.os.Process
-import android.support.v4.content.FileProvider
-import android.support.v7.app.AlertDialog
+import androidx.core.content.FileProvider
+import androidx.appcompat.app.AlertDialog
 import android.view.View
 import android.widget.ListView
 import config.BuildVariant
@@ -22,7 +22,8 @@ class PageLog(activity : Activity, ignored : View) :
 	
 	companion object {
 		private val log = LogTag("PageLog")
-		internal val filename_date_fmt = SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault())
+		internal val filename_date_fmt :SimpleDateFormat
+			get()= SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault())
 	}
 	
 	private lateinit var lvLog : ListView

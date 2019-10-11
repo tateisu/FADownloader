@@ -19,10 +19,10 @@ import android.os.Environment
 import android.provider.BaseColumns
 import android.provider.DocumentsContract
 import android.provider.MediaStore
-import android.support.v4.app.LoaderManager
-import android.support.v4.content.CursorLoader
-import android.support.v4.content.Loader
-import android.support.v7.app.AppCompatActivity
+import androidx.loader.app.LoaderManager
+import androidx.loader.content.CursorLoader
+import androidx.loader.content.Loader
+import androidx.appcompat.app.AppCompatActivity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -49,7 +49,9 @@ class DownloadRecordViewer {
 	companion object {
 		private val log = LogTag("DownloadRecordViewer")
 		
-		internal val date_fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+		internal val date_fmt :SimpleDateFormat
+			get() = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+
 		internal val default_thumbnail : Drawable = ColorDrawable(- 0x7f7f80)
 		internal val reJPEG = Pattern.compile("\\.jp(g|eg?)\\z", Pattern.CASE_INSENSITIVE)
 		
@@ -65,19 +67,20 @@ class DownloadRecordViewer {
 		
 		
 		private var loader : Loader<Cursor>? = null
+		private val loaderManager = LoaderManager.getInstance(activity)
 		
 		init {
 			listView.onItemClickListener = this
 		}
 		
 		internal fun onStart(loader_id : Int) {
-			loader = activity.supportLoaderManager.initLoader(loader_id, null, this)
+			loader = loaderManager.initLoader(loader_id, null, this)
 		}
 		
 		fun onStop() : Int {
 			val loader = this.loader
 			if(loader != null) {
-				activity.supportLoaderManager.destroyLoader(loader.id)
+				loaderManager.destroyLoader(loader.id)
 				this.loader = null
 			}
 			val rv = listView.firstVisiblePosition
@@ -538,18 +541,19 @@ class DownloadRecordViewer {
 		
 		private fun fixFileURL(data : DownloadRecord) : Utils.FileInfo? {
 			try {
-				if(data.local_file == null) {
+				val localFileTmp = data.local_file
+				if(localFileTmp  == null) {
 					Utils.showToast(activity, false, "missing local file uri.")
 					return null
 				}
 				
-				val tmp_info = Utils.FileInfo(data.local_file)
+				val tmp_info = Utils.FileInfo(localFileTmp)
 				val tmp_uri = tmp_info.uri
 				
 				if(Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION) {
 					
 					if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-						if(tmp_uri != null && DocumentsContract.isDocumentUri(activity, tmp_uri)) {
+						if(DocumentsContract.isDocumentUri(activity, tmp_uri)) {
 							if(isExternalStorageDocument(tmp_uri)) {
 								val docId = DocumentsContract.getDocumentId(tmp_uri)
 								val split =
@@ -670,8 +674,8 @@ class DownloadRecordViewer {
 		private fun registerMediaURI(tmp_info : Utils.FileInfo) {
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 				val tmp_uri = tmp_info.uri
-				if(tmp_uri == null || "file" != tmp_uri.scheme) return
-				val path = tmp_uri.path
+				if("file" != tmp_uri.scheme) return
+				val path = tmp_uri.path ?: ""
 				val files_uri = MediaStore.Files.getContentUri("external")
 				var newUri = getUriFromDb(path, files_uri)
 				if(newUri != null) {
@@ -701,7 +705,7 @@ class DownloadRecordViewer {
 				if(cursor.moveToFirst()) {
 					val colIdx_id = cursor.getColumnIndex(BaseColumns._ID)
 					val id = cursor.getLong(colIdx_id)
-					return Uri.parse(files_uri.toString() + "/" + id)
+					return Uri.parse("$files_uri/$id")
 				}
 			}
 			return null

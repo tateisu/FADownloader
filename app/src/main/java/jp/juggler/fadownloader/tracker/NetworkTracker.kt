@@ -1,11 +1,11 @@
 package jp.juggler.fadownloader.tracker
 
+import android.annotation.TargetApi
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.ConnectivityManager
-import android.net.NetworkInfo
+import android.net.*
 import android.net.wifi.SupplicantState
 import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiInfo
@@ -90,7 +90,7 @@ class NetworkTracker(
 	@Volatile
 	var bLastConnected : Boolean = false
 	
-	private val testerMap = HashMap<String, NetworkTracker.UrlTester>()
+	private val testerMap = HashMap<String, UrlTester>()
 	
 	val lastTargetUrl = AtomicReferenceNotNull("")
 	
@@ -113,9 +113,61 @@ class NetworkTracker(
 		context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE)
 			as ConnectivityManager
 	
+	private lateinit var networkCallback : Any
+	
 	init {
 		context.registerReceiver(this, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
-		context.registerReceiver(this, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
+		if(Build.VERSION.SDK_INT >= 28) {
+			networkCallback = object : ConnectivityManager.NetworkCallback() {
+				override fun onCapabilitiesChanged(
+					network : Network?,
+					networkCapabilities : NetworkCapabilities?
+				) {
+					super.onCapabilitiesChanged(network, networkCapabilities)
+					worker?.notifyEx()
+				}
+				
+				override fun onLost(network : Network?) {
+					super.onLost(network)
+					worker?.notifyEx()
+				}
+				
+				override fun onLinkPropertiesChanged(
+					network : Network?,
+					linkProperties : LinkProperties?
+				) {
+					super.onLinkPropertiesChanged(network, linkProperties)
+					worker?.notifyEx()
+				}
+				
+				override fun onUnavailable() {
+					super.onUnavailable()
+					worker?.notifyEx()
+				}
+				
+				override fun onLosing(network : Network?, maxMsToLive : Int) {
+					super.onLosing(network, maxMsToLive)
+					worker?.notifyEx()
+				}
+				
+				override fun onAvailable(network : Network?) {
+					super.onAvailable(network)
+					worker?.notifyEx()
+				}
+			}
+			
+			(context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager)
+				?.registerNetworkCallback(
+					NetworkRequest.Builder()
+						.addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+						.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+						.build()
+					, networkCallback as ConnectivityManager.NetworkCallback
+				)
+		} else {
+			@Suppress("DEPRECATION")
+			context.registerReceiver(this, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
+		}
 		context.registerReceiver(this, IntentFilter(TETHER_STATE_CHANGED))
 		worker = Worker().apply {
 			start()
@@ -123,6 +175,10 @@ class NetworkTracker(
 	}
 	
 	fun dispose() {
+		if(Build.VERSION.SDK_INT >= 28) {
+			(context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager)
+				?.unregisterNetworkCallback(networkCallback as ConnectivityManager.NetworkCallback)
+		}
 		context.unregisterReceiver(this)
 		worker?.cancel("disposed")
 		worker = null
@@ -155,9 +211,8 @@ class NetworkTracker(
 		if(intent.action == TETHER_STATE_CHANGED) {
 			val sb = StringBuilder("TETHER_STATE_CHANGED. ")
 			val extras = intent.extras
-			for(key in extras.keySet()) {
-				val v = extras[key]
-				when(v) {
+			if(extras != null) for(key in extras.keySet()) {
+				when(val v = extras[key]) {
 					is ArrayList<*> -> sb.append("$key=[${v.joinToString("/")}],")
 					is Array<*> -> sb.append("$key=[${v.joinToString("/")}],")
 					else -> sb.append("$key=$v,")
@@ -291,8 +346,9 @@ class NetworkTracker(
 	
 	// 種別ごとのネットワーク接続の状況
 	private class NetworkStatus(
-		var type_name : String,
-		var sub_name : String? = null,
+		
+		val type_name : String,
+		val sub_name : String? = null,
 		var is_active : Boolean = false,
 		var strWifiStatus : String? = null
 	)
@@ -306,24 +362,54 @@ class NetworkTracker(
 		
 		var other_active : String = ""
 		
-		fun addNetworkInfo(is_active : Boolean, ni : NetworkInfo?) {
+		@TargetApi(23)
+		fun addNetwork(nc : NetworkCapabilities?, is_active : Boolean) {
+			nc ?: return
+			
+			val ns = NetworkStatus(
+				type_name = when {
+					nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "WIFI"
+					nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI_AWARE) -> "WIFI_AWARE"
+					nc.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "CELLULAR"
+					nc.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH) -> "BLUETOOTH"
+					nc.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "ETHERNET"
+					nc.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> "VPN"
+					nc.hasTransport(NetworkCapabilities.TRANSPORT_LOWPAN) -> "LOWPAN"
+					else -> "?"
+				},
+				sub_name = null,
+				is_active = is_active
+			)
+			
+			// hasTransport は isConnectedを兼ねてるらしい
+			val wifiConnected = nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+			if(wifiConnected) {
+				this.add(ns)
+				wifi_status = ns
+			} else if(is_active) {
+				this.add(ns)
+				other_active = ns.type_name
+			}
+		}
+		
+		fun addNetworkInfo(ni : NetworkInfo?, is_active : Boolean) {
 			ni ?: return
 			
-			val is_wifi = ni.type == ConnectivityManager.TYPE_WIFI
-			
-			// Wi-Fiでもなく接続中でもないなら全くの無関係
-			if(! is_wifi && ! ni.isConnected) return
-			
+			@Suppress("DEPRECATION")
 			val ns = NetworkStatus(
 				type_name = ni.typeName,
 				sub_name = ni.subtypeName,
 				is_active = is_active
 			)
-			this.add(ns)
+			
+			@Suppress("DEPRECATION")
+			val is_wifi = ni.type == ConnectivityManager.TYPE_WIFI
 			
 			if(is_wifi) {
+				this.add(ns)
 				wifi_status = ns
 			} else if(is_active) {
+				this.add(ns)
 				other_active = ns.type_name
 			}
 		}
@@ -465,7 +551,7 @@ class NetworkTracker(
 			var tester = testerMap[checkUrl]
 			if(tester?.isAlive == true) return
 			// log.v("${checkUrl}の確認を開始")
-			tester = NetworkTracker.UrlTester(setting, log, targetUrl, checkUrl, onUrlTestComplete)
+			tester = UrlTester(setting, log, targetUrl, checkUrl, onUrlTestComplete)
 			testerMap[checkUrl] = tester
 			tester.start()
 		}
@@ -723,8 +809,12 @@ class NetworkTracker(
 				min(remain, 3000L)
 			} else try {
 				timeLastWiFiScan = now
-				wifiManager.startScan()
-				log.d(R.string.wifi_scan_start)
+				try {
+					log.d(R.string.wifi_scan_start)
+					@Suppress("DEPRECATION")
+					wifiManager.startScan()
+				} catch(ex : Throwable) {
+				}
 				3000L
 			} catch(ex : Throwable) {
 				log.trace(ex, "startScan() failed.")
@@ -783,33 +873,33 @@ class NetworkTracker(
 			
 			// 現在のネットワーク接続を列挙する
 			if(Build.VERSION.SDK_INT >= 23) {
-				var active_handle : Long? = null
-				val an = connectivityManager.activeNetwork
-				if(an != null) {
-					active_handle = an.networkHandle
-				}
-				val src_list = connectivityManager.allNetworks
-				if(src_list != null) {
-					for(n in src_list) {
-						val is_active =
-							active_handle != null && active_handle == n.networkHandle
-						val ni = connectivityManager.getNetworkInfo(n)
-						ns_list.addNetworkInfo(is_active, ni)
+				val active_handle : Long? = connectivityManager.activeNetwork?.networkHandle
+				
+				connectivityManager.allNetworks?.forEach { n ->
+					n ?: return@forEach
+					val isActive = active_handle?.equals(n.networkHandle) == true
+					if(Build.VERSION.SDK_INT >= 28) {
+						ns_list.addNetwork(
+							connectivityManager.getNetworkCapabilities(n),
+							isActive
+						)
+					} else {
+						ns_list.addNetworkInfo(
+							connectivityManager.getNetworkInfo(n),
+							isActive
+						)
 					}
 				}
+				
 			} else {
-				var active_name : String? = null
-				val ani = connectivityManager.activeNetworkInfo
-				if(ani != null) {
-					active_name = ani.typeName
-				}
 				@Suppress("DEPRECATION")
-				val src_list = connectivityManager.allNetworkInfo
-				if(src_list != null) {
-					for(ni in src_list) {
-						val is_active = active_name != null && active_name == ni.typeName
-						ns_list.addNetworkInfo(is_active, ni)
-					}
+				val active_name = connectivityManager.activeNetworkInfo?.typeName
+				
+				@Suppress("DEPRECATION")
+				connectivityManager.allNetworkInfo?.forEach { ni ->
+					ni ?: return@forEach
+					val isActive = active_name?.equals(ni.typeName) == true
+					ns_list.addNetworkInfo(ni, isActive)
 				}
 			}
 			ns_list.afterAddAll()
@@ -871,7 +961,7 @@ class NetworkTracker(
 			
 			while(! isCancelled) {
 				
- 				val remain = try {
+				val remain = try {
 					checkNetwork()
 				} catch(ex : Throwable) {
 					log.trace(ex, "network check failed.")
@@ -897,7 +987,7 @@ class NetworkTracker(
 				}
 				
 				logStatic.d("run: remain=$remain")
-				waitEx(if(remain <= 0L) 5000L else if(remain > 10000L )10000L else remain)
+				waitEx(if(remain <= 0L) 5000L else if(remain > 10000L) 10000L else remain)
 			}
 		}
 	}

@@ -72,11 +72,11 @@ class DownloadWorker : WorkerBase {
 	
 	private val service : DownloadService
 	
-	val repeat : Boolean
+	private val repeat : Boolean
 	var target_url : String = ""
 	val folder_uri : String
 	val intervalSeconds : Int
-	val file_type : String
+	private val file_type : String
 	val log : LogWriter
 	val file_type_list : ArrayList<Pattern>
 	val target_type : Int
@@ -119,7 +119,7 @@ class DownloadWorker : WorkerBase {
 						if(info.isConnected && info.type == ConnectivityManager.TYPE_WIFI) {
 							if(isValidSsid) return n
 						}
-					}catch(ex:Throwable){
+					} catch(ex : Throwable) {
 						// クラッシュレポートによるとこのあたりで java.lang.IllegalStateException が発生するらしい
 						// Platform type の利用でnull例外が起きてるのだろう
 						log.trace(ex)
@@ -183,7 +183,7 @@ class DownloadWorker : WorkerBase {
 		this.target_type = Pref.uiTargetType(intent)
 		this.target_url = intent.getStringExtra(DownloadService.EXTRA_TARGET_URL)
 		this.file_type = Pref.uiFileType(intent).trim()
-
+		
 		this.folder_uri = Pref.uiFolderUri(intent)
 		this.repeat = Pref.uiRepeat(intent)
 		this.intervalSeconds = Pref.uiInterval.getInt(intent)
@@ -191,7 +191,7 @@ class DownloadWorker : WorkerBase {
 		this.skip_already_download = Pref.uiSkipAlreadyDownload(intent)
 		
 		this.network_setting = NetworkTracker.Setting(
-			force_wifi =Pref.uiForceWifi(intent),
+			force_wifi = Pref.uiForceWifi(intent),
 			target_ssid = Pref.uiSsid(intent),
 			target_type = this.target_type,
 			target_url = this.target_url,
@@ -200,7 +200,7 @@ class DownloadWorker : WorkerBase {
 			tetherTestConnectionTimeout = x1000Safe(Pref.uiTetherTestConnectionTimeout.getInt(intent)),
 			wifiChangeApInterval = x1000Safe(Pref.uiWifiChangeApInterval.getInt(intent)),
 			wifiScanInterval = x1000Safe(Pref.uiWifiScanInterval.getInt(intent)),
-
+			
 			stopWhenTetheringOff = Pref.uiStopWhenTetheringOff(intent)
 		)
 		
@@ -225,7 +225,10 @@ class DownloadWorker : WorkerBase {
 			.put(Pref.workerProtectedOnly, protected_only)
 			.put(Pref.workerSkipAlreadyDownload, skip_already_download)
 			.put(Pref.workerTetherSprayInterval, network_setting.tetherSprayInterval)
-			.put(Pref.workerTetherTestConnectionTimeout, network_setting.tetherTestConnectionTimeout)
+			.put(
+				Pref.workerTetherTestConnectionTimeout,
+				network_setting.tetherTestConnectionTimeout
+			)
 			.put(Pref.workerWifiChangeApInterval, network_setting.wifiChangeApInterval)
 			.put(Pref.workerWifiScanInterval, network_setting.wifiScanInterval)
 			.put(Pref.workerStopWhenTetheringOff, network_setting.stopWhenTetheringOff)
@@ -250,12 +253,12 @@ class DownloadWorker : WorkerBase {
 		this.intervalSeconds = Pref.workerInterval(pref)
 		this.file_type = Pref.workerFileType(pref)
 		this.target_type = Pref.workerTargetType(pref)
-		this.protected_only =Pref.workerProtectedOnly(pref)
-		this.skip_already_download =Pref.workerSkipAlreadyDownload(pref)
+		this.protected_only = Pref.workerProtectedOnly(pref)
+		this.skip_already_download = Pref.workerSkipAlreadyDownload(pref)
 		
 		this.network_setting = NetworkTracker.Setting(
 			force_wifi = Pref.workerForceWifi(pref),
-			target_ssid =Pref.workerSsid(pref),
+			target_ssid = Pref.workerSsid(pref),
 			target_type = this.target_type,
 			target_url = this.target_url,
 			
@@ -375,12 +378,15 @@ class DownloadWorker : WorkerBase {
 			// なので、一時ファイルの拡張子とMIME TYPE は無害なものに設定するしかない
 			val tmp_name =
 				local_file.name + ".tmp-" + Thread.currentThread().id + "-" + android.os.Process.myPid()
-			local_temp = LocalFile(local_parent, tmp_name)
 			
-			if(! local_temp.prepareFile(log, true, Utils.MIME_TYPE_APPLICATION_OCTET_STREAM)) {
+			local_temp = LocalFile(local_parent, tmp_name)
+				.prepareFile(log, true, Utils.MIME_TYPE_APPLICATION_OCTET_STREAM)
+			
+			if(local_temp == null) {
 				log.e("prepareFile() failed.")
 				return ErrorAndMessage(false, "prepareFile() failed.")
 			}
+			
 			
 			bDeleteTempFile = true
 			
@@ -697,7 +703,7 @@ class DownloadWorker : WorkerBase {
 					log.w(R.string.location_wait_timeout)
 					break
 				}
-				Thread.sleep(1000L)
+				sleep(1000L)
 			}
 		}
 		
@@ -716,11 +722,11 @@ class DownloadWorker : WorkerBase {
 		}
 		
 		// 未取得状態のファイルを履歴から消す
-		if(DownloadWorker.RECORD_QUEUED_STATE) {
+		if(RECORD_QUEUED_STATE) {
 			service.contentResolver.delete(
 				DownloadRecord.meta.content_uri,
 				DownloadRecord.COL_STATE_CODE + "=?",
-				arrayOf(Integer.toString(DownloadRecord.STATE_QUEUED))
+				arrayOf(DownloadRecord.STATE_QUEUED.toString())
 			)
 		}
 		setStatus(false, service.getString(R.string.thread_end))

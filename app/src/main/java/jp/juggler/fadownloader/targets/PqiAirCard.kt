@@ -202,12 +202,15 @@ class PqiAirCard(
 	
 	private fun loadFile(network : Any?, item : ScanItem) {
 		val time_start = SystemClock.elapsedRealtime()
-		val file_name = File(item.remote_path).name
-		val remote_path = item.remote_path
-		val local_file = item.local_file
 		
 		try {
-			if(! local_file.prepareFile(log, true, item.mime_type)) {
+			val file_name = File(item.remote_path).name
+			val remote_path = item.remote_path
+
+			val local_file = item.local_file
+				.prepareFile(log, true, item.mime_type)
+			
+			if(local_file ==null) {
 				log.e("%s//%s :skip. can not prepare local file.", item.remote_path, file_name)
 				thread.record(
 					item,
@@ -351,7 +354,7 @@ class PqiAirCard(
 					service.contentResolver.delete(
 						DownloadRecord.meta.content_uri,
 						DownloadRecord.COL_STATE_CODE + "=?",
-						arrayOf(Integer.toString(DownloadRecord.STATE_QUEUED))
+						arrayOf(DownloadRecord.STATE_QUEUED.toString())
 					)
 				}
 				

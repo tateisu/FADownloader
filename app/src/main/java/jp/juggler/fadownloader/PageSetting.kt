@@ -6,8 +6,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Build
-import android.support.annotation.StringRes
-import android.support.v4.provider.DocumentFile
+import androidx.annotation.StringRes
+import androidx.documentfile.provider.DocumentFile
 import android.view.View
 import android.widget.*
 import jp.juggler.fadownloader.model.LocalFile
@@ -187,7 +187,14 @@ class PageSetting(activity : Activity, ignored : View) :
 			Pref.pref(activity).edit().put(Pref.uiCopyBeforeSend, isChecked).apply()
 			updateFormEnabled()
 		}
-
+		
+		val tvWifiScanInterval :TextView = root.findViewById(R.id.tvWifiScanInterval)
+		tvWifiScanInterval.visibility = if( Build.VERSION.SDK_INT >= 26){
+			View.VISIBLE
+		}else{
+			View.GONE
+		}
+		
 		ui_value_load()
 		folder_view_update()
 	}

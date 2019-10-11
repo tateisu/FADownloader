@@ -3,10 +3,10 @@ package jp.juggler.fadownloader
 import android.content.Context
 import android.database.Cursor
 import android.os.Bundle
-import android.support.v4.app.LoaderManager
-import android.support.v4.content.CursorLoader
-import android.support.v4.content.Loader
-import android.support.v7.app.AppCompatActivity
+import androidx.loader.app.LoaderManager
+import androidx.loader.content.CursorLoader
+import androidx.loader.content.Loader
+import androidx.appcompat.app.AppCompatActivity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,7 +22,8 @@ class LogViewer {
 	
 	companion object {
 		
-		internal val date_fmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS z", Locale.getDefault())
+		internal val date_fmt :SimpleDateFormat
+			get()= SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS z", Locale.getDefault())
 	}
 	
 	class Holder(
@@ -32,14 +33,16 @@ class LogViewer {
 		
 		private var loader : Loader<Cursor>? = null
 		
+		private val loaderManager = LoaderManager.getInstance(activity)
+		
 		fun onStart(loader_id : Int) {
-			loader = activity.supportLoaderManager.initLoader(loader_id, null, this)
+			loader = loaderManager.initLoader(loader_id, null, this)
 		}
 		
 		fun onStop() : Int {
 			val loader = this.loader
 			if(loader != null) {
-				activity.supportLoaderManager.destroyLoader(loader.id)
+				loaderManager.destroyLoader(loader.id)
 				this.loader = null
 			}
 			val rv = listView.firstVisiblePosition

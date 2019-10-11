@@ -49,8 +49,8 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 	
 	// フォルダを読む
 	private fun loadFolder(network : Any?, item : ScanItem) {
-
-		val cgi_url =  "${thread.target_url}command.cgi?op=100&DIR=${Uri.encode(item.remote_path)}"
+		
+		val cgi_url = "${thread.target_url}command.cgi?op=100&DIR=${Uri.encode(item.remote_path)}"
 		val data = thread.client.getHTTP(log, network, cgi_url)
 		if(thread.isCancelled) return
 		
@@ -103,7 +103,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 				// https://flashair-developers.com/ja/support/forum/#/discussion/3/%E3%82%AB%E3%83%B3%E3%83%9E%E5%8C%BA%E5%88%87%E3%82%8A
 				val dir = if(item.remote_path == "/") "" else item.remote_path
 				val file_name = line.substring(dir.length + 1, mAttr.start())
-
+				
 				if(attr and 2 != 0) {
 					// skip hidden file
 					continue
@@ -117,7 +117,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 				
 				if(attr and 0x10 != 0) {
 					// フォルダはキューの頭に追加
-					thread.job_queue!!.addFolder(
+					thread.job_queue !!.addFolder(
 						ScanItem(
 							file_name,
 							remote_path,
@@ -136,12 +136,12 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 					
 					var matched = false
 					for(re in thread.file_type_list) {
-						if(re.matcher(file_name).find()){
+						if(re.matcher(file_name).find()) {
 							matched = true
 							break
 						}
 					}
-					if(!matched) {
+					if(! matched) {
 						// logStatic.d("$file_name not match in file_type_list")
 						continue
 					}
@@ -150,7 +150,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 						// logStatic.d("$file_name already downloaded.")
 						continue
 					}
-						
+					
 					val mime_type = Utils.getMimeType(log, file_name)
 					
 					// ファイルはキューの末尾に追加
@@ -163,12 +163,12 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 							time = time,
 							mime_type = mime_type
 						)
-					thread.job_queue!!.addFile(sub_item)
+					thread.job_queue !!.addFile(sub_item)
 					thread.record(sub_item, 0L, DownloadRecord.STATE_QUEUED, "queued.")
-						
+					
 				}
 			} catch(ex : Throwable) {
-				log.trace(ex, "folder list parse error: $line" )
+				log.trace(ex, "folder list parse error: $line")
 				log.e(ex, "folder list parse error: %s", line)
 			}
 			
@@ -177,13 +177,13 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 	
 	private fun loadFile(network : Any?, item : ScanItem) {
 		val time_start = SystemClock.elapsedRealtime()
-		val file_name = File(item.remote_path).name
-		val remote_path = item.remote_path
-		val local_file = item.local_file
-		
 		try {
+			val file_name = File(item.remote_path).name
+			val remote_path = item.remote_path
 			
-			if(! local_file.prepareFile(log, true, item.mime_type)) {
+			val local_file = item.local_file
+				.prepareFile(log, true, item.mime_type)
+			if(local_file == null) {
 				log.e("%s//%s :skip. can not prepare local file.", item.remote_path, file_name)
 				thread.record(
 					item,
@@ -225,7 +225,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 						}
 					}
 				} catch(ex : Throwable) {
-					log.e(ex,"HTTP read error.")
+					log.e(ex, "HTTP read error.")
 				}
 				
 				null
@@ -275,7 +275,7 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 				while(! thread.isCancelled) {
 					val tracker_last_result = service.wifi_tracker.bLastConnected
 					val air_url = service.wifi_tracker.lastTargetUrl.get()
-					if(tracker_last_result && air_url.isNotEmpty() ) {
+					if(tracker_last_result && air_url.isNotEmpty()) {
 						thread.target_url = air_url
 						break
 					}
@@ -345,13 +345,13 @@ class FlashAir(private val service : DownloadService, internal val thread : Down
 					service.contentResolver.delete(
 						DownloadRecord.meta.content_uri,
 						DownloadRecord.COL_STATE_CODE + "=?",
-						arrayOf(Integer.toString(DownloadRecord.STATE_QUEUED))
+						arrayOf(DownloadRecord.STATE_QUEUED.toString())
 					)
 				}
 				
 				// フォルダスキャン開始
 				thread.onFileScanStart()
-				thread.job_queue ?.addFolder(
+				thread.job_queue?.addFolder(
 					ScanItem(
 						"",
 						"/",

@@ -3,7 +3,7 @@ package jp.juggler.fadownloader.model
 import android.content.Context
 import android.net.Uri
 import android.os.Build
-import android.support.v4.provider.DocumentFile
+import androidx.documentfile.provider.DocumentFile
 import jp.juggler.fadownloader.R
 import jp.juggler.fadownloader.util.LogWriter
 import jp.juggler.fadownloader.util.Utils
@@ -33,6 +33,13 @@ class LocalFile(
 	
 	companion object {
 		const val DOCUMENT_FILE_VERSION = 21
+		
+		private val Any.name : String
+			get() = if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
+				(this as DocumentFile).name ?: ""
+			} else {
+				(this as File).name
+			}
 	}
 	
 	// local_fileで表現されたフォルダ中に含まれるエントリの一覧
@@ -49,18 +56,14 @@ class LocalFile(
 	
 	// エントリを探索
 	private fun findChild(log : LogWriter, bCreate : Boolean, target_name : String) : Any? {
-		if(prepareFileList(log, bCreate)) {
+		val list = prepareFileList(log, bCreate)
+		if(list != null) {
 			var start = 0
-			var end = child_list !!.size
+			var end = list.size
 			while(end - start > 0) {
 				val mid = start + end shr 1
-				val x = child_list !![mid]
-				val i : Int
-				i = if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
-					target_name.compareTo((x as DocumentFile).name)
-				} else {
-					target_name.compareTo((x as File).name)
-				}
+				val x = list[mid]
+				val i = target_name.compareTo(x.name)
 				when {
 					i < 0 -> end = mid
 					i > 0 -> start = mid + 1
@@ -71,52 +74,46 @@ class LocalFile(
 		return null
 	}
 	
-	private fun prepareFileList(log : LogWriter, bCreate : Boolean) : Boolean {
+	private fun prepareFileList(log : LogWriter, bCreate : Boolean) : ArrayList<Any>? {
 		if(child_list == null) {
 			if(local_file == null && parent != null && name != null) {
-				if(parent.prepareDirectory(log, bCreate)) {
-					local_file = parent.findChild(log, bCreate, name)
-				}
+				local_file = parent.prepareDirectory(log, bCreate)?.findChild(log, bCreate, name)
 			}
 			if(local_file != null) {
 				try {
-					val result = ArrayList<Any>()
-					if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
-						Collections.addAll(result, *(local_file as DocumentFile).listFiles())
-						result.sortWith(Comparator { a, b -> (a as DocumentFile).name.compareTo((b as DocumentFile).name) })
-					} else {
-						Collections.addAll(result, *(local_file as File).listFiles())
-						result.sortWith(Comparator { a, b -> (a as File).name.compareTo((b as File).name) })
+					child_list = ArrayList<Any>().apply{
+						if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
+							Collections.addAll(this, *(local_file as DocumentFile).listFiles())
+						} else {
+							Collections.addAll(this, *(local_file as File).listFiles())
+						}
+						this.sortBy { it.name }
 					}
-					child_list = result
 				} catch(ex : Throwable) {
 					log.trace(ex, "listFiles() failed.")
 					log.e(ex, "listFiles() failed.")
 				}
-				
 			}
 		}
-		return child_list != null
+		return child_list
 	}
 	
-	private fun prepareDirectory(log : LogWriter, bCreate : Boolean) : Boolean {
+	private fun prepareDirectory(log : LogWriter, bCreate : Boolean) : LocalFile? {
 		try {
 			if(local_file == null && parent != null && name != null) {
-				if(parent.prepareDirectory(log, bCreate)) {
-					local_file = parent.findChild(log, bCreate, name)
-					if(local_file == null && bCreate) {
-						log.i(R.string.folder_create, name)
-						if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
-							local_file = (parent.local_file as DocumentFile).createDirectory(name)
-						} else {
-							local_file = File(parent.local_file as File?, name)
-							if(! (local_file as File).mkdir()) {
-								local_file = null
-							}
+				local_file = parent.prepareDirectory(log, bCreate)?.findChild(log, bCreate, name)
+				if(local_file == null && bCreate) {
+					log.i(R.string.folder_create, name)
+					if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
+						local_file = (parent.local_file as DocumentFile).createDirectory(name)
+					} else {
+						local_file = File(parent.local_file as File?, name)
+						if(! (local_file as File).mkdir()) {
+							local_file = null
 						}
-						if(local_file == null) {
-							log.e(R.string.folder_create_failed)
-						}
+					}
+					if(local_file == null) {
+						log.e(R.string.folder_create_failed)
 					}
 				}
 			}
@@ -124,32 +121,30 @@ class LocalFile(
 			log.e(ex, R.string.folder_create_failed)
 		}
 		
-		return local_file != null
+		return if( local_file == null ) null else this
 	}
 	
-	fun prepareFile(log : LogWriter, bCreate : Boolean, mimeTypeArg : String?) : Boolean {
+	fun prepareFile(log : LogWriter, bCreate : Boolean, mimeTypeArg : String?) : LocalFile? {
 		try {
 			if(local_file == null && parent != null && name != null) {
-				if(parent.prepareDirectory(log, bCreate)) {
-					local_file = parent.findChild(log, bCreate, name)
-					if(local_file == null && bCreate) {
-						local_file = when {
-							Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ->
-								(parent.local_file as DocumentFile)
-									.createFile(
-										if(mimeTypeArg?.isNotEmpty() == true) {
-											mimeTypeArg
-										} else {
-											"application/octet-stream"
-										}
-										,name
-									)
-							else ->
-								File(parent.local_file as File?, name)
-						}
-						if(local_file == null) {
-							log.e(R.string.file_create_failed)
-						}
+				local_file = parent.prepareDirectory(log, bCreate)?.findChild(log, bCreate, name)
+				if(local_file == null && bCreate) {
+					local_file = when {
+						Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION ->
+							(parent.local_file as DocumentFile)
+								.createFile(
+									if(mimeTypeArg?.isNotEmpty() == true) {
+										mimeTypeArg
+									} else {
+										"application/octet-stream"
+									}
+									, name
+								)
+						else ->
+							File(parent.local_file as File?, name)
+					}
+					if(local_file == null) {
+						log.e(R.string.file_create_failed)
 					}
 				}
 			}
@@ -158,18 +153,17 @@ class LocalFile(
 			log.e(ex, R.string.file_create_failed)
 		}
 		
-		return local_file != null
+		return if( local_file == null ) null else this
 	}
 	
-	fun length(log : LogWriter) : Long {
-		return if(prepareFile(log, false, null)) {
+	fun length(log : LogWriter) : Long =
+		prepareFile(log, false, null)?.local_file ?.let{
 			if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
-				(local_file as DocumentFile).length()
+				( it as DocumentFile).length()
 			} else {
-				(local_file as File).length()
+				( it as File).length()
 			}
-		} else 0L
-	}
+		} ?: 0L
 	
 	//	fun isFile(log : LogWriter) : Boolean {
 	//		return if(prepareFile(log, false, null)) {
@@ -219,14 +213,14 @@ class LocalFile(
 	//		}
 	//	}
 	
-	fun getFileUri(log : LogWriter) : String? {
-		if(! prepareFile(log, false, null)) return null
-		return if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
-			(local_file as DocumentFile).uri.toString()
-		} else {
-			(local_file as File).absolutePath
+	fun getFileUri(log : LogWriter) : String? =
+		prepareFile(log, false, null) ?.local_file ?.let{
+			if(Build.VERSION.SDK_INT >= DOCUMENT_FILE_VERSION) {
+				(it as DocumentFile).uri.toString()
+			} else {
+				(it as File).absolutePath
+			}
 		}
-	}
 	
 	fun getFile(context : Context, log : LogWriter) : File? {
 		try {

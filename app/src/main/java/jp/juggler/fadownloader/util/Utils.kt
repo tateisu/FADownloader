@@ -169,7 +169,7 @@ object Utils {
 		val e = z.length
 		while(i < e) {
 			val zc = z[i]
-			taisaku_map[zc] = "" + Character.toString(h[i])
+			taisaku_map[zc] = "" + h[i].toString()
 			taisaku_map2.put(zc.toInt(), true)
 			++ i
 		}
@@ -312,25 +312,17 @@ object Utils {
 		return MIME_TYPE_APPLICATION_OCTET_STREAM
 	}
 	
-	internal class FileInfo(any_uri : String?) {
+	internal class FileInfo(any_uri : String) {
 		
-		var uri : Uri? = null
-		var mime_type : String? = null
+		var uri : Uri = if(any_uri.startsWith("/")) {
+			Uri.fromFile(File(any_uri))
+		} else {
+			Uri.parse(any_uri)
+		}
 		
-		init {
-			if(any_uri != null) {
-				uri = if(any_uri.startsWith("/")) {
-					Uri.fromFile(File(any_uri))
-				} else {
-					Uri.parse(any_uri)
-				}
-				
-				val ext = MimeTypeMap.getFileExtensionFromUrl(any_uri)
-				if(ext != null) {
-					mime_type =
-						MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext.toLowerCase())
-				}
-			}
+		var mime_type : String? = when(val ext = MimeTypeMap.getFileExtensionFromUrl(any_uri)) {
+			null -> null
+			else -> MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext.toLowerCase())
 		}
 	}
 	
@@ -552,7 +544,8 @@ fun ByteArray.digestSHA256() : ByteArray {
 	return digest.digest(this)
 }
 
-fun ByteArray.encodeBase64Safe() :String = Base64.encodeToString(this, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+fun ByteArray.encodeBase64Safe() :String =
+	Base64.encodeToString(this, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
 
 fun ByteArray.digestMD5() : String {
 	val md = MessageDigest.getInstance("MD5")

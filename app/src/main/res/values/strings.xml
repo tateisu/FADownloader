@@ -224,7 +224,14 @@ FADownloaderはテザリング内部のLANにUDPパケットをばらまいた�
     <string name="tether_test_connection_timeout_help">In tethering mode, this app test HTTP connection to detected device. but sometimes this test will failed by socket timeout.\nThis setting can change its timeouts.\nUnit is seconds, default is 15.</string>
 
     <string name="wifi_scan_interval">Wi-Fi scan interval (force Wi-Fi AP mode)</string>
-    <string name="wifi_scan_interval_help">In force Wi-Fi AP mode, this app starts Wi-Fi scan to detect target AP if it\'s is not found in previous scan result.\nBut frequently Wi-Fi scan wastes battery.\nThis setting can change its intervals.\nUnit is seconds, default is 10.</string>
+    <string name="wifi_scan_interval_help">In force Wi-Fi AP mode, this app starts Wi-Fi scan to detect target AP if it\'s is not found in previous scan result.\nBut frequently Wi-Fi scan wastes battery.\nThis setting can change its intervals.\nUnit is seconds, default is 10.
+\n\n*Throttling*
+\nThe following limitations apply to the frequency of scans using WifiManager.startScan().
+\n・Android 8.x: Each background app can scan one time in a 30-minute period.
+\n・Android 9: Each foreground app can scan four times in a 2-minute period. All background apps combined can scan one time in a 30-minute period.
+\n・Android 10+: The same throttling limits from Android 9 apply. There is a new developer option to toggle the throttling off for local testing (under Developer Options > Networking > Wi-Fi scan throttling).
+    </string>
+    <string name="wifi_scan_warning">Android 8 or later have limitation about wifi scan frequency. (see \"?\")</string>
 
     <string name="wifi_change_ap_interval">Wi-Fi change AP interval (force Wi-Fi AP mode)</string>
     <string name="wifi_change_ap_interval_help">In force Wi-Fi AP mode, this app change Wi-Fi AP to target AP if it\'s is found in scan result, but it\'s not selected.\nThis setting can change its intervals.\nUnit is seconds, default is 5.</string>

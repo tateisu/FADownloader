@@ -5,14 +5,15 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.ConnectivityManager
+import android.net.*
 import android.net.wifi.WifiManager
+import android.os.Build
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.ListView
+import androidx.appcompat.app.AppCompatActivity
 import jp.juggler.fadownloader.R
 import jp.juggler.fadownloader.util.LogTag
 import java.util.*
@@ -42,6 +43,8 @@ class SSIDPicker : AppCompatActivity(), AdapterView.OnItemClickListener, View.On
 		}
 	}
 	
+	private lateinit var networkCallback : Any
+	
 	private lateinit var listView : ListView
 	private lateinit var list_adapter : ArrayAdapter<String>
 	private lateinit var wifi_manager : WifiManager
@@ -66,7 +69,19 @@ class SSIDPicker : AppCompatActivity(), AdapterView.OnItemClickListener, View.On
 	override fun onStart() {
 		super.onStart()
 		registerReceiver(receiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
-		registerReceiver(receiver, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
+		if( Build.VERSION.SDK_INT >= 28 ){
+			(getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager)
+				?. registerNetworkCallback(
+					NetworkRequest.Builder()
+						.addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+						.build()
+					,networkCallback as ConnectivityManager.NetworkCallback
+				)
+		}else{
+			@Suppress("DEPRECATION")
+			registerReceiver(receiver, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
+		}
+		
 		updateList()
 		reload()
 	}
@@ -74,6 +89,10 @@ class SSIDPicker : AppCompatActivity(), AdapterView.OnItemClickListener, View.On
 	override fun onStop() {
 		super.onStop()
 		unregisterReceiver(receiver)
+		if( Build.VERSION.SDK_INT >= 28 ){
+			(getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager)
+				?. unregisterNetworkCallback( networkCallback as ConnectivityManager.NetworkCallback)
+		}
 	}
 	
 	override fun onCreate(savedInstanceState : Bundle?) {
@@ -88,10 +107,56 @@ class SSIDPicker : AppCompatActivity(), AdapterView.OnItemClickListener, View.On
 		listView.onItemClickListener = this
 		
 		wifi_manager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+		
+		if( Build.VERSION.SDK_INT >= 28){
+			networkCallback = object: ConnectivityManager.NetworkCallback() {
+				override fun onCapabilitiesChanged(
+					network : Network?,
+					networkCapabilities : NetworkCapabilities?
+				) {
+					super.onCapabilitiesChanged(network, networkCapabilities)
+					updateList()
+				}
+				
+				override fun onLost(network : Network?) {
+					super.onLost(network)
+					updateList()
+				}
+				
+				override fun onLinkPropertiesChanged(
+					network : Network?,
+					linkProperties : LinkProperties?
+				) {
+					super.onLinkPropertiesChanged(network, linkProperties)
+					updateList()
+				}
+				
+				override fun onUnavailable() {
+					super.onUnavailable()
+					updateList()
+				}
+				
+				override fun onLosing(network : Network?, maxMsToLive : Int) {
+					super.onLosing(network, maxMsToLive)
+					updateList()
+				}
+				
+				override fun onAvailable(network : Network?) {
+					super.onAvailable(network)
+					updateList()
+				}
+			}
+		}
 	}
 	
 	private fun reload() {
-		wifi_manager.startScan()
+		try {
+			// API level 28 でdeprecated
+			//  Each foreground app is restricted to 4 scans every 2 minutes.
+			@Suppress("DEPRECATION")
+			wifi_manager.startScan()
+		}catch(ex:Throwable){
+		}
 	}
 	
 	private fun updateList() {

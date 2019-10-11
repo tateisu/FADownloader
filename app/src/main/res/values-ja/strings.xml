@@ -192,7 +192,14 @@
     <string name="tether_test_connection_timeout_help">テザリングモードでは、このアプリはデバイスへのHTTP接続をテストします。しかしこのテストは通信状況などの理由により待たされた挙句失敗する場合があります。\nそのタイムアウトをこの設定で変更できます。単位は秒数、デフォルトは15です。</string>
 
     <string name="wifi_scan_interval">Wi-Fiスキャン間隔 (Wi-Fi AP半強制時)</string>
-    <string name="wifi_scan_interval_help">Wi-Fi AP半強制モードでは、指定されたAPが過去のWi-Fiスキャン結果に含まれない場合にこのアプリは定期的にWi-Fiスキャンの開始を行います。\nしかし頻繁なWi-Fiスキャンは端末のバッテリーを浪費します。\nその時間間隔をこの設定で変更できます。単位は秒数、デフォルトは10です。</string>
+    <string name="wifi_scan_interval_help">Wi-Fi AP半強制モードでは、指定されたAPが過去のWi-Fiスキャン結果に含まれない場合にこのアプリは定期的にWi-Fiスキャンの開始を行います。\nしかし頻繁なWi-Fiスキャンは端末のバッテリーを浪費します。\nその時間間隔をこの設定で変更できます。単位は秒数、デフォルトは10です。
+\n\n*制限*
+\nWifiManager.startScan（）を使用したスキャンの頻度には、次の制限が適用されます。
+\n・Android 8.x: 各バックグラウンドアプリは、30分間に1回スキャンできます。
+\n・Android 9: 各フォアグラウンドアプリは、2分間に4回スキャンできます。 すべてのバックグラウンドアプリは合計で30分間に1回スキャンできます。
+\n・Android 10+： Android 9と同じ制限が適用されます。開発者オプションで制限を無効にできます。開発者オプション/ネットワーク/Wi-Fiスキャン調整
+    </string>
+    <string name="wifi_scan_warning">Android 8以降はWi-Fiスキャンの周期に制限があります。(\"?\"を参照)</string>
 
     <string name="wifi_change_ap_interval">Wi-Fi AP変更間隔</string>
     <string name="wifi_change_ap_interval_help">Wi-Fi AP半強制モードでは、指定されたAPがスキャン結果に含まれるが選択されていない場合にこのアプリは定期的にW-Fi APの変更を試みます。\nその時間間隔をこの設定で変更できます。単位は秒数、デフォルトは5です。</string>

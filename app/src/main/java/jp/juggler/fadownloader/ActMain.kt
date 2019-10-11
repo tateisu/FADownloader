@@ -2,7 +2,6 @@ package jp.juggler.fadownloader
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlarmManager
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
@@ -13,11 +12,10 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.provider.Settings
-import android.support.v4.app.ActivityCompat
-import android.support.v4.provider.DocumentFile
-import android.support.v4.view.ViewPager
-import android.support.v7.app.AlertDialog
-import android.support.v7.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.viewpager.widget.ViewPager
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import android.view.*
 import android.widget.TextView
 import com.example.android.trivialdrivesample.util.IabHelper
@@ -73,7 +71,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	private var permission_alert : WeakReference<Dialog>? = null
 	private var mLocationSettingsRequest : LocationSettingsRequest? = null
 	
-	var dlgPrivacyPolicy : WeakReference<Dialog>?=null
+	private var dlgPrivacyPolicy : WeakReference<Dialog>? = null
 	
 	private var is_resume = false
 	internal var is_start = false
@@ -114,9 +112,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 							// Location settings are not satisfied.
 							// But could be fixed by showing the user a dialog.
 							try {
-								if(apiException !is ResolvableApiException) {
-									// should not happen
-								} else {
+								if(apiException is ResolvableApiException) {
 									// Show the dialog by calling startResolutionForResult(),
 									// and check the result in onActivityResult().
 									apiException.startResolutionForResult(
@@ -314,12 +310,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 			when(requestCode) {
 				REQUEST_RESOLUTION -> startDownloadService()
 				
-				REQUEST_CODE_DOCUMENT -> {
-					handleLocalFolder2(resultData)
-					return
-				}
-				
-				REQUEST_FOLDER_PICKER -> {
+				REQUEST_CODE_DOCUMENT, REQUEST_FOLDER_PICKER -> {
 					handleLocalFolder2(resultData)
 					return
 				}
@@ -342,7 +333,6 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		
 	}
 	
-
 	override fun onCreate(savedInstanceState : Bundle?) {
 		super.onCreate(savedInstanceState)
 		
@@ -437,35 +427,32 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	
 	private fun permission_request() {
 		val missing_permission_list = PermissionChecker.getMissingPermissionList(this)
-		if(! missing_permission_list.isEmpty()) {
-			var dialog : Dialog?
+		if(missing_permission_list.isNotEmpty()) {
 			
 			// 既にダイアログを表示中なら何もしない
-			if(permission_alert != null) {
-				dialog = permission_alert !!.get()
-				if(dialog != null && dialog.isShowing) return
-			}
+			if(permission_alert?.get()?.isShowing == true) return
 			
-			dialog = AlertDialog.Builder(this)
-				.setMessage(R.string.app_permission_required)
-				.setPositiveButton(R.string.request) { _, _ ->
-					ActivityCompat.requestPermissions(
-						this@ActMain,
-						missing_permission_list.toTypedArray(),
-						REQUEST_CODE_PERMISSION
-					)
-				}
-				.setNegativeButton(R.string.cancel) { _, _ -> this@ActMain.finish() }
-				.setNeutralButton(R.string.setting) { _, _ ->
-					val intent = Intent()
-					intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-					intent.data = Uri.parse("package:$packageName")
-					startActivity(intent)
-				}
-				.setOnCancelListener { this@ActMain.finish() }
-				.create()
-			dialog !!.show()
-			permission_alert = WeakReference(dialog)
+			permission_alert = WeakReference(
+				AlertDialog.Builder(this)
+					.setMessage(R.string.app_permission_required)
+					.setPositiveButton(R.string.request) { _, _ ->
+						ActivityCompat.requestPermissions(
+							this@ActMain,
+							missing_permission_list.toTypedArray(),
+							REQUEST_CODE_PERMISSION
+						)
+					}
+					.setNegativeButton(R.string.cancel) { _, _ -> this@ActMain.finish() }
+					.setNeutralButton(R.string.setting) { _, _ ->
+						val intent = Intent()
+						intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+						intent.data = Uri.parse("package:$packageName")
+						startActivity(intent)
+					}
+					.setOnCancelListener { this@ActMain.finish() }
+					.create()
+					.apply { show() }
+			)
 			
 		}
 	}
@@ -521,7 +508,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	private fun startDownloadService() {
 		
 		val error = actionStart(this)
-		if( error != null) {
+		if(error != null) {
 			Utils.showToast(this, true, error)
 		}
 	}
@@ -609,7 +596,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		
 	}
 	
-	internal fun remove_ad(isPurchased : Boolean) {
+	private fun remove_ad(isPurchased : Boolean) {
 		bRemoveAdPurchased = isPurchased
 		if(isPurchased && mAdView != null) {
 			(mAdView?.parent as? ViewGroup)?.removeView(mAdView)
@@ -627,13 +614,13 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 	}
 	
 	private fun checkPrivacyPolicy() {
-
+		
 		// 既に表示中かもしれない
-		if( dlgPrivacyPolicy?.get()?.isShowing == true) return
+		if(dlgPrivacyPolicy?.get()?.isShowing == true) return
 		
 		// プライバシーポリシーデータの読み込み
-		val bytes = readRawResource(this,R.raw.privacy_policy)
-		if( bytes?.isEmpty() != false) return
+		val bytes = readRawResource(this, R.raw.privacy_policy)
+		if(bytes?.isEmpty() != false) return
 		
 		// 同意ずみなら表示しない
 		val digest = bytes.digestSHA256().encodeBase64Safe()
@@ -641,36 +628,35 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 		// SharedPreferenceは文字列の末尾に改行があるとゴミを付与する事例があった
 		// encodeBase64Safe()が改行を付与しないよう修正したが、過去のagreedには末尾にゴミが残っているのでtrimが必要
 		log.d("digest=$digest agreed=$agreed")
-		if( digest == agreed ) return
+		if(digest == agreed) return
 		
 		val dialog = AlertDialog.Builder(this)
 			.setTitle(R.string.privacy_policy)
-			.setMessage( bytes.decodeUTF8())
-			.setNegativeButton(R.string.cancel){_,_ ->
+			.setMessage(bytes.decodeUTF8())
+			.setNegativeButton(R.string.cancel) { _, _ ->
 				finish()
 			}
-			.setOnCancelListener{_->
+			.setOnCancelListener {
 				finish()
 			}
-			.setPositiveButton(R.string.agree){_,_ ->
-				pref.edit().put(Pref.agreedPrivacyPolicyDigest,digest).apply()
+			.setPositiveButton(R.string.agree) { _, _ ->
+				pref.edit().put(Pref.agreedPrivacyPolicyDigest, digest).apply()
 			}
 			.create()
 		dlgPrivacyPolicy = WeakReference(dialog)
 		dialog.show()
 	}
 	
-	private fun readRawResource(context:Context, resId:Int):ByteArray?{
-		context.resources.openRawResource(resId)?.use{inStream->
-			val bao = ByteArrayOutputStream( inStream.available() )
-			IOUtils.copy(inStream,bao)
-			return bao.toByteArray()
+	private fun readRawResource(context : Context, resId : Int) : ByteArray? =
+		context.resources.openRawResource(resId).use { inStream ->
+			ByteArrayOutputStream(inStream.available()).use { outStream ->
+				IOUtils.copy(inStream, outStream)
+				return outStream.toByteArray()
+			}
 		}
-		return null
-	}
 	
 	@SuppressLint("NewApi")
-	private fun handleLocalFolder2(resultData:Intent?){
+	private fun handleLocalFolder2(resultData : Intent?) {
 		if(Build.VERSION.SDK_INT >= LocalFile.DOCUMENT_FILE_VERSION) {
 			try {
 				val treeUri = resultData?.data
@@ -691,7 +677,7 @@ open class ActMain : AppCompatActivity(), View.OnClickListener {
 				Utils.showToast(this, true, ex.withCaption("folder access failed."))
 			}
 			
-		}else{
+		} else {
 			try {
 				val path = resultData?.getStringExtra(FolderPicker.EXTRA_FOLDER)
 				if(path != null) {
